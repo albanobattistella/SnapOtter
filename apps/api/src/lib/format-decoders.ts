@@ -8,7 +8,23 @@ import { promisify } from "node:util";
 const execFileAsync = promisify(execFile);
 
 /** Formats that need external CLI tools (not decodable by Sharp). */
-const CLI_DECODED_FORMATS = new Set(["raw", "ico", "tga", "psd", "exr", "hdr", "bmp", "jxl"]);
+const CLI_DECODED_FORMATS = new Set([
+  "raw",
+  "ico",
+  "tga",
+  "psd",
+  "exr",
+  "hdr",
+  "bmp",
+  "jxl",
+  "jp2",
+  "qoi",
+  "eps",
+  "dds",
+  "cur",
+  "dpx",
+  "fits",
+]);
 
 export function needsCliDecode(format: string): boolean {
   return CLI_DECODED_FORMATS.has(format);
@@ -47,6 +63,20 @@ export async function decodeToSharpCompat(
       return decodeBmp(buffer);
     case "jxl":
       return decodeJxl(buffer);
+    case "jp2":
+      return decodeJp2(buffer);
+    case "eps":
+      return decodeEps(buffer);
+    case "dds":
+      return decodeDds(buffer);
+    case "cur":
+      return decodeIco(buffer); // CUR is structurally identical to ICO
+    case "dpx":
+      return decodeDpx(buffer);
+    case "fits":
+      return decodeFits(buffer);
+    case "qoi":
+      return decodeQoi(buffer);
     default:
       return buffer;
   }
@@ -283,4 +313,135 @@ async function decodeJxl(buffer: Buffer): Promise<Buffer> {
     await rm(inputPath, { force: true }).catch(() => {});
     await rm(outputPath, { force: true }).catch(() => {});
   }
+}
+
+// ── JPEG 2000 decoder (opj_decompress-first, ImageMagick fallback) ──
+
+async function decodeJp2(buffer: Buffer): Promise<Buffer> {
+  const id = randomUUID();
+  const inputPath = join(tmpdir(), `jp2-in-${id}.jp2`);
+  const outputPath = join(tmpdir(), `jp2-out-${id}.png`);
+  try {
+    await writeFile(inputPath, buffer);
+    try {
+      await execFileAsync("opj_decompress", ["-i", inputPath, "-o", outputPath], {
+        timeout: 60_000,
+      });
+      return await readFile(outputPath);
+    } catch {
+      // opj_decompress not available, fall back to ImageMagick
+    }
+    const cmd = await findMagickCmd();
+    await execFileAsync(cmd, magickArgs(cmd, [inputPath, `png:${outputPath}`]), {
+      timeout: 120_000,
+    });
+    return await readFile(outputPath);
+  } finally {
+    await rm(inputPath, { force: true }).catch(() => {});
+    await rm(outputPath, { force: true }).catch(() => {});
+  }
+}
+
+// ── EPS decoder (ImageMagick + Ghostscript delegate) ──
+
+const MAX_EPS_SIZE = 50 * 1024 * 1024;
+
+async function decodeEps(buffer: Buffer): Promise<Buffer> {
+  if (buffer.length > MAX_EPS_SIZE) {
+    throw new Error(
+      `EPS file too large (${(buffer.length / 1024 / 1024).toFixed(1)}MB, limit: 50MB)`,
+    );
+  }
+  const cmd = await findMagickCmd();
+  const id = randomUUID();
+  const inputPath = join(tmpdir(), `eps-in-${id}.eps`);
+  const outputPath = join(tmpdir(), `eps-out-${id}.png`);
+  try {
+    await writeFile(inputPath, buffer);
+    await execFileAsync(
+      cmd,
+      magickArgs(cmd, [
+        "-density",
+        "300",
+        "-define",
+        "gs:MaxBitmap=500000000",
+        inputPath,
+        "-colorspace",
+        "sRGB",
+        `png:${outputPath}`,
+      ]),
+      { timeout: 30_000 },
+    );
+    return await readFile(outputPath);
+  } finally {
+    await rm(inputPath, { force: true }).catch(() => {});
+    await rm(outputPath, { force: true }).catch(() => {});
+  }
+}
+
+// ── DDS decoder ──
+
+async function decodeDds(buffer: Buffer): Promise<Buffer> {
+  const cmd = await findMagickCmd();
+  const id = randomUUID();
+  const inputPath = join(tmpdir(), `dds-in-${id}.dds`);
+  const outputPath = join(tmpdir(), `dds-out-${id}.png`);
+  try {
+    await writeFile(inputPath, buffer);
+    await execFileAsync(cmd, magickArgs(cmd, [`${inputPath}[0]`, `png:${outputPath}`]), {
+      timeout: 120_000,
+    });
+    return await readFile(outputPath);
+  } finally {
+    await rm(inputPath, { force: true }).catch(() => {});
+    await rm(outputPath, { force: true }).catch(() => {});
+  }
+}
+
+// ── DPX / Cineon decoder ──
+
+async function decodeDpx(buffer: Buffer): Promise<Buffer> {
+  const cmd = await findMagickCmd();
+  const id = randomUUID();
+  const inputPath = join(tmpdir(), `dpx-in-${id}.dpx`);
+  const outputPath = join(tmpdir(), `dpx-out-${id}.png`);
+  try {
+    await writeFile(inputPath, buffer);
+    await execFileAsync(
+      cmd,
+      magickArgs(cmd, [inputPath, "-colorspace", "sRGB", `png:${outputPath}`]),
+      { timeout: 120_000 },
+    );
+    return await readFile(outputPath);
+  } finally {
+    await rm(inputPath, { force: true }).catch(() => {});
+    await rm(outputPath, { force: true }).catch(() => {});
+  }
+}
+
+// ── FITS decoder ──
+
+async function decodeFits(buffer: Buffer): Promise<Buffer> {
+  const cmd = await findMagickCmd();
+  const id = randomUUID();
+  const inputPath = join(tmpdir(), `fits-in-${id}.fits`);
+  const outputPath = join(tmpdir(), `fits-out-${id}.png`);
+  try {
+    await writeFile(inputPath, buffer);
+    await execFileAsync(
+      cmd,
+      magickArgs(cmd, [inputPath, "-normalize", "-colorspace", "sRGB", `png:${outputPath}`]),
+      { timeout: 120_000 },
+    );
+    return await readFile(outputPath);
+  } finally {
+    await rm(inputPath, { force: true }).catch(() => {});
+    await rm(outputPath, { force: true }).catch(() => {});
+  }
+}
+
+// ── QOI decoder (stub -- real codec comes in Task 4) ──
+
+async function decodeQoi(_buffer: Buffer): Promise<Buffer> {
+  throw new Error("QOI decode not yet implemented");
 }

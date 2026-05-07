@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 import { useEditorStore } from "@/stores/editor-store";
 import { NewDocumentDialog } from "./new-document-dialog";
 
-const ACCEPTED_TYPES = ".png,.jpg,.jpeg,.webp,.gif,.bmp,.tiff,.svg";
+const ACCEPTED_TYPES = ".png,.jpg,.jpeg,.webp,.gif,.bmp,.tiff,.svg,.avif,.svgz";
 
 export function WelcomeScreen() {
   const [showNewDoc, setShowNewDoc] = useState(false);

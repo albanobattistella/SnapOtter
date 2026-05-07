@@ -16,7 +16,7 @@ import { sanitizeFilename } from "../lib/filename.js";
 import { decodeToSharpCompat, needsCliDecode } from "../lib/format-decoders.js";
 import { decodeHeic } from "../lib/heic-converter.js";
 import type { WorkerInput, WorkerOutput } from "../lib/image-worker.js";
-import { sanitizeSvg } from "../lib/svg-sanitize.js";
+import { decompressSvgz, sanitizeSvg } from "../lib/svg-sanitize.js";
 import { computeTimeout } from "../lib/timeout.js";
 import { getWorkerPool } from "../lib/worker-pool.js";
 import { createWorkspace } from "../lib/workspace.js";
@@ -212,6 +212,7 @@ export function createToolRoute<T>(app: FastifyInstance, config: ToolRouteConfig
       const isSvg = validation.format === "svg";
       if (isSvg) {
         try {
+          fileBuffer = decompressSvgz(fileBuffer);
           fileBuffer = sanitizeSvg(fileBuffer);
         } catch (err) {
           return reply.status(400).send({
@@ -323,6 +324,12 @@ export function createToolRoute<T>(app: FastifyInstance, config: ToolRouteConfig
           "image/x-exr": ".exr",
           "image/vnd.radiance": ".hdr",
           "image/x-targa": ".tga",
+          "image/jp2": ".jp2",
+          "image/qoi": ".qoi",
+          "application/postscript": ".eps",
+          "image/vnd.ms-dds": ".dds",
+          "image/x-dpx": ".dpx",
+          "image/fits": ".fits",
         };
         const expectedExt = CONTENT_TYPE_TO_EXT[result.contentType];
         if (expectedExt) {
