@@ -308,6 +308,11 @@ const TransparencyFixerSettings = lazy(() =>
     default: m.TransparencyFixerSettings,
   })),
 );
+const ColorBlindnessSettings = lazy(() =>
+  import("@/components/tools/color-blindness-settings").then((m) => ({
+    default: m.ColorBlindnessSettings,
+  })),
+);
 
 // ── Color tool wrapper ─────────────────────────────────────────────
 // Color tools share a single component but differ by toolId.
@@ -426,6 +431,7 @@ export const toolRegistry = new Map<string, ToolRegistryEntry>([
 
   // Adjustments extra
   ["replace-color", { displayMode: "before-after", Settings: ReplaceColorSettings }],
+  ["color-blindness", { displayMode: "before-after", Settings: ColorBlindnessSettings }],
 
   // AI Tools
   ["remove-background", { displayMode: "before-after", Settings: RemoveBgSettings }],
