@@ -17,6 +17,7 @@ import { PrivacyPromise } from "./compositions/hero/PrivacyPromise";
 import { ToolGalaxy } from "./compositions/hero/ToolGalaxy";
 import { PromoTeaser } from "./compositions/promo-teaser/PromoTeaser";
 import { PromoTeaserVertical } from "./compositions/promo-teaser/PromoTeaserVertical";
+import { XLaunchVideo } from "./compositions/x-launch/XLaunchVideo";
 import { TEXT } from "./lib/fonts";
 
 const ComponentTest: React.FC = () => (
@@ -145,6 +146,14 @@ export const RemotionRoot: React.FC = () => (
       fps={30}
       width={1080}
       height={1920}
+    />
+    <Composition
+      id="XLaunchVideo"
+      component={XLaunchVideo}
+      durationInFrames={1050}
+      fps={30}
+      width={1080}
+      height={1080}
     />
   </>
 );
