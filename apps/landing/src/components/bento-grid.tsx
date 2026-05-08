@@ -396,7 +396,7 @@ export function BentoGrid() {
       <div className="mx-auto max-w-6xl">
         <FadeIn>
           <h2 className="font-[family-name:var(--font-nunito)] text-center text-3xl font-bold tracking-tight md:text-4xl">
-            48 tools. Zero cloud dependency.
+            50 tools. Zero cloud dependency.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-center text-lg text-muted">
             Search to find exactly what you need. Every tool runs 100% locally.
