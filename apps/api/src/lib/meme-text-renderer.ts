@@ -210,16 +210,20 @@ export function renderMemeTextSvg(opts: MemeTextOptions): Buffer {
     const bw = (box.width / 100) * imageWidth;
     const bh = (box.height / 100) * imageHeight;
 
-    const fontSize = fixedFontSize ?? autoSizeFontToFit(text, fontFamily, bw, bh);
+    const pad = Math.max(4, Math.round(bw * 0.02));
+    const innerW = bw - pad * 2;
+    const innerH = bh - pad * 2;
+    const fontSize = fixedFontSize ?? autoSizeFontToFit(text, fontFamily, innerW, innerH);
     const lineHeight = fontSize * LINE_HEIGHT_FACTOR;
-    const lines = wrapText(text, fontFamily, fontSize, bw);
+    const lines = wrapText(text, fontFamily, fontSize, innerW);
     const strokeWidth = Math.max(1, Math.round(fontSize * 0.04));
 
     const fillAttr = escapeXmlAttr(textColor);
     const strokeAttr = escapeXmlAttr(strokeColor);
 
     const totalTextHeight = lines.length * lineHeight;
-    const yOffset = by + (bh - totalTextHeight) / 2 + fontSize * 0.85;
+    const yOffset = by + pad + (innerH - totalTextHeight) / 2 + fontSize * 0.85;
+    const innerX = bx + pad;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
@@ -229,11 +233,11 @@ export function renderMemeTextSvg(opts: MemeTextOptions): Buffer {
 
       let x: number;
       if (textAlign === "left") {
-        x = bx;
+        x = innerX;
       } else if (textAlign === "right") {
-        x = bx + bw - lineWidth;
+        x = innerX + innerW - lineWidth;
       } else {
-        x = bx + (bw - lineWidth) / 2;
+        x = innerX + (innerW - lineWidth) / 2;
       }
 
       const y = yOffset + i * lineHeight;
