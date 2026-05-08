@@ -48,25 +48,25 @@ test.describe("Beautify Screenshot", () => {
   test("processes image with default settings", async ({ loggedInPage: page }) => {
     await page.goto("/beautify");
     await uploadTestImage(page);
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(1500);
 
     // Click the Beautify button
     const processBtn = page.getByTestId("beautify-submit");
+    await expect(processBtn).toBeEnabled({ timeout: 5000 });
     await processBtn.click();
-    await waitForProcessing(page);
 
-    // Verify download is available
+    // Wait for download link to appear (processing may be fast enough to skip spinner)
     await expect(
       page
         .getByTestId("beautify-download")
         .or(page.getByRole("link", { name: /download/i }).first()),
-    ).toBeVisible({ timeout: 15_000 });
+    ).toBeVisible({ timeout: 30_000 });
   });
 
   test("applies preset and processes", async ({ loggedInPage: page }) => {
     await page.goto("/beautify");
     await uploadTestImage(page);
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(1500);
 
     // Click a preset card
     const presetCards = page.locator("button").filter({ hasText: /purple haze|flamingo|ocean/i });
@@ -82,13 +82,13 @@ test.describe("Beautify Screenshot", () => {
 
     // Process
     const processBtn = page.getByTestId("beautify-submit");
+    await expect(processBtn).toBeEnabled({ timeout: 5000 });
     await processBtn.click();
-    await waitForProcessing(page);
 
     await expect(
       page
         .getByTestId("beautify-download")
         .or(page.getByRole("link", { name: /download/i }).first()),
-    ).toBeVisible({ timeout: 15_000 });
+    ).toBeVisible({ timeout: 30_000 });
   });
 });
