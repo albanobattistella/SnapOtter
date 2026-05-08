@@ -26,6 +26,7 @@ import { registerImageEnhancement } from "./image-enhancement.js";
 import { registerImageToBase64 } from "./image-to-base64.js";
 import { registerImageToPdf } from "./image-to-pdf.js";
 import { registerInfo } from "./info.js";
+import { registerMemeGenerator } from "./meme-generator.js";
 import { registerNoiseRemoval } from "./noise-removal.js";
 import { registerOcr } from "./ocr.js";
 import { registerOptimizeForWeb } from "./optimize-for-web.js";
@@ -101,6 +102,7 @@ export async function registerToolRoutes(app: FastifyInstance): Promise<void> {
     { id: "watermark-image", register: registerWatermarkImage },
     { id: "text-overlay", register: registerTextOverlay },
     { id: "compose", register: registerCompose },
+    { id: "meme-generator", register: registerMemeGenerator },
 
     // Utilities
     { id: "info", register: registerInfo },

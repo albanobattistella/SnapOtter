@@ -61,7 +61,15 @@ export function loadFont(family: string): opentype.Font {
   }
 
   const buf = readFileSync(join(FONT_DIR, filename));
-  const font = opentype.parse(buf.buffer as ArrayBuffer);
+  let font: opentype.Font;
+  try {
+    font = opentype.parse(buf.buffer as ArrayBuffer);
+  } catch {
+    if (filename !== FONT_MAP.anton) {
+      return loadFont("anton");
+    }
+    throw new Error(`Failed to parse font: ${filename}`);
+  }
   fontCache.set(filename, font);
   return font;
 }

@@ -17,11 +17,14 @@ const CONTENT_TYPES: Record<string, string> = {
 /** Cached manifest (read once at first request, served from memory). */
 let manifestCache: string | null = null;
 
-function getManifest(): string {
-  if (manifestCache === null) {
+let parsedManifestCache: unknown = null;
+
+function getManifest(): unknown {
+  if (parsedManifestCache === null) {
     manifestCache = readFileSync(join(TEMPLATES_DIR, "meme-templates.json"), "utf-8");
+    parsedManifestCache = JSON.parse(manifestCache);
   }
-  return manifestCache;
+  return parsedManifestCache;
 }
 
 function hasPathTraversal(filename: string): boolean {
