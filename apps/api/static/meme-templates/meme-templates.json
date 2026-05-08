@@ -3028,6 +3028,35 @@
           "defaultText": "Bottom text"
         }
       ]
+    },
+    {
+      "id": "grumpy-cat",
+      "name": "Grumpy Cat",
+      "aliases": [],
+      "tags": ["grumpy", "cat"],
+      "category": "animals",
+      "filename": "grumpy-cat.jpg",
+      "width": 800,
+      "height": 600,
+      "popularity": 101,
+      "textBoxes": [
+        {
+          "id": "top",
+          "x": 5,
+          "y": 2,
+          "width": 90,
+          "height": 20,
+          "defaultText": "Top text"
+        },
+        {
+          "id": "bottom",
+          "x": 5,
+          "y": 78,
+          "width": 90,
+          "height": 20,
+          "defaultText": "Bottom text"
+        }
+      ]
     }
   ]
 }
