@@ -233,8 +233,8 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
       ctx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
       ctx.drawImage(stageCanvas, 0, 0);
       dataUrl = exportCanvas.toDataURL(
-        `image/${settings.format === "jpeg" ? "jpeg" : "png"}`,
-        settings.format === "jpeg" ? settings.quality / 100 : undefined,
+        getMimeType(settings.format),
+        settings.format === "png" ? undefined : settings.quality / 100,
       );
     } else {
       dataUrl = stage.toDataURL({
@@ -248,23 +248,51 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
       });
     }
 
-    // Convert data URL to blob for download
-    fetch(dataUrl)
-      .then((res) => res.blob())
-      .then((blob) => {
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `export.${settings.format}`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        markClean();
-      })
-      .catch((err) => {
-        console.error("Export failed:", err);
-      });
+    const formatOpt = FORMAT_OPTIONS.find((f) => f.value === settings.format);
+    if (formatOpt?.needsServerConvert) {
+      fetch(dataUrl)
+        .then((res) => res.blob())
+        .then(async (pngBlob) => {
+          const formData = new FormData();
+          formData.append("file", pngBlob, "export.png");
+          formData.append(
+            "settings",
+            JSON.stringify({ format: settings.format, quality: settings.quality }),
+          );
+          const res = await fetch("/api/v1/tools/convert", { method: "POST", body: formData });
+          if (!res.ok) throw new Error("Server conversion failed");
+          const json = await res.json();
+          if (json.downloadUrl) {
+            const a = document.createElement("a");
+            a.href = json.downloadUrl;
+            a.download = `export.${settings.format}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            markClean();
+          }
+        })
+        .catch((err) => {
+          console.error("Export failed:", err);
+        });
+    } else {
+      fetch(dataUrl)
+        .then((res) => res.blob())
+        .then((blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `export.${settings.format}`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          markClean();
+        })
+        .catch((err) => {
+          console.error("Export failed:", err);
+        });
+    }
   }, [settings, canvasSize, markClean]);
 
   // Issue #6: Copy to clipboard using Konva stage
@@ -351,6 +379,10 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
             sourceImageSize: data.sourceImageSize || null,
             foregroundColor: data.foregroundColor || "#000000",
             backgroundColor: data.backgroundColor || "#ffffff",
+            selection: null,
+            cropState: null,
+            selectedObjectIds: [],
+            clipboard: [],
             isDirty: false,
             lastAction: "Load Project",
             _historyVersion: store._historyVersion + 1,
@@ -621,29 +653,68 @@ interface AutosaveData {
   state: AutosaveState;
 }
 
-export function saveEditorState(): void {
+/**
+ * Convert a blob: URL to a data: URL. Returns the original string
+ * if it is not a blob URL or if the fetch fails.
+ */
+async function blobUrlToDataUrl(url: string): Promise<string> {
+  if (!url.startsWith("blob:")) return url;
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(url);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return url;
+  }
+}
+
+export async function saveEditorState(): Promise<void> {
   try {
     const s = useEditorStore.getState();
+
+    // Convert blob URLs to data URLs so they survive localStorage round-trip
+    const sourceImageUrl = s.sourceImageUrl ? await blobUrlToDataUrl(s.sourceImageUrl) : null;
+
+    // Also convert blob URLs inside image-type canvas objects
+    const objects = await Promise.all(
+      s.objects.map(async (obj) => {
+        if (obj.type === "image" && obj.attrs.src?.startsWith("blob:")) {
+          return { ...obj, attrs: { ...obj.attrs, src: await blobUrlToDataUrl(obj.attrs.src) } };
+        }
+        return obj;
+      }),
+    );
+
     const data: AutosaveData = {
       version: 1,
       timestamp: Date.now(),
       state: {
         canvasSize: s.canvasSize,
         layers: s.layers,
-        objects: s.objects,
+        objects,
         adjustments: s.adjustments,
         filters: s.filters,
         guides: s.guides,
-        sourceImageUrl: s.sourceImageUrl,
+        sourceImageUrl,
         sourceImageSize: s.sourceImageSize,
         foregroundColor: s.foregroundColor,
         backgroundColor: s.backgroundColor,
       },
     };
-    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));
-    useEditorStore.setState({ lastAutoSave: Date.now() });
+
+    try {
+      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(data));
+      useEditorStore.setState({ lastAutoSave: Date.now() });
+    } catch (storageErr) {
+      console.warn("[SnapOtter] Autosave failed (localStorage quota may be exceeded):", storageErr);
+    }
   } catch {
-    // localStorage might be full or unavailable
+    // Serialization or fetch error
   }
 }
 

@@ -21,20 +21,73 @@ import {
 import useImage from "use-image";
 import { useCanvasZoom } from "@/hooks/use-canvas-zoom";
 import { useEditorStore } from "@/stores/editor-store";
-import type { AdjustmentValues, CanvasObject, FilterConfig, ImageAttrs } from "@/types/editor";
+import type {
+  AdjustmentValues,
+  CanvasObject,
+  FilterConfig,
+  ImageAttrs,
+  ObjectEffects,
+} from "@/types/editor";
 import { ContextMenu, useContextMenu } from "./common/context-menu";
 import { BrushCursorOverlay, useEditorCursor } from "./common/custom-cursor";
 import { LoadingOverlay } from "./common/loading-overlay";
+import { SmartGuidesOverlay } from "./common/smart-guides";
+import {
+  createExposureFilter,
+  createGrainFilter,
+  createMotionBlurFilter,
+  createRadialBlurFilter,
+  createSharpenFilter,
+  createSurfaceBlurFilter,
+  createVibranceFilter,
+  createVignetteFilter,
+  createWarmthFilter,
+} from "./konva-filters";
 import { useBrushTool } from "./tools/brush-tool";
+import { useCloneStampTool } from "./tools/clone-stamp-tool";
 import { CropOverlay } from "./tools/crop-tool";
+import { useDodgeBurnTool } from "./tools/dodge-burn-tool";
 import { useEraserTool } from "./tools/eraser-tool";
+import { useEyedropperTool } from "./tools/eyedropper-tool";
 import { useFillTool } from "./tools/fill-tool";
 import { useGradientTool } from "./tools/gradient-tool";
 import { MoveToolTransformer, useMoveTool } from "./tools/move-tool";
-import { SelectionOverlay, useSelectionTool } from "./tools/selection-tool";
+
+import { usePixelBrushTool } from "./tools/pixel-brush-tool";
+import { ActiveSelectionPreview, SelectionOverlay, useSelectionTool } from "./tools/selection-tool";
 import { useShapeTool } from "./tools/shape-tool";
 import { useTextTool } from "./tools/text-tool";
 import { TransformToolTransformer, useTransformTool } from "./tools/transform-tool";
+
+// Konva's globalCompositeOperationType is not exported, so we define a compatible alias
+type GlobalCompositeOperation =
+  | ""
+  | "source-over"
+  | "source-in"
+  | "source-out"
+  | "source-atop"
+  | "destination-over"
+  | "destination-in"
+  | "destination-out"
+  | "destination-atop"
+  | "lighter"
+  | "copy"
+  | "xor"
+  | "multiply"
+  | "screen"
+  | "overlay"
+  | "darken"
+  | "lighten"
+  | "color-dodge"
+  | "color-burn"
+  | "hard-light"
+  | "soft-light"
+  | "difference"
+  | "exclusion"
+  | "hue"
+  | "saturation"
+  | "color"
+  | "luminosity";
 
 // Module-level stage ref for export dialog access (Issue #6)
 export const editorStageRefHolder: { current: Konva.Stage | null } = {
@@ -76,6 +129,7 @@ function SourceImage({
     if (hasActiveAdjustments || hasActiveFilters) {
       const konvaFilters: Array<((this: Konva.Node, imageData: ImageData) => void) | string> = [];
 
+      // Built-in Konva adjustment filters
       if (adjustments.brightness !== 0) {
         konvaFilters.push(KonvaFilters.Filters.Brighten);
         node.brightness(adjustments.brightness / 100);
@@ -89,6 +143,17 @@ function SourceImage({
         node.hue(adjustments.hue);
         node.saturation(adjustments.saturation / 100);
         node.luminance(adjustments.luminance / 100);
+      }
+
+      // FIX 3: Custom adjustment filters for exposure, vibrance, warmth
+      if (adjustments.exposure !== 0) {
+        konvaFilters.push(createExposureFilter(adjustments.exposure / 100));
+      }
+      if (adjustments.vibrance !== 0) {
+        konvaFilters.push(createVibranceFilter(adjustments.vibrance));
+      }
+      if (adjustments.warmth !== 0) {
+        konvaFilters.push(createWarmthFilter(adjustments.warmth));
       }
 
       // Apply enabled filters
@@ -138,12 +203,63 @@ function SourceImage({
             node.kaleidoscopePower(f.params.power ?? 2);
             node.kaleidoscopeAngle(f.params.angle ?? 0);
             break;
+          // FIX 2: Custom filter types
+          case "motionBlur":
+            konvaFilters.push(
+              createMotionBlurFilter({
+                angle: f.params.angle ?? 0,
+                distance: f.params.distance ?? 10,
+              }),
+            );
+            break;
+          case "radialBlur":
+            konvaFilters.push(
+              createRadialBlurFilter({
+                amount: f.params.amount ?? 10,
+                centerX: f.params.centerX ?? 0.5,
+                centerY: f.params.centerY ?? 0.5,
+              }),
+            );
+            break;
+          case "surfaceBlur":
+            konvaFilters.push(
+              createSurfaceBlurFilter({
+                radius: f.params.radius ?? 5,
+                threshold: f.params.threshold ?? 25,
+              }),
+            );
+            break;
+          case "vignette":
+            konvaFilters.push(
+              createVignetteFilter({
+                amount: f.params.amount ?? 50,
+                midpoint: f.params.midpoint ?? 50,
+              }),
+            );
+            break;
+          case "grain":
+            konvaFilters.push(
+              createGrainFilter({
+                amount: f.params.amount ?? 25,
+                size: f.params.size ?? 25,
+              }),
+            );
+            break;
+          case "sharpen":
+            konvaFilters.push(
+              createSharpenFilter({
+                amount: f.params.amount ?? 0,
+                radius: f.params.radius ?? 1,
+              }),
+            );
+            break;
         }
       }
 
+      // FIX 1: Filters must be set BEFORE caching in Konva
       node.clearCache();
-      node.cache();
       node.filters(konvaFilters);
+      node.cache();
       node.getLayer()?.batchDraw();
     } else {
       node.clearCache();
@@ -203,6 +319,59 @@ function ImageObject({
 }
 
 // ---------------------------------------------------------------------------
+// Object Effects helpers (FIX 5)
+// ---------------------------------------------------------------------------
+
+/**
+ * Compute Konva-compatible props from an object's effects configuration.
+ * Returns props for drop shadow, outer glow, and stroke that can be spread
+ * onto any Konva shape node.
+ */
+function computeEffectProps(effects?: ObjectEffects): Record<string, unknown> {
+  if (!effects) return {};
+  const props: Record<string, unknown> = {};
+
+  // Drop shadow: uses Konva's built-in shadow support
+  if (effects.dropShadow?.enabled) {
+    const ds = effects.dropShadow;
+    const rad = (ds.angle * Math.PI) / 180;
+    props.shadowColor = ds.color;
+    props.shadowBlur = ds.blur;
+    props.shadowOffsetX = Math.cos(rad) * ds.distance;
+    props.shadowOffsetY = Math.sin(rad) * ds.distance;
+    props.shadowOpacity = ds.opacity;
+    props.shadowEnabled = true;
+  }
+
+  // Outer glow: like drop shadow but with zero offset
+  // Only apply if drop shadow is not already active (Konva has one shadow per node)
+  if (effects.outerGlow?.enabled && !effects.dropShadow?.enabled) {
+    const og = effects.outerGlow;
+    props.shadowColor = og.color;
+    props.shadowBlur = og.blur + og.spread;
+    props.shadowOffsetX = 0;
+    props.shadowOffsetY = 0;
+    props.shadowOpacity = og.opacity;
+    props.shadowEnabled = true;
+  }
+
+  // Stroke effect -- Konva draws strokes centered by default
+  if (effects.stroke?.enabled) {
+    const s = effects.stroke;
+    props.stroke = s.color;
+    props.strokeEnabled = true;
+    if (s.position === "inside" || s.position === "outside") {
+      props.strokeWidth = s.width * 2;
+      props.strokeScaleEnabled = false;
+    } else {
+      props.strokeWidth = s.width;
+    }
+  }
+
+  return props;
+}
+
+// ---------------------------------------------------------------------------
 // Canvas Object Renderer (Issue #3: wire move tool handlers)
 // ---------------------------------------------------------------------------
 
@@ -224,6 +393,8 @@ function CanvasObjectRenderer({
   onTransformEnd?: (e: Konva.KonvaEventObject<Event>) => void;
 }) {
   const draggable = isMoveTool;
+  // FIX 5: Compute effect props (drop shadow, outer glow, stroke) for all shapes
+  const fx = computeEffectProps(obj.effects);
 
   switch (obj.type) {
     case "line": {
@@ -241,10 +412,11 @@ function CanvasObjectRenderer({
           globalCompositeOperation={
             a.globalCompositeOperation as "source-over" | "destination-out" | undefined
           }
-          shadowBlur={a.shadowBlur}
-          shadowColor={a.shadowColor}
-          shadowOffsetX={a.shadowOffsetX}
-          shadowOffsetY={a.shadowOffsetY}
+          {...fx}
+          shadowBlur={a.shadowBlur ?? (fx.shadowBlur as number | undefined)}
+          shadowColor={a.shadowColor ?? (fx.shadowColor as string | undefined)}
+          shadowOffsetX={a.shadowOffsetX ?? (fx.shadowOffsetX as number | undefined)}
+          shadowOffsetY={a.shadowOffsetY ?? (fx.shadowOffsetY as number | undefined)}
         />
       );
     }
@@ -269,6 +441,7 @@ function CanvasObjectRenderer({
           onDragMove={onDragMove}
           onDragEnd={onDragEnd}
           onTransformEnd={onTransformEnd}
+          {...fx}
         />
       );
     }
@@ -292,6 +465,7 @@ function CanvasObjectRenderer({
           onDragMove={onDragMove}
           onDragEnd={onDragEnd}
           onTransformEnd={onTransformEnd}
+          {...fx}
         />
       );
     }
@@ -321,6 +495,7 @@ function CanvasObjectRenderer({
           onDragMove={onDragMove}
           onDragEnd={onDragEnd}
           onTransformEnd={onTransformEnd}
+          {...fx}
         />
       );
     }
@@ -343,6 +518,7 @@ function CanvasObjectRenderer({
           onDragMove={onDragMove}
           onDragEnd={onDragEnd}
           onTransformEnd={onTransformEnd}
+          {...fx}
         />
       );
     }
@@ -366,6 +542,7 @@ function CanvasObjectRenderer({
           onDragMove={onDragMove}
           onDragEnd={onDragEnd}
           onTransformEnd={onTransformEnd}
+          {...fx}
         />
       );
     }
@@ -390,6 +567,7 @@ function CanvasObjectRenderer({
           onDragMove={onDragMove}
           onDragEnd={onDragEnd}
           onTransformEnd={onTransformEnd}
+          {...fx}
         />
       );
     }
@@ -418,9 +596,14 @@ function useActiveToolHandlers(stageRef: React.RefObject<Konva.Stage | null>) {
   const activeTool = useEditorStore((s) => s.activeTool);
   const zoom = useEditorStore((s) => s.zoom);
   const panOffset = useEditorStore((s) => s.panOffset);
+  const magicWandTolerance = useEditorStore((s) => s.magicWandTolerance);
+  const fillContiguous = useEditorStore((s) => s.fillContiguous);
 
   const brushTool = useBrushTool();
   const eraserTool = useEraserTool();
+  const cloneStampTool = useCloneStampTool(stageRef);
+  const dodgeBurnTool = useDodgeBurnTool(stageRef);
+  const pixelBrushTool = usePixelBrushTool(stageRef);
   const shapeTool = useShapeTool();
   const textTool = useTextTool();
   const fillTool = useFillTool(stageRef);
@@ -428,6 +611,20 @@ function useActiveToolHandlers(stageRef: React.RefObject<Konva.Stage | null>) {
   const moveTool = useMoveTool();
   const selectionTool = useSelectionTool();
   const transformTool = useTransformTool();
+  const eyedropperTool = useEyedropperTool({ stageRef, sampleSize: 1 });
+
+  useEffect(() => {
+    const typeMap: Record<string, "rect" | "ellipse" | "lasso"> = {
+      "marquee-rect": "rect",
+      "marquee-ellipse": "ellipse",
+      "lasso-free": "lasso",
+      "lasso-poly": "lasso",
+    };
+    const mapped = typeMap[activeTool];
+    if (mapped) {
+      selectionTool.setSelectionType(mapped);
+    }
+  }, [activeTool, selectionTool.setSelectionType]);
 
   const selectionHandlers = useMemo(
     () => ({
@@ -451,18 +648,66 @@ function useActiveToolHandlers(stageRef: React.RefObject<Konva.Stage | null>) {
     [selectionTool, zoom, panOffset],
   );
 
+  const magicWandHandlers = useMemo(
+    () => ({
+      handleMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => {
+        const stage = e.target.getStage();
+        const pointer = stage?.getPointerPosition();
+        if (!pointer || !stage) return;
+        const pos = { x: (pointer.x - panOffset.x) / zoom, y: (pointer.y - panOffset.y) / zoom };
+        selectionTool.magicWandSelect(stage, pos.x, pos.y, magicWandTolerance, fillContiguous);
+      },
+      handleMouseMove: () => {},
+      handleMouseUp: () => {},
+    }),
+    [selectionTool, zoom, panOffset, magicWandTolerance, fillContiguous],
+  );
+
+  const eyedropperHandlers = useMemo(
+    () => ({
+      handleMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => {
+        eyedropperTool.handleEyedropperClick(e);
+      },
+      handleMouseMove: (e: Konva.KonvaEventObject<MouseEvent>) => {
+        eyedropperTool.handleEyedropperMove(e);
+      },
+      handleMouseUp: () => {},
+    }),
+    [eyedropperTool],
+  );
+
+  const zoomHandlers = useMemo(
+    () => ({
+      handleMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => {
+        const isAlt = e.evt.altKey;
+        const state = useEditorStore.getState();
+        const factor = isAlt ? 1 / 1.5 : 1.5;
+        state.setZoom(state.zoom * factor);
+      },
+      handleMouseMove: () => {},
+      handleMouseUp: () => {},
+    }),
+    [],
+  );
+
+  type ToolHandlers = {
+    handleMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => void;
+    handleMouseMove: (e: Konva.KonvaEventObject<MouseEvent>) => void;
+    handleMouseUp: (e: Konva.KonvaEventObject<MouseEvent>) => void;
+  };
+
   const handlers = useMemo(() => {
-    const toolMap: Record<
-      string,
-      {
-        handleMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => void;
-        handleMouseMove: (e: Konva.KonvaEventObject<MouseEvent>) => void;
-        handleMouseUp: (e: Konva.KonvaEventObject<MouseEvent>) => void;
-      }
-    > = {
+    const toolMap: Record<string, ToolHandlers> = {
       brush: brushTool,
       pencil: brushTool,
       eraser: eraserTool,
+      "clone-stamp": cloneStampTool,
+      dodge: dodgeBurnTool,
+      burn: dodgeBurnTool,
+      sponge: dodgeBurnTool,
+      "blur-brush": pixelBrushTool,
+      "sharpen-brush": pixelBrushTool,
+      smudge: pixelBrushTool,
       "shape-rect": shapeTool,
       "shape-ellipse": shapeTool,
       "shape-line": shapeTool,
@@ -472,11 +717,13 @@ function useActiveToolHandlers(stageRef: React.RefObject<Konva.Stage | null>) {
       text: textTool,
       fill: fillTool,
       gradient: gradientTool,
+      eyedropper: eyedropperHandlers,
+      zoom: zoomHandlers,
       "marquee-rect": selectionHandlers,
       "marquee-ellipse": selectionHandlers,
       "lasso-free": selectionHandlers,
       "lasso-poly": selectionHandlers,
-      "magic-wand": selectionHandlers,
+      "magic-wand": magicWandHandlers,
     };
 
     return toolMap[activeTool] ?? null;
@@ -484,11 +731,17 @@ function useActiveToolHandlers(stageRef: React.RefObject<Konva.Stage | null>) {
     activeTool,
     brushTool,
     eraserTool,
+    cloneStampTool,
+    dodgeBurnTool,
+    pixelBrushTool,
     shapeTool,
     textTool,
     fillTool,
     gradientTool,
+    eyedropperHandlers,
+    zoomHandlers,
     selectionHandlers,
+    magicWandHandlers,
   ]);
 
   return { handlers, moveTool, selectionTool, transformTool };
@@ -680,7 +933,16 @@ export function EditorCanvas({
             const layerObjects = objectsByLayer.get(layer.id) ?? [];
             if (!layer.visible) return null;
             return (
-              <Group key={layer.id} opacity={layer.opacity} listening={layer.id === activeLayerId}>
+              <Group
+                key={layer.id}
+                opacity={layer.opacity}
+                globalCompositeOperation={
+                  layer.blendMode !== "normal"
+                    ? (layer.blendMode as GlobalCompositeOperation)
+                    : undefined
+                }
+                listening={layer.id === activeLayerId}
+              >
                 {layerObjects.map((obj) => (
                   <CanvasObjectRenderer
                     key={obj.id}
@@ -702,6 +964,8 @@ export function EditorCanvas({
             <MoveToolTransformer transformerRef={moveTool.transformerRef} />
           )}
 
+          {activeTool === "move" && <SmartGuidesOverlay guides={moveTool.smartGuides} />}
+
           {/* Transform tool transformer */}
           {activeTool === "transform" && (
             <TransformToolTransformer transformerRef={transformTool.transformerRef} />
@@ -712,15 +976,9 @@ export function EditorCanvas({
 
           {/* Active selection preview (drawn while dragging) */}
           {selectionTool.isDrawing && selectionTool.currentPoints.length >= 4 && (
-            <Rect
-              x={Math.min(selectionTool.currentPoints[0], selectionTool.currentPoints[2])}
-              y={Math.min(selectionTool.currentPoints[1], selectionTool.currentPoints[3])}
-              width={Math.abs(selectionTool.currentPoints[2] - selectionTool.currentPoints[0])}
-              height={Math.abs(selectionTool.currentPoints[3] - selectionTool.currentPoints[1])}
-              stroke="#3b82f6"
-              strokeWidth={1}
-              dash={[4, 4]}
-              listening={false}
+            <ActiveSelectionPreview
+              type={selectionTool.selectionType}
+              points={selectionTool.currentPoints}
             />
           )}
         </Layer>
@@ -739,6 +997,9 @@ export function EditorCanvas({
               canvasWidth={canvasSize.width}
               canvasHeight={canvasSize.height}
               zoom={zoom}
+              panOffset={panOffset}
+              stageWidth={stageWidth}
+              stageHeight={stageHeight}
               showGrid={gridVisible}
               showPixelGrid={zoom >= 8}
             />
@@ -764,12 +1025,18 @@ function GridOverlay({
   canvasWidth,
   canvasHeight,
   zoom,
+  panOffset,
+  stageWidth,
+  stageHeight,
   showGrid,
   showPixelGrid,
 }: {
   canvasWidth: number;
   canvasHeight: number;
   zoom: number;
+  panOffset: { x: number; y: number };
+  stageWidth: number;
+  stageHeight: number;
   showGrid: boolean;
   showPixelGrid: boolean;
 }) {
@@ -793,17 +1060,38 @@ function GridOverlay({
           ctx.stroke();
         }
 
+        // FIX 7: Clip pixel grid to the visible viewport to avoid drawing
+        // thousands of lines for large images. Cap at 200 lines per axis.
         if (showPixelGrid) {
           ctx.beginPath();
           ctx.strokeStyle = "rgba(128, 128, 128, 0.1)";
           ctx.lineWidth = 1 / zoom;
-          for (let x = 1; x < canvasWidth; x++) {
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, canvasHeight);
+
+          // Calculate visible region in canvas coordinates from pan/zoom
+          const visMinX = Math.max(0, Math.floor(-panOffset.x / zoom));
+          const visMinY = Math.max(0, Math.floor(-panOffset.y / zoom));
+          const visMaxX = Math.min(canvasWidth, Math.ceil((stageWidth - panOffset.x) / zoom));
+          const visMaxY = Math.min(canvasHeight, Math.ceil((stageHeight - panOffset.y) / zoom));
+
+          const MAX_LINES = 200;
+
+          // Determine step: if visible range exceeds max lines, skip pixels
+          const xRange = visMaxX - visMinX;
+          const yRange = visMaxY - visMinY;
+          const xStep = xRange > MAX_LINES ? Math.ceil(xRange / MAX_LINES) : 1;
+          const yStep = yRange > MAX_LINES ? Math.ceil(yRange / MAX_LINES) : 1;
+
+          // Align start to step boundary
+          const startX = Math.max(1, visMinX - (visMinX % xStep) + xStep);
+          const startY = Math.max(1, visMinY - (visMinY % yStep) + yStep);
+
+          for (let x = startX; x < visMaxX; x += xStep) {
+            ctx.moveTo(x, visMinY);
+            ctx.lineTo(x, visMaxY);
           }
-          for (let y = 1; y < canvasHeight; y++) {
-            ctx.moveTo(0, y);
-            ctx.lineTo(canvasWidth, y);
+          for (let y = startY; y < visMaxY; y += yStep) {
+            ctx.moveTo(visMinX, y);
+            ctx.lineTo(visMaxX, y);
           }
           ctx.stroke();
         }
