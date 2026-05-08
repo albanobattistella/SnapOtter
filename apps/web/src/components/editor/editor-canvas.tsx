@@ -26,12 +26,16 @@ import { ContextMenu, useContextMenu } from "./common/context-menu";
 import { BrushCursorOverlay, useEditorCursor } from "./common/custom-cursor";
 import { LoadingOverlay } from "./common/loading-overlay";
 import { useBrushTool } from "./tools/brush-tool";
+import { useCloneStampTool } from "./tools/clone-stamp-tool";
 import { CropOverlay } from "./tools/crop-tool";
+import { useDodgeBurnTool } from "./tools/dodge-burn-tool";
 import { useEraserTool } from "./tools/eraser-tool";
+import { useEyedropperTool } from "./tools/eyedropper-tool";
 import { useFillTool } from "./tools/fill-tool";
 import { useGradientTool } from "./tools/gradient-tool";
 import { MoveToolTransformer, useMoveTool } from "./tools/move-tool";
-import { SelectionOverlay, useSelectionTool } from "./tools/selection-tool";
+import { usePixelBrushTool } from "./tools/pixel-brush-tool";
+import { ActiveSelectionPreview, SelectionOverlay, useSelectionTool } from "./tools/selection-tool";
 import { useShapeTool } from "./tools/shape-tool";
 import { useTextTool } from "./tools/text-tool";
 import { TransformToolTransformer, useTransformTool } from "./tools/transform-tool";
@@ -418,9 +422,14 @@ function useActiveToolHandlers(stageRef: React.RefObject<Konva.Stage | null>) {
   const activeTool = useEditorStore((s) => s.activeTool);
   const zoom = useEditorStore((s) => s.zoom);
   const panOffset = useEditorStore((s) => s.panOffset);
+  const magicWandTolerance = useEditorStore((s) => s.magicWandTolerance);
+  const fillContiguous = useEditorStore((s) => s.fillContiguous);
 
   const brushTool = useBrushTool();
   const eraserTool = useEraserTool();
+  const cloneStampTool = useCloneStampTool(stageRef);
+  const dodgeBurnTool = useDodgeBurnTool(stageRef);
+  const pixelBrushTool = usePixelBrushTool(stageRef);
   const shapeTool = useShapeTool();
   const textTool = useTextTool();
   const fillTool = useFillTool(stageRef);
@@ -428,6 +437,22 @@ function useActiveToolHandlers(stageRef: React.RefObject<Konva.Stage | null>) {
   const moveTool = useMoveTool();
   const selectionTool = useSelectionTool();
   const transformTool = useTransformTool();
+  const eyedropperTool = useEyedropperTool({ stageRef, sampleSize: 1 });
+
+  // Sync the selection hook's internal selectionType from the global activeTool.
+  // Without this, marquee-ellipse/lasso always produce rect selections.
+  useEffect(() => {
+    const typeMap: Record<string, "rect" | "ellipse" | "lasso"> = {
+      "marquee-rect": "rect",
+      "marquee-ellipse": "ellipse",
+      "lasso-free": "lasso",
+      "lasso-poly": "lasso",
+    };
+    const mapped = typeMap[activeTool];
+    if (mapped) {
+      selectionTool.setSelectionType(mapped);
+    }
+  }, [activeTool, selectionTool.setSelectionType]);
 
   const selectionHandlers = useMemo(
     () => ({
@@ -451,18 +476,66 @@ function useActiveToolHandlers(stageRef: React.RefObject<Konva.Stage | null>) {
     [selectionTool, zoom, panOffset],
   );
 
+  const magicWandHandlers = useMemo(
+    () => ({
+      handleMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => {
+        const stage = e.target.getStage();
+        const pointer = stage?.getPointerPosition();
+        if (!pointer || !stage) return;
+        const pos = { x: (pointer.x - panOffset.x) / zoom, y: (pointer.y - panOffset.y) / zoom };
+        selectionTool.magicWandSelect(stage, pos.x, pos.y, magicWandTolerance, fillContiguous);
+      },
+      handleMouseMove: () => {},
+      handleMouseUp: () => {},
+    }),
+    [selectionTool, zoom, panOffset, magicWandTolerance, fillContiguous],
+  );
+
+  const eyedropperHandlers = useMemo(
+    () => ({
+      handleMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => {
+        eyedropperTool.handleEyedropperClick(e);
+      },
+      handleMouseMove: (e: Konva.KonvaEventObject<MouseEvent>) => {
+        eyedropperTool.handleEyedropperMove(e);
+      },
+      handleMouseUp: () => {},
+    }),
+    [eyedropperTool],
+  );
+
+  const zoomHandlers = useMemo(
+    () => ({
+      handleMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => {
+        const isAlt = e.evt.altKey;
+        const state = useEditorStore.getState();
+        const factor = isAlt ? 1 / 1.5 : 1.5;
+        state.setZoom(state.zoom * factor);
+      },
+      handleMouseMove: () => {},
+      handleMouseUp: () => {},
+    }),
+    [],
+  );
+
+  type ToolHandlers = {
+    handleMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => void;
+    handleMouseMove: (e: Konva.KonvaEventObject<MouseEvent>) => void;
+    handleMouseUp: (e: Konva.KonvaEventObject<MouseEvent>) => void;
+  };
+
   const handlers = useMemo(() => {
-    const toolMap: Record<
-      string,
-      {
-        handleMouseDown: (e: Konva.KonvaEventObject<MouseEvent>) => void;
-        handleMouseMove: (e: Konva.KonvaEventObject<MouseEvent>) => void;
-        handleMouseUp: (e: Konva.KonvaEventObject<MouseEvent>) => void;
-      }
-    > = {
+    const toolMap: Record<string, ToolHandlers> = {
       brush: brushTool,
       pencil: brushTool,
       eraser: eraserTool,
+      "clone-stamp": cloneStampTool,
+      dodge: dodgeBurnTool,
+      burn: dodgeBurnTool,
+      sponge: dodgeBurnTool,
+      "blur-brush": pixelBrushTool,
+      "sharpen-brush": pixelBrushTool,
+      smudge: pixelBrushTool,
       "shape-rect": shapeTool,
       "shape-ellipse": shapeTool,
       "shape-line": shapeTool,
@@ -472,11 +545,13 @@ function useActiveToolHandlers(stageRef: React.RefObject<Konva.Stage | null>) {
       text: textTool,
       fill: fillTool,
       gradient: gradientTool,
+      eyedropper: eyedropperHandlers,
+      zoom: zoomHandlers,
       "marquee-rect": selectionHandlers,
       "marquee-ellipse": selectionHandlers,
       "lasso-free": selectionHandlers,
       "lasso-poly": selectionHandlers,
-      "magic-wand": selectionHandlers,
+      "magic-wand": magicWandHandlers,
     };
 
     return toolMap[activeTool] ?? null;
@@ -484,11 +559,17 @@ function useActiveToolHandlers(stageRef: React.RefObject<Konva.Stage | null>) {
     activeTool,
     brushTool,
     eraserTool,
+    cloneStampTool,
+    dodgeBurnTool,
+    pixelBrushTool,
     shapeTool,
     textTool,
     fillTool,
     gradientTool,
+    eyedropperHandlers,
+    zoomHandlers,
     selectionHandlers,
+    magicWandHandlers,
   ]);
 
   return { handlers, moveTool, selectionTool, transformTool };
@@ -712,15 +793,9 @@ export function EditorCanvas({
 
           {/* Active selection preview (drawn while dragging) */}
           {selectionTool.isDrawing && selectionTool.currentPoints.length >= 4 && (
-            <Rect
-              x={Math.min(selectionTool.currentPoints[0], selectionTool.currentPoints[2])}
-              y={Math.min(selectionTool.currentPoints[1], selectionTool.currentPoints[3])}
-              width={Math.abs(selectionTool.currentPoints[2] - selectionTool.currentPoints[0])}
-              height={Math.abs(selectionTool.currentPoints[3] - selectionTool.currentPoints[1])}
-              stroke="#3b82f6"
-              strokeWidth={1}
-              dash={[4, 4]}
-              listening={false}
+            <ActiveSelectionPreview
+              type={selectionTool.selectionType}
+              points={selectionTool.currentPoints}
             />
           )}
         </Layer>
