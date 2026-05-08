@@ -26,7 +26,11 @@ export type OutputFormat =
   | "gif"
   | "heic"
   | "heif"
-  | "jxl";
+  | "jxl"
+  | "bmp"
+  | "ico"
+  | "jp2"
+  | "qoi";
 
 export interface ResizeOptions {
   width?: number;
@@ -183,10 +187,24 @@ export interface CorrectionParams {
 }
 
 export interface OptimizeForWebOptions {
-  format: "webp" | "jpeg" | "avif" | "png";
+  format: "webp" | "jpeg" | "avif" | "png" | "jxl";
   quality: number;
   maxWidth?: number;
   maxHeight?: number;
   progressive?: boolean;
   stripMetadata?: boolean;
+}
+
+export type ColorBlindnessType =
+  | "protanopia"
+  | "deuteranopia"
+  | "tritanopia"
+  | "protanomaly"
+  | "deuteranomaly"
+  | "tritanomaly"
+  | "achromatopsia"
+  | "blueConeMonochromacy";
+
+export interface ColorBlindnessOptions {
+  type: ColorBlindnessType;
 }

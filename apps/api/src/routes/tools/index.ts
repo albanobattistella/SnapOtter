@@ -3,11 +3,13 @@ import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db, schema } from "../../db/index.js";
 import { registerBarcodeRead } from "./barcode-read.js";
+import { registerBeautify } from "./beautify.js";
 import { registerBlurFaces } from "./blur-faces.js";
 import { registerBorder } from "./border.js";
 import { registerBulkRename } from "./bulk-rename.js";
 import { registerCollage } from "./collage.js";
 import { registerColorAdjustments } from "./color-adjustments.js";
+import { registerColorBlindness } from "./color-blindness.js";
 import { registerColorPalette } from "./color-palette.js";
 import { registerColorize } from "./colorize.js";
 import { registerCompare } from "./compare.js";
@@ -118,6 +120,7 @@ export async function registerToolRoutes(app: FastifyInstance): Promise<void> {
     { id: "stitch", register: registerStitch },
     { id: "split", register: registerSplit },
     { id: "border", register: registerBorder },
+    { id: "beautify", register: registerBeautify },
 
     // Format & Conversion
     { id: "svg-to-raster", register: registerSvgToRaster },
@@ -133,6 +136,7 @@ export async function registerToolRoutes(app: FastifyInstance): Promise<void> {
 
     // Adjustments extra
     { id: "replace-color", register: registerReplaceColor },
+    { id: "color-blindness", register: registerColorBlindness },
 
     // AI Tools
     { id: "remove-background", register: registerRemoveBackground },

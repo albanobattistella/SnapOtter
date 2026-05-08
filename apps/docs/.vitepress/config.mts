@@ -4,7 +4,7 @@ import llmstxt from "vitepress-plugin-llms";
 export default defineConfig({
   title: "SnapOtter",
   description:
-    "Documentation for SnapOtter - A Self Hosted Image Manipulator. 48 tools, local AI, pipelines, REST API.",
+    "Documentation for SnapOtter - A Self Hosted Image Manipulator. 50 tools, local AI, pipelines, REST API.",
   base: "/",
   appearance: { initialValue: "light" },
   srcDir: ".",
@@ -48,7 +48,7 @@ export default defineConfig({
 `,
         customTemplateVariables: {
           description:
-            "SnapOtter is a self-hosted, open-source image processing platform with 48 tools including AI/ML. Runs in a single Docker container with GPU auto-detection.",
+            "SnapOtter is a self-hosted, open-source image processing platform with 50 tools including AI/ML. Runs in a single Docker container with GPU auto-detection.",
           details:
             "Resize, compress, convert, remove backgrounds, upscale, run OCR, and more - without sending images to external services.",
         },
@@ -74,6 +74,7 @@ export default defineConfig({
           { text: "Configuration", link: "/guide/configuration" },
           { text: "Database", link: "/guide/database" },
           { text: "Deployment", link: "/guide/deployment" },
+          { text: "Supported Formats", link: "/guide/supported-formats" },
           { text: "Hardware requirements", link: "/guide/deployment#hardware-requirements" },
           { text: "Docker tags", link: "/guide/docker-tags" },
           { text: "Developer guide", link: "/guide/developer" },

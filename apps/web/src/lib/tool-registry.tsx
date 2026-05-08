@@ -194,6 +194,9 @@ const SplitCanvas = lazy(() =>
 const BorderSettings = lazy(() =>
   import("@/components/tools/border-settings").then((m) => ({ default: m.BorderSettings })),
 );
+const BeautifySettings = lazy(() =>
+  import("@/components/tools/beautify-settings").then((m) => ({ default: m.BeautifySettings })),
+);
 const SvgToRasterSettings = lazy(() =>
   import("@/components/tools/svg-to-raster-settings").then((m) => ({
     default: m.SvgToRasterSettings,
@@ -318,6 +321,11 @@ const MemeGeneratorPreview = lazy(() =>
     default: m.MemeGeneratorPreview,
   })),
 );
+const ColorBlindnessSettings = lazy(() =>
+  import("@/components/tools/color-blindness-settings").then((m) => ({
+    default: m.ColorBlindnessSettings,
+  })),
+);
 
 // ── Color tool wrapper ─────────────────────────────────────────────
 // Color tools share a single component but differ by toolId.
@@ -426,6 +434,10 @@ export const toolRegistry = new Map<string, ToolRegistryEntry>([
     { displayMode: "interactive-split", Settings: SplitSettings, ResultsPanel: SplitCanvas },
   ],
   ["border", { displayMode: "live-preview", livePreview: true, Settings: BorderSettings as never }],
+  [
+    "beautify",
+    { displayMode: "live-preview", livePreview: true, Settings: BeautifySettings as never },
+  ],
 
   // Format & Conversion
   ["svg-to-raster", { displayMode: "before-after", Settings: SvgToRasterSettings }],
@@ -444,6 +456,7 @@ export const toolRegistry = new Map<string, ToolRegistryEntry>([
 
   // Adjustments extra
   ["replace-color", { displayMode: "before-after", Settings: ReplaceColorSettings }],
+  ["color-blindness", { displayMode: "before-after", Settings: ColorBlindnessSettings }],
 
   // AI Tools
   ["remove-background", { displayMode: "before-after", Settings: RemoveBgSettings }],

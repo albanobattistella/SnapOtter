@@ -128,6 +128,14 @@ export const TOOLS: Tool[] = [
     icon: "Pipette",
     route: "/replace-color",
   },
+  {
+    id: "color-blindness",
+    name: "Color Blindness Simulation",
+    description: "Simulate how images appear with color vision deficiency",
+    category: "adjustments",
+    icon: "Eye",
+    route: "/color-blindness",
+  },
   // AI Tools
   {
     id: "remove-background",
@@ -379,6 +387,14 @@ export const TOOLS: Tool[] = [
     category: "layout",
     icon: "Frame",
     route: "/border",
+  },
+  {
+    id: "beautify",
+    name: "Beautify Screenshot",
+    description: "Add gradient backgrounds, device frames, shadows, and social media sizing",
+    category: "layout",
+    icon: "Sparkles",
+    route: "/beautify",
   },
   // Format & Conversion
   {
