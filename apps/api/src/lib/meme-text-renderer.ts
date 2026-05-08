@@ -152,8 +152,9 @@ export function autoSizeFontToFit(
     const mid = Math.floor((lo + hi) / 2);
     const lines = wrapText(text, fontFamily, mid, boxWidth);
     const totalHeight = lines.length * mid * LINE_HEIGHT_FACTOR;
+    const maxLineWidth = Math.max(...lines.map((l) => measureText(l, fontFamily, mid)));
 
-    if (totalHeight <= boxHeight) {
+    if (totalHeight <= boxHeight && maxLineWidth <= boxWidth) {
       best = mid;
       lo = mid + 1;
     } else {
