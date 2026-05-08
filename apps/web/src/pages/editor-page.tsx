@@ -10,9 +10,11 @@ import {
 } from "@/components/editor/common/export-dialog";
 import { FillDialog } from "@/components/editor/common/fill-dialog";
 import { ImageResizeDialog } from "@/components/editor/common/image-resize-dialog";
+import { NewDocumentDialog } from "@/components/editor/common/new-document-dialog";
 import { HorizontalRuler, VerticalRuler } from "@/components/editor/common/rulers";
 import { WelcomeScreen } from "@/components/editor/common/welcome-screen";
 import { EditorCanvas } from "@/components/editor/editor-canvas";
+import { EditorMenuBar } from "@/components/editor/editor-menu-bar";
 import { EditorOptionsBar } from "@/components/editor/editor-options-bar";
 import { EditorRightPanel } from "@/components/editor/editor-right-panel";
 import { EditorStatusBar } from "@/components/editor/editor-status-bar";
@@ -20,6 +22,8 @@ import { EditorToolbar } from "@/components/editor/editor-toolbar";
 import { useEditorShortcuts } from "@/hooks/use-editor-shortcuts";
 import { useMobile } from "@/hooks/use-mobile";
 import { useEditorStore } from "@/stores/editor-store";
+
+const SERVER_DECODED_EXTS = new Set(["psd", "tga", "exr", "hdr"]);
 
 export function EditorPage() {
   const isMobile = useMobile();
@@ -31,6 +35,7 @@ export function EditorPage() {
   const [showCanvasResize, setShowCanvasResize] = useState(false);
   const [showImageResize, setShowImageResize] = useState(false);
   const [fillDialogOpen, setFillDialogOpen] = useState(false);
+  const [showNewDocument, setShowNewDocument] = useState(false);
 
   // Autosave recovery
   const { recoveryData, dismissRecovery, restoreRecovery } = useAutosave();
@@ -84,6 +89,43 @@ export function EditorPage() {
     return () => document.removeEventListener("paste", handlePaste);
   }, [handlePaste]);
 
+  const handleOpenImage = useCallback(() => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/*,.psd,.tga,.exr,.hdr";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+      if (SERVER_DECODED_EXTS.has(ext)) {
+        try {
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("settings", JSON.stringify({ format: "png" }));
+          const res = await fetch("/api/v1/tools/convert", { method: "POST", body: formData });
+          if (!res.ok) throw new Error("Server decode failed");
+          const json = await res.json();
+          if (json.downloadUrl) {
+            const imgRes = await fetch(json.downloadUrl);
+            const blob = await imgRes.blob();
+            const url = URL.createObjectURL(blob);
+            const img = new Image();
+            img.onload = () => loadImage(url, img.naturalWidth, img.naturalHeight);
+            img.src = url;
+          }
+        } catch (err) {
+          console.error("Failed to decode file via server:", err);
+        }
+        return;
+      }
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => loadImage(url, img.naturalWidth, img.naturalHeight);
+      img.src = url;
+    };
+    input.click();
+  }, [loadImage]);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const url = params.get("url");
@@ -110,6 +152,14 @@ export function EditorPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      <EditorMenuBar
+        onNewDocument={() => setShowNewDocument(true)}
+        onOpenImage={handleOpenImage}
+        onExport={() => setShowExport(true)}
+        onSave={() => saveEditorState()}
+        onCanvasResize={() => setShowCanvasResize(true)}
+        onImageResize={() => setShowImageResize(true)}
+      />
       {/* Autosave recovery banner */}
       {recoveryData && (
         <AutosaveRecoveryBanner
@@ -139,6 +189,7 @@ export function EditorPage() {
       <CanvasResizeDialog open={showCanvasResize} onClose={() => setShowCanvasResize(false)} />
       <ImageResizeDialog open={showImageResize} onClose={() => setShowImageResize(false)} />
       <FillDialog open={fillDialogOpen} onClose={() => setFillDialogOpen(false)} />
+      <NewDocumentDialog open={showNewDocument} onClose={() => setShowNewDocument(false)} />
     </div>
   );
 }
