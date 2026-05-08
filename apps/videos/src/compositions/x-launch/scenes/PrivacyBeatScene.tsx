@@ -24,11 +24,13 @@ export const PrivacyBeatScene: React.FC = () => {
         <Img
           src={staticFile("screenshots/dashboard.png")}
           style={{
-            width: "100%",
+            width: "180%",
             height: "100%",
             objectFit: "cover",
+            objectPosition: "left top",
             opacity: 0.12,
             transform: `scale(${bgScale})`,
+            transformOrigin: "left center",
           }}
         />
       </AbsoluteFill>

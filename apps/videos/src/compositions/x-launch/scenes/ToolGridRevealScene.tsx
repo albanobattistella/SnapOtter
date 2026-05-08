@@ -31,10 +31,12 @@ export const ToolGridRevealScene: React.FC = () => {
             <Img
               src={staticFile("screenshots/dashboard.png")}
               style={{
-                width: "100%",
+                width: "180%",
                 height: "100%",
                 objectFit: "cover",
+                objectPosition: "left top",
                 transform: `scale(${scale})`,
+                transformOrigin: "left center",
               }}
             />
           </div>
