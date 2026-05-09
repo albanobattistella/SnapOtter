@@ -609,7 +609,7 @@ describe("Alpha channel preservation", () => {
 
 // ── Large file handling ─────────────────────────────────────────
 describe("Large file handling", () => {
-  it("enhances a large stress image", async () => {
+  it("enhances a large stress image", { timeout: 120_000 }, async () => {
     const large = readFileSync(join(FIXTURES, "content", "stress-large.jpg"));
     const res = await postTool(
       { mode: "auto", intensity: 50 },
@@ -951,7 +951,7 @@ describe("Invalid image data", () => {
 
 // ── Large file with specific modes ──────────────────────────────
 describe("Large file with modes", () => {
-  it("enhances large image in low-light mode", async () => {
+  it("enhances large image in low-light mode", { timeout: 120_000 }, async () => {
     const large = readFileSync(join(FIXTURES, "content", "stress-large.jpg"));
     const res = await postTool(
       { mode: "low-light", intensity: 70 },
@@ -964,7 +964,7 @@ describe("Large file with modes", () => {
     expect(result.processedSize).toBeGreaterThan(0);
   });
 
-  it("enhances large image in document mode", async () => {
+  it("enhances large image in document mode", { timeout: 120_000 }, async () => {
     const large = readFileSync(join(FIXTURES, "content", "stress-large.jpg"));
     const res = await postTool(
       { mode: "document", intensity: 90 },

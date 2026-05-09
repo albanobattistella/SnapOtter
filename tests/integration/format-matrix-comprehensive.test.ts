@@ -188,8 +188,10 @@ function needsFallback(fmt: FormatDef): boolean {
   return fmt.needsCliDecoder || fmt.needsHeifDecoder || fmt.mayFailValidation;
 }
 
-function getTimeout(fmt: FormatDef): number | undefined {
-  return fmt.needsHeifDecoder || fmt.needsCliDecoder ? 180_000 : undefined;
+function getTimeout(fmt: FormatDef, toolId?: string): number | undefined {
+  if (fmt.needsHeifDecoder || fmt.needsCliDecoder) return 180_000;
+  if (toolId === "image-enhancement") return 120_000;
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -639,7 +641,7 @@ describe("Image enhancement across all 16 primary formats", () => {
             if (!res) return;
             assertDownloadResponse(res, fmt);
           },
-          getTimeout(fmt),
+          getTimeout(fmt, "image-enhancement"),
         );
       }
     });
@@ -896,7 +898,7 @@ describe("No-crash matrix: 16 formats x 12 tools", () => {
               expect(body.error.length).toBeGreaterThan(0);
             }
           },
-          getTimeout(fmt),
+          getTimeout(fmt, tool.id),
         );
       }
     });

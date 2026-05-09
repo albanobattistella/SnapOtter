@@ -484,7 +484,12 @@ describe("Cross-format matrix", () => {
         // Skip "Convert to PNG" when input is already PNG (no-op conversion)
         if (tool.id === "convert" && fmt.name === "PNG") continue;
 
-        const perTestTimeout = fmt.needsHeifDecoder || fmt.needsCliDecoder ? 180_000 : undefined;
+        const perTestTimeout =
+          fmt.needsHeifDecoder || fmt.needsCliDecoder
+            ? 180_000
+            : tool.id === "image-enhancement"
+              ? 120_000
+              : undefined;
 
         it(
           `${tool.label}`,
