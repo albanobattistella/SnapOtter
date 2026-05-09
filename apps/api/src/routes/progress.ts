@@ -254,12 +254,20 @@ export async function registerProgressRoutes(app: FastifyInstance): Promise<void
         listeners.set(jobId, new Set());
       }
 
+      let ended = false;
       const callback = (data: JobProgress | SingleFileProgress) => {
+        if (ended) return;
         sendEvent(data);
         if (
           ("status" in data && (data.status === "completed" || data.status === "failed")) ||
           ("phase" in data && (data.phase === "complete" || data.phase === "failed"))
         ) {
+          ended = true;
+          const subs = listeners.get(jobId);
+          if (subs) {
+            subs.delete(callback);
+            if (subs.size === 0) listeners.delete(jobId);
+          }
           reply.raw.end();
         }
       };

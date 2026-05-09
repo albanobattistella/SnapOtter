@@ -56,9 +56,8 @@ const fontCache = new Map<string, opentype.Font>();
 export function loadFont(family: string): opentype.Font {
   const filename = FONT_MAP[family] ?? FONT_MAP.anton;
 
-  if (fontCache.has(filename)) {
-    return fontCache.get(filename)!;
-  }
+  const cached = fontCache.get(filename);
+  if (cached) return cached;
 
   const buf = readFileSync(join(FONT_DIR, filename));
   let font: opentype.Font;

@@ -27,7 +27,7 @@ test.describe("GUI Utility Tools", () => {
     test("shows second image upload button with correct label", async ({ loggedInPage: page }) => {
       await page.goto("/compare");
 
-      await expect(page.getByText("Second Image")).toBeVisible();
+      await expect(page.getByText("Second Image").first()).toBeVisible();
       await expect(page.getByText("Choose second image")).toBeVisible();
     });
 

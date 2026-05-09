@@ -47,7 +47,7 @@ function serveStaticFile(
   filename: string,
   reply: FastifyReply,
   cacheControl: string,
-): FastifyReply | void {
+): FastifyReply | undefined {
   if (hasPathTraversal(filename)) {
     return reply.status(400).send({ error: "Invalid filename" });
   }

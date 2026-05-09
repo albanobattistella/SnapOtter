@@ -554,8 +554,8 @@ test.describe("File Upload Preview Timing", () => {
     await expect(
       page
         .getByText(/test-image/i)
-        .first()
-        .or(page.locator("img[src^='blob:']").first()),
+        .or(page.locator("img[src^='blob:']"))
+        .first(),
     ).toBeVisible({ timeout: 5_000 });
     const previewTime = Date.now() - start;
 

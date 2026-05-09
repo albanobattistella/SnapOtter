@@ -39,6 +39,7 @@ function revokeEntries(entries: FileEntry[]): void {
   for (const entry of entries) {
     URL.revokeObjectURL(entry.blobUrl);
     if (entry.processedUrl) URL.revokeObjectURL(entry.processedUrl);
+    if (entry.processedPreviewUrl) URL.revokeObjectURL(entry.processedPreviewUrl);
   }
 }
 
@@ -150,7 +151,9 @@ export const useFileStore = create<FileState>((set, get) => ({
           const state = get();
           if (state.entries[i]?.file !== file) return;
           const updated = [...state.entries];
+          const oldBlobUrl = updated[i].blobUrl;
           updated[i] = { ...updated[i], previewLoading: false, ...(url ? { blobUrl: url } : {}) };
+          if (url && oldBlobUrl) URL.revokeObjectURL(oldBlobUrl);
           set({ entries: updated, ...deriveSelected(updated, state.selectedIndex) });
         });
       }
@@ -172,7 +175,9 @@ export const useFileStore = create<FileState>((set, get) => ({
           const state = get();
           if (state.entries[i]?.file !== file) return;
           const updated = [...state.entries];
+          const oldBlobUrl = updated[i].blobUrl;
           updated[i] = { ...updated[i], previewLoading: false, ...(url ? { blobUrl: url } : {}) };
+          if (url && oldBlobUrl) URL.revokeObjectURL(oldBlobUrl);
           set({ entries: updated, ...deriveSelected(updated, state.selectedIndex) });
         });
       }
@@ -186,6 +191,7 @@ export const useFileStore = create<FileState>((set, get) => ({
 
     URL.revokeObjectURL(removed.blobUrl);
     if (removed.processedUrl) URL.revokeObjectURL(removed.processedUrl);
+    if (removed.processedPreviewUrl) URL.revokeObjectURL(removed.processedPreviewUrl);
 
     const newEntries = entries.filter((_, i) => i !== index);
     let newIndex = selectedIndex;
@@ -285,6 +291,7 @@ export const useFileStore = create<FileState>((set, get) => ({
     const { entries, selectedIndex } = get();
     for (const entry of entries) {
       if (entry.processedUrl) URL.revokeObjectURL(entry.processedUrl);
+      if (entry.processedPreviewUrl) URL.revokeObjectURL(entry.processedPreviewUrl);
     }
     const resetEntries = entries.map((e) => ({
       ...e,

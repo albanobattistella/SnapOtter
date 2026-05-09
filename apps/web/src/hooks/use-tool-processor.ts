@@ -44,6 +44,7 @@ export function useToolProcessor(toolId: string) {
   const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const xhrRef = useRef<XMLHttpRequest | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const isAiTool = AI_PYTHON_TOOLS.has(toolId);
   const isMediumTool = MEDIUM_TOOLS.has(toolId);
@@ -57,6 +58,7 @@ export function useToolProcessor(toolId: string) {
       if (processingTimerRef.current) clearInterval(processingTimerRef.current);
       if (eventSourceRef.current) eventSourceRef.current.close();
       if (xhrRef.current) xhrRef.current.abort();
+      if (abortRef.current) abortRef.current.abort();
     };
   }, []);
 
@@ -389,10 +391,12 @@ export function useToolProcessor(toolId: string) {
       formData.append("clientJobId", clientJobId);
 
       try {
+        abortRef.current = new AbortController();
         const response = await fetch(`/api/v1/tools/${toolId}/batch`, {
           method: "POST",
           headers: formatHeaders(),
           body: formData,
+          signal: abortRef.current.signal,
         });
 
         if (elapsedRef.current) clearInterval(elapsedRef.current);

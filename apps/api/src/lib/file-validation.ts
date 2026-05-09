@@ -221,8 +221,8 @@ export async function validateImageBuffer(
     detectedFormat = "raw";
   }
 
-  // TGA has no magic bytes — detect by extension only
-  if (!detectedFormat && ext === "tga") {
+  // TGA has no magic bytes and its header can match other formats (e.g. CUR)
+  if (ext === "tga") {
     detectedFormat = "tga";
   }
 

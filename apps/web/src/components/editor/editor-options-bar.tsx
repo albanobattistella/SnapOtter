@@ -75,7 +75,6 @@ export function EditorOptionsBar() {
 
   // Eyedropper state (managed here since EyedropperOptions requires props)
   const [eyedropperSampleSize, setEyedropperSampleSize] = useState<SampleSize>(1);
-  const [sampledColor, setSampledColor] = useState<string | null>(null);
 
   // Transform tool API (managed here since TransformOptions requires props)
   const transformApi = useTransformTool();
@@ -98,7 +97,7 @@ export function EditorOptionsBar() {
           <EyedropperOptions
             sampleSize={eyedropperSampleSize}
             onSampleSizeChange={setEyedropperSampleSize}
-            sampledColor={sampledColor ?? foregroundColor}
+            sampledColor={foregroundColor}
           />
         )}
         {activeTool === "transform" && <TransformOptions api={transformApi} />}

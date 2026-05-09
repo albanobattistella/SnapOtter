@@ -7,7 +7,7 @@ import {
   Workflow,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";

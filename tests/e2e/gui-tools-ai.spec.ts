@@ -1078,8 +1078,8 @@ test.describe("GUI AI Tools", () => {
       await expect(
         page
           .getByText(/upload/i)
-          .first()
-          .or(page.locator("img").first()),
+          .or(page.locator("img"))
+          .first(),
       ).toBeVisible({ timeout: 10_000 });
     });
   });

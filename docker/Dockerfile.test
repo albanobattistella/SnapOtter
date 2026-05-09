@@ -12,6 +12,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libimage-exiftool-perl \
     imagemagick \
     libraw-dev \
+    && if apt-cache show libheif-plugin-libde265 >/dev/null 2>&1; then \
+         apt-get install -y --no-install-recommends libheif-plugin-libde265; \
+       fi \
     && if apt-cache show libheif-plugin-x265 >/dev/null 2>&1; then \
          apt-get install -y --no-install-recommends libheif-plugin-x265; \
        fi \

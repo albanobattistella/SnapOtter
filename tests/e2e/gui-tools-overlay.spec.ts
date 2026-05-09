@@ -256,7 +256,7 @@ test.describe("GUI Watermark & Overlay Tools", () => {
     test("shows overlay image upload button", async ({ loggedInPage: page }) => {
       await page.goto("/compose");
 
-      await expect(page.getByText("Overlay Image")).toBeVisible();
+      await expect(page.getByText("Overlay Image").first()).toBeVisible();
       await expect(page.getByText("Choose overlay image")).toBeVisible();
     });
 

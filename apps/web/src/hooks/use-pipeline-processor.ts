@@ -34,6 +34,7 @@ export function usePipelineProcessor() {
   const elapsedRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const xhrRef = useRef<XMLHttpRequest | null>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const processingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Clean up on unmount
@@ -43,6 +44,7 @@ export function usePipelineProcessor() {
       if (processingTimerRef.current) clearInterval(processingTimerRef.current);
       if (eventSourceRef.current) eventSourceRef.current.close();
       if (xhrRef.current) xhrRef.current.abort();
+      if (abortRef.current) abortRef.current.abort();
     };
   }, []);
 
@@ -252,10 +254,12 @@ export function usePipelineProcessor() {
       formData.append("clientJobId", clientJobId);
 
       try {
+        abortRef.current = new AbortController();
         const response = await fetch("/api/v1/pipeline/batch", {
           method: "POST",
           headers: formatHeaders(),
           body: formData,
+          signal: abortRef.current.signal,
         });
 
         if (elapsedRef.current) clearInterval(elapsedRef.current);

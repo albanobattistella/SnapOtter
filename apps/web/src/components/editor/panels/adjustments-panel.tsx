@@ -1062,10 +1062,9 @@ export function AdjustmentsPanel() {
       }
     }
 
-    // Capture on mount and when adjustments/filters change
     const timer = setTimeout(captureImageData, 100);
     return () => clearTimeout(timer);
-  }, [adjustments, filters, canvasSize]);
+  }, [canvasSize]);
 
   const hasChanges = useMemo(() => {
     const hasAdjustmentChanges = Object.values(adjustments).some((v) => v !== 0);

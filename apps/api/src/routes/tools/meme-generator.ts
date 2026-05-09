@@ -260,7 +260,10 @@ export function registerMemeGenerator(app: FastifyInstance) {
     // ── Process ─────────────────────────────────────────────────────
     try {
       // Normalize the image for Sharp compatibility
-      imageBuffer = await autoOrient(await ensureSharpCompat(imageBuffer!));
+      if (!imageBuffer) {
+        return reply.status(400).send({ error: "No image provided" });
+      }
+      imageBuffer = await autoOrient(await ensureSharpCompat(imageBuffer));
 
       const output = await processMeme(imageBuffer, settings, filename, templateTextBoxes);
 

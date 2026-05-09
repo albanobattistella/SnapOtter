@@ -209,7 +209,7 @@ test.describe("GUI Layout Tools", () => {
     test("shows Background section with tabs", async ({ loggedInPage: page }) => {
       await page.goto("/beautify");
 
-      await expect(page.getByText("Background")).toBeVisible();
+      await expect(page.getByText("Background").first()).toBeVisible();
       await expect(page.getByRole("button", { name: "Gradient" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Solid" })).toBeVisible();
       await expect(page.getByRole("button", { name: "Image" })).toBeVisible();
