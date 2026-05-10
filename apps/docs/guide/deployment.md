@@ -306,7 +306,7 @@ docker inspect --format='{{.State.Health.Status}}' SnapOtter
 
 # Manual health check
 curl http://localhost:1349/api/v1/health
-# {"status":"healthy","version":"1.15.9"}
+# {"status":"healthy","version":"x.y.z"}
 ```
 
 ## Reverse Proxy
