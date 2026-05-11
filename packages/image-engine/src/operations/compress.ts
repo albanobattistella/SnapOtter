@@ -58,8 +58,8 @@ async function findBestQuality(
   let low = 1;
   let high = 100;
   let bestQuality: number | null = null;
-  const maxIterations = 8;
-  const tolerance = 0.05;
+  const maxIterations = 12;
+  const tolerance = 0.01;
 
   for (let i = 0; i < maxIterations && low <= high; i++) {
     const mid = Math.min(100, Math.max(1, Math.round((low + high) / 2)));
