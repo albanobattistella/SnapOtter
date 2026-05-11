@@ -12,7 +12,7 @@ export interface CompressControlsProps {
 }
 
 export function CompressControls({ settings: initialSettings, onChange }: CompressControlsProps) {
-  const [mode, setMode] = useState<CompressMode>("quality");
+  const [mode, setMode] = useState<CompressMode>("targetSize");
   const [quality, setQuality] = useState(75);
   const [targetSizeKb, setTargetSizeKb] = useState("");
 
@@ -46,22 +46,37 @@ export function CompressControls({ settings: initialSettings, onChange }: Compre
         <div className="flex gap-1 mt-1">
           <button
             type="button"
-            onClick={() => setMode("quality")}
-            className={`flex-1 text-xs py-1.5 rounded ${mode === "quality" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
-          >
-            Quality
-          </button>
-          <button
-            type="button"
             onClick={() => setMode("targetSize")}
             className={`flex-1 text-xs py-1.5 rounded ${mode === "targetSize" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
           >
             Target Size
           </button>
+          <button
+            type="button"
+            onClick={() => setMode("quality")}
+            className={`flex-1 text-xs py-1.5 rounded ${mode === "quality" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+          >
+            Quality
+          </button>
         </div>
       </div>
 
-      {mode === "quality" ? (
+      {mode === "targetSize" ? (
+        <div>
+          <label htmlFor="compress-target-size" className="text-xs text-muted-foreground">
+            Target Size (KB)
+          </label>
+          <input
+            id="compress-target-size"
+            type="number"
+            value={targetSizeKb}
+            onChange={(e) => setTargetSizeKb(e.target.value)}
+            min={1}
+            placeholder="e.g. 200"
+            className="w-full mt-0.5 px-2 py-1.5 rounded border border-border bg-background text-sm text-foreground"
+          />
+        </div>
+      ) : (
         <div>
           <div className="flex justify-between items-center">
             <label htmlFor="compress-quality" className="text-xs text-muted-foreground">
@@ -82,21 +97,6 @@ export function CompressControls({ settings: initialSettings, onChange }: Compre
             <span>Smallest file</span>
             <span>Best quality</span>
           </div>
-        </div>
-      ) : (
-        <div>
-          <label htmlFor="compress-target-size" className="text-xs text-muted-foreground">
-            Target Size (KB)
-          </label>
-          <input
-            id="compress-target-size"
-            type="number"
-            value={targetSizeKb}
-            onChange={(e) => setTargetSizeKb(e.target.value)}
-            min={1}
-            placeholder="e.g. 200"
-            className="w-full mt-0.5 px-2 py-1.5 rounded border border-border bg-background text-sm text-foreground"
-          />
         </div>
       )}
     </div>
