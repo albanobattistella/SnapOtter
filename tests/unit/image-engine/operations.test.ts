@@ -677,7 +677,6 @@ describe("compress", () => {
   });
 
   it("target size binary search gets reasonably close", async () => {
-    // Create a bigger image for more compressibility headroom
     const bigBuf = await sharp({
       create: { width: 400, height: 300, channels: 3, background: "#884422" },
     })
@@ -689,9 +688,7 @@ describe("compress", () => {
       format: "jpg",
     });
     const buf = await result.toBuffer();
-    // Should be at or below target (with some tolerance)
-    // The algorithm tries to be within 5% or below target
-    expect(buf.length).toBeLessThan(targetBytes * 1.5);
+    expect(buf.length).toBeLessThanOrEqual(targetBytes);
   });
 
   it("uses input format when no format specified", async () => {
@@ -771,21 +768,150 @@ describe("compress", () => {
     expect(meta.format).toBe("heif");
   });
 
-  it("target size falls back to bestQuality=1 when bestBuffer stays null", async () => {
-    // Use a very tiny target that forces all iterations to overshoot,
-    // so bestBuffer never gets assigned and the fallback path runs
+  it("target size falls back to dimension reduction when quality alone fails", async () => {
     const bigBuf = await sharp({
       create: { width: 200, height: 200, channels: 3, background: "#ff8800" },
     })
       .jpeg({ quality: 100 })
       .toBuffer();
-    // Target of 1 byte -- impossible to hit, so every iteration overshoots
     const result = await compress(sharp(bigBuf), {
       targetSizeBytes: 1,
       format: "jpg",
     });
     const buf = await result.toBuffer();
     expect(buf.length).toBeGreaterThan(0);
+    const meta = await sharp(buf).metadata();
+    expect(meta.width).toBeLessThan(200);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// compress -- target-size accuracy
+// ---------------------------------------------------------------------------
+describe("compress target-size accuracy", () => {
+  it("output never exceeds target size for JPEG", async () => {
+    const largeBuf = await sharp({
+      create: { width: 800, height: 600, channels: 3, background: "#3366aa" },
+    })
+      .jpeg({ quality: 100 })
+      .toBuffer();
+    const targetBytes = 5000;
+    const result = await compress(sharp(largeBuf), {
+      targetSizeBytes: targetBytes,
+      format: "jpg",
+    });
+    const buf = await result.toBuffer();
+    expect(buf.length).toBeLessThanOrEqual(targetBytes);
+  });
+
+  it("output never exceeds target size for PNG", async () => {
+    const largeBuf = await sharp({
+      create: { width: 600, height: 400, channels: 4, background: "#cc4488" },
+    })
+      .png()
+      .toBuffer();
+    const targetBytes = 3000;
+    const result = await compress(sharp(largeBuf), {
+      targetSizeBytes: targetBytes,
+      format: "png",
+    });
+    const buf = await result.toBuffer();
+    expect(buf.length).toBeLessThanOrEqual(targetBytes);
+  });
+
+  it("output never exceeds target size for WebP", async () => {
+    const largeBuf = await sharp({
+      create: { width: 800, height: 600, channels: 3, background: "#99bb22" },
+    })
+      .webp({ quality: 100 })
+      .toBuffer();
+    const targetBytes = 4000;
+    const result = await compress(sharp(largeBuf), {
+      targetSizeBytes: targetBytes,
+      format: "webp",
+    });
+    const buf = await result.toBuffer();
+    expect(buf.length).toBeLessThanOrEqual(targetBytes);
+  });
+
+  it("aggressive target on large image triggers dimension reduction", async () => {
+    const width = 1200;
+    const height = 900;
+    const channels = 3;
+    const rawData = Buffer.alloc(width * height * channels);
+    for (let i = 0; i < rawData.length; i++) {
+      rawData[i] = (i * 7 + 13) % 256;
+    }
+    const largeBuf = await sharp(rawData, { raw: { width, height, channels } })
+      .jpeg({ quality: 95 })
+      .toBuffer();
+    const targetBytes = 5000;
+    const result = await compress(sharp(largeBuf), {
+      targetSizeBytes: targetBytes,
+      format: "jpg",
+    });
+    const buf = await result.toBuffer();
+    expect(buf.length).toBeLessThanOrEqual(targetBytes);
+    const meta = await sharp(buf).metadata();
+    expect(meta.width).toBeLessThan(1200);
+    expect(meta.height).toBeLessThan(900);
+  });
+
+  it("500KB-to-50KB scenario produces output at or below target", async () => {
+    const noisyBuf = await sharp({
+      create: { width: 1600, height: 1200, channels: 3, background: "#447799" },
+    })
+      .jpeg({ quality: 100 })
+      .toBuffer();
+    const targetBytes = 50 * 1024;
+    const result = await compress(sharp(noisyBuf), {
+      targetSizeBytes: targetBytes,
+      format: "jpg",
+    });
+    const buf = await result.toBuffer();
+    expect(buf.length).toBeLessThanOrEqual(targetBytes);
+    expect(buf.length).toBeGreaterThan(0);
+  });
+
+  it("preserves requested format during dimension reduction", async () => {
+    const width = 1200;
+    const height = 900;
+    const channels = 3;
+    const rawData = Buffer.alloc(width * height * channels);
+    for (let i = 0; i < rawData.length; i++) {
+      rawData[i] = (i * 7 + 13) % 256;
+    }
+    const largeBuf = await sharp(rawData, { raw: { width, height, channels } })
+      .jpeg({ quality: 95 })
+      .toBuffer();
+    const targetBytes = 5000;
+    const result = await compress(sharp(largeBuf), {
+      targetSizeBytes: targetBytes,
+      format: "webp",
+    });
+    const buf = await result.toBuffer();
+    const meta = await sharp(buf).metadata();
+    expect(meta.format).toBe("webp");
+    expect(buf.length).toBeLessThanOrEqual(targetBytes);
+    expect(meta.width).toBeLessThan(1200);
+  });
+
+  it("does not reduce dimensions when quality alone suffices", async () => {
+    const buf = await sharp({
+      create: { width: 400, height: 300, channels: 3, background: "#112233" },
+    })
+      .jpeg({ quality: 95 })
+      .toBuffer();
+    const targetBytes = buf.length + 5000;
+    const result = await compress(sharp(buf), {
+      targetSizeBytes: targetBytes,
+      format: "jpg",
+    });
+    const outBuf = await result.toBuffer();
+    const meta = await sharp(outBuf).metadata();
+    expect(meta.width).toBe(400);
+    expect(meta.height).toBe(300);
+    expect(outBuf.length).toBeLessThanOrEqual(targetBytes);
   });
 });
 

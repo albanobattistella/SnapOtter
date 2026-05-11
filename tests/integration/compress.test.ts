@@ -109,6 +109,45 @@ describe("Target size mode", () => {
     const result = JSON.parse(res.body);
     expect(result.downloadUrl).toBeDefined();
     expect(result.processedSize).toBeGreaterThan(0);
+    expect(result.processedSize).toBeLessThanOrEqual(5 * 1024);
+  });
+
+  it("output is at or below target for aggressive reduction", async () => {
+    const largeBuf = await sharp({
+      create: { width: 1200, height: 900, channels: 3, background: "#4488cc" },
+    })
+      .jpeg({ quality: 100 })
+      .toBuffer();
+    const targetKb = 10;
+    const res = await postTool(
+      { mode: "targetSize", targetSizeKb: targetKb },
+      largeBuf,
+      "large.jpg",
+      "image/jpeg",
+    );
+    expect(res.statusCode).toBe(200);
+    const result = JSON.parse(res.body);
+    expect(result.processedSize).toBeLessThanOrEqual(targetKb * 1024);
+    expect(result.processedSize).toBeGreaterThan(0);
+  });
+
+  it("output is at or below target for PNG input", async () => {
+    const largePng = await sharp({
+      create: { width: 800, height: 600, channels: 4, background: "#cc2266" },
+    })
+      .png()
+      .toBuffer();
+    const targetKb = 5;
+    const res = await postTool(
+      { mode: "targetSize", targetSizeKb: targetKb },
+      largePng,
+      "large.png",
+      "image/png",
+    );
+    expect(res.statusCode).toBe(200);
+    const result = JSON.parse(res.body);
+    expect(result.processedSize).toBeLessThanOrEqual(targetKb * 1024);
+    expect(result.processedSize).toBeGreaterThan(0);
   });
 });
 

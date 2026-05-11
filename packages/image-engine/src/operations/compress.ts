@@ -49,44 +49,75 @@ export async function compress(image: Sharp, options: CompressOptions): Promise<
   return image.toFormat(outputFormat, formatOpts(outputFormat, q));
 }
 
+async function findBestQuality(
+  inputBuffer: Buffer,
+  resize: { width: number; height: number } | null,
+  format: keyof import("sharp").FormatEnum,
+  targetBytes: number,
+): Promise<number | null> {
+  let low = 1;
+  let high = 100;
+  let bestQuality: number | null = null;
+  const maxIterations = 8;
+  const tolerance = 0.05;
+
+  for (let i = 0; i < maxIterations && low <= high; i++) {
+    const mid = Math.min(100, Math.max(1, Math.round((low + high) / 2)));
+    let pipeline = sharp(inputBuffer);
+    if (resize) pipeline = pipeline.resize(resize.width, resize.height);
+    const resultBuffer = await pipeline.toFormat(format, formatOpts(format, mid)).toBuffer();
+    const resultSize = resultBuffer.length;
+
+    if (resultSize <= targetBytes) {
+      bestQuality = mid;
+      if ((targetBytes - resultSize) / targetBytes <= tolerance) break;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  return bestQuality;
+}
+
 async function compressToTargetSize(
   inputBuffer: Buffer,
   format: keyof import("sharp").FormatEnum,
   targetBytes: number,
 ): Promise<Sharp> {
-  let low = 1;
-  let high = 100;
-  let bestQuality = 1;
-  let bestBuffer: Buffer | null = null;
-  const maxIterations = 8;
-  const tolerance = 0.05; // 5%
+  const quality = await findBestQuality(inputBuffer, null, format, targetBytes);
+  if (quality !== null) {
+    return sharp(inputBuffer).toFormat(format, formatOpts(format, quality));
+  }
 
-  for (let i = 0; i < maxIterations && low <= high; i++) {
-    const mid = Math.min(100, Math.max(1, Math.round((low + high) / 2)));
-    const attempt = sharp(inputBuffer).toFormat(format, formatOpts(format, mid));
-    const resultBuffer = await attempt.toBuffer();
-    const resultSize = resultBuffer.length;
+  const metadata = await sharp(inputBuffer).metadata();
+  const originalWidth = metadata.width ?? 0;
+  const originalHeight = metadata.height ?? 0;
 
-    if (Math.abs(resultSize - targetBytes) / targetBytes <= tolerance) {
-      bestQuality = mid;
-      bestBuffer = resultBuffer;
-      break;
-    }
+  if (originalWidth === 0 || originalHeight === 0) {
+    return sharp(inputBuffer).toFormat(format, formatOpts(format, 1));
+  }
 
-    if (resultSize > targetBytes) {
-      high = mid - 1;
-    } else {
-      low = mid + 1;
-      bestQuality = mid;
-      bestBuffer = resultBuffer;
+  const scaleFactor = 0.75;
+  const maxScalePasses = 8;
+  let lastWidth = originalWidth;
+  let lastHeight = originalHeight;
+
+  for (let pass = 1; pass <= maxScalePasses; pass++) {
+    const factor = scaleFactor ** pass;
+    const newWidth = Math.round(originalWidth * factor);
+    const newHeight = Math.round(originalHeight * factor);
+    if (newWidth < 10 || newHeight < 10) break;
+
+    lastWidth = newWidth;
+    lastHeight = newHeight;
+
+    const dims = { width: newWidth, height: newHeight };
+    const q = await findBestQuality(inputBuffer, dims, format, targetBytes);
+    if (q !== null) {
+      return sharp(inputBuffer).resize(newWidth, newHeight).toFormat(format, formatOpts(format, q));
     }
   }
 
-  if (bestBuffer === null) {
-    bestBuffer = await sharp(inputBuffer)
-      .toFormat(format, formatOpts(format, bestQuality))
-      .toBuffer();
-  }
-
-  return sharp(bestBuffer);
+  return sharp(inputBuffer).resize(lastWidth, lastHeight).toFormat(format, formatOpts(format, 1));
 }
