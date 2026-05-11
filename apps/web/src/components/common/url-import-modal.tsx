@@ -1,5 +1,5 @@
 import { AlertCircle, Check, Clock, Link, Loader2, RotateCw, X } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { type UrlImportEntry, useUrlImport } from "@/hooks/use-url-import";
 import { extractUrls } from "@/lib/url-parser";
 
@@ -79,6 +79,14 @@ export function UrlImportModal({ onClose, onImport }: UrlImportModalProps) {
     onClose();
   }, [cancel, onClose]);
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [handleClose]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Overlay */}
@@ -89,7 +97,11 @@ export function UrlImportModal({ onClose, onImport }: UrlImportModalProps) {
       />
 
       {/* Modal card */}
-      <div className="relative z-10 w-full max-w-lg bg-background border border-border rounded-xl shadow-xl flex flex-col mx-4">
+      <div
+        role="dialog"
+        aria-modal="true"
+        className="relative z-10 w-full max-w-lg bg-background border border-border rounded-xl shadow-xl flex flex-col mx-4"
+      >
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border shrink-0">
           <Link className="h-5 w-5 text-primary" />
@@ -97,6 +109,7 @@ export function UrlImportModal({ onClose, onImport }: UrlImportModalProps) {
           <button
             type="button"
             onClick={handleClose}
+            aria-label="Close"
             className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground"
           >
             <X className="h-4 w-4" />
