@@ -1,9 +1,16 @@
+import { execFile } from "node:child_process";
+import { rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { promisify } from "node:util";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import sharp from "sharp";
 import { validateImageBuffer } from "../../lib/file-validation.js";
 import { sanitizeFilename } from "../../lib/filename.js";
 import { decodeToSharpCompat, needsCliDecode } from "../../lib/format-decoders.js";
 import { ensureSharpCompat } from "../../lib/heic-converter.js";
+
+const execFileAsync = promisify(execFile);
 
 /**
  * Image info route - read-only, returns JSON metadata.
@@ -42,13 +49,25 @@ export function registerInfo(app: FastifyInstance) {
       const validation = await validateImageBuffer(fileBuffer, filename);
       const detectedFormat = validation.valid ? validation.format : null;
 
-      // Decode CLI formats and HEIC before reading metadata
+      // For metadata reading, try Sharp on the raw buffer first -- it handles
+      // TIFF-based formats (DNG, CR2, NEF) without needing a full decode via
+      // ImageMagick/darktable. Only fall back to the decode pipeline for
+      // formats Sharp can't open at all (PSD, ICO, TGA, etc.).
       let metaBuffer = fileBuffer;
       const ext = filename.split(".").pop()?.toLowerCase();
-      if (detectedFormat && needsCliDecode(detectedFormat)) {
-        metaBuffer = await decodeToSharpCompat(fileBuffer, detectedFormat, ext);
-      } else {
-        metaBuffer = await ensureSharpCompat(fileBuffer);
+      let sharpDirectFailed = false;
+      try {
+        await sharp(fileBuffer).metadata();
+      } catch {
+        sharpDirectFailed = true;
+      }
+
+      if (sharpDirectFailed) {
+        if (detectedFormat && needsCliDecode(detectedFormat)) {
+          metaBuffer = await decodeToSharpCompat(fileBuffer, detectedFormat, ext);
+        } else {
+          metaBuffer = await ensureSharpCompat(fileBuffer);
+        }
       }
 
       const metadata = await sharp(metaBuffer).metadata();
@@ -63,23 +82,27 @@ export function registerInfo(app: FastifyInstance) {
         stdev: Math.round(ch.stdev * 100) / 100,
       }));
 
+      // For RAW formats, Sharp reads the embedded thumbnail -- enrich with
+      // ExifTool to get the real sensor dimensions and EXIF/ICC/XMP flags.
+      const exif = detectedFormat === "raw" ? await readExifToolMeta(fileBuffer, ext) : null;
+
       return reply.send({
         filename,
         fileSize: fileBuffer.length,
-        width: metadata.width ?? 0,
-        height: metadata.height ?? 0,
-        format: metadata.format ?? "unknown",
+        width: exif?.width ?? metadata.width ?? 0,
+        height: exif?.height ?? metadata.height ?? 0,
+        format: exif?.format ?? metadata.format ?? "unknown",
         channels: metadata.channels ?? 0,
         hasAlpha: metadata.hasAlpha ?? false,
-        colorSpace: metadata.space ?? "unknown",
-        density: metadata.density ?? null,
+        colorSpace: exif?.colorSpace ?? metadata.space ?? "unknown",
+        density: metadata.density ?? exif?.density ?? null,
         isProgressive: metadata.isProgressive ?? false,
         orientation: metadata.orientation ?? null,
         hasProfile: metadata.hasProfile ?? false,
-        hasExif: !!metadata.exif,
-        hasIcc: !!metadata.icc,
-        hasXmp: !!metadata.xmp,
-        bitDepth: metadata.depth ?? null,
+        hasExif: exif?.hasExif ?? !!metadata.exif,
+        hasIcc: exif?.hasIcc ?? !!metadata.icc,
+        hasXmp: exif?.hasXmp ?? !!metadata.xmp,
+        bitDepth: exif?.bitDepth ?? metadata.depth ?? null,
         pages: metadata.pages ?? 1,
         histogram,
       });
@@ -90,4 +113,59 @@ export function registerInfo(app: FastifyInstance) {
       });
     }
   });
+}
+
+interface ExifMeta {
+  width: number;
+  height: number;
+  format: string;
+  colorSpace: string | null;
+  density: number | null;
+  bitDepth: string | null;
+  hasExif: boolean;
+  hasIcc: boolean;
+  hasXmp: boolean;
+}
+
+async function readExifToolMeta(buffer: Buffer, ext?: string): Promise<ExifMeta | null> {
+  const suffix = ext ? `.${ext}` : ".dng";
+  const tmpPath = join(tmpdir(), `info-exif-${Date.now()}${suffix}`);
+  try {
+    await writeFile(tmpPath, buffer);
+    const { stdout } = await execFileAsync(
+      "exiftool",
+      [
+        "-j",
+        "-ImageWidth",
+        "-ImageHeight",
+        "-FileType",
+        "-BitsPerSample",
+        "-ColorSpace",
+        "-XResolution",
+        "-ICCProfileName",
+        "-EXIF:all",
+        "-XMP:XMPToolkit",
+        tmpPath,
+      ],
+      { timeout: 10_000 },
+    );
+    const [data] = JSON.parse(stdout);
+    if (!data) return null;
+
+    return {
+      width: data.ImageWidth ?? 0,
+      height: data.ImageHeight ?? 0,
+      format: (data.FileType ?? "raw").toLowerCase(),
+      colorSpace: data.ColorSpace ?? null,
+      density: data.XResolution ?? null,
+      bitDepth: data.BitsPerSample ? String(data.BitsPerSample) : null,
+      hasExif: Object.keys(data).some((k) => k.startsWith("EXIF:") || k === "ExifVersion"),
+      hasIcc: !!data.ICCProfileName,
+      hasXmp: !!data.XMPToolkit,
+    };
+  } catch {
+    return null;
+  } finally {
+    await rm(tmpPath, { force: true }).catch(() => {});
+  }
 }
