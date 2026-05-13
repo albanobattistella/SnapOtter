@@ -2,6 +2,7 @@ import { TOOLS } from "@snapotter/shared";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { db, schema } from "../../db/index.js";
+import { registerAiCanvasExpand } from "./ai-canvas-expand.js";
 import { registerBarcodeRead } from "./barcode-read.js";
 import { registerBeautify } from "./beautify.js";
 import { registerBlurFaces } from "./blur-faces.js";
@@ -15,7 +16,6 @@ import { registerColorize } from "./colorize.js";
 import { registerCompare } from "./compare.js";
 import { registerCompose } from "./compose.js";
 import { registerCompress } from "./compress.js";
-import { registerContentAwareCrop } from "./content-aware-crop.js";
 import { registerContentAwareResize } from "./content-aware-resize.js";
 import { registerConvert } from "./convert.js";
 import { registerCrop } from "./crop.js";
@@ -148,7 +148,7 @@ export async function registerToolRoutes(app: FastifyInstance): Promise<void> {
     { id: "smart-crop", register: registerSmartCrop },
     { id: "image-enhancement", register: registerImageEnhancement },
     { id: "content-aware-resize", register: registerContentAwareResize },
-    { id: "content-aware-crop", register: registerContentAwareCrop },
+    { id: "ai-canvas-expand", register: registerAiCanvasExpand },
     { id: "colorize", register: registerColorize },
     { id: "enhance-faces", register: registerEnhanceFaces },
     { id: "noise-removal", register: registerNoiseRemoval },

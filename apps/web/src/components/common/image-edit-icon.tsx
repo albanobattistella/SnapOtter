@@ -12,11 +12,10 @@ export function ImageEditIcon(props: SVGProps<SVGSVGElement>) {
       strokeLinejoin="round"
       {...props}
     >
-      <path d="M12 20H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v7" />
-      <circle cx="9" cy="9" r="2" />
-      <path d="m3 16 4-4 3 3 4-4" />
-      <path d="M17 22l-2.5-2.5L20 14l2.5 2.5z" />
-      <path d="m22 16.5-2.5-2.5" />
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M7 17C7 12 12 7 17 7" />
+      <circle cx="7" cy="17" r="1.5" />
+      <circle cx="17" cy="7" r="1.5" />
     </svg>
   );
 }
