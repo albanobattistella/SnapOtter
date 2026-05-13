@@ -158,7 +158,7 @@ describe("Error handling", () => {
     expect(result.error).toBeDefined();
   });
 
-  it("returns 422 for corrupted image data", async () => {
+  it("returns 400 for corrupted image data", async () => {
     const badBuffer = Buffer.from("not an image at all");
     const { body: payload, contentType } = makeFilePayload(badBuffer, "bad.png", "image/png");
     const res = await app.inject({
@@ -170,7 +170,8 @@ describe("Error handling", () => {
         authorization: `Bearer ${adminToken}`,
       },
     });
-    expect(res.statusCode).toBe(422);
+    // validateImageBuffer catches corrupt data before processing
+    expect(res.statusCode).toBe(400);
   });
 });
 
