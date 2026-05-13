@@ -269,7 +269,7 @@ export const useFileStore = create<FileState>((set, get) => ({
 
   setProcessing: (v) => set({ processing: v }),
 
-  setError: (e) => set({ error: e, processing: false }),
+  setError: (e) => set(e ? { error: e, processing: false } : { error: null }),
 
   setJobId: (_id) => {
     // no-op for backward compat

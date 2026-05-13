@@ -28,8 +28,8 @@ export function StitchSettings() {
   const handleProcess = async () => {
     if (files.length < 2) return;
 
-    setProcessing(true);
     setError(null);
+    setProcessing(true);
     setDownloadUrl(null);
     setUploadProgress(0);
 
