@@ -181,6 +181,9 @@ vi.mock("@/components/tools/meme-generator-preview", () => ({
 vi.mock("@/components/tools/color-blindness-settings", () => ({
   ColorBlindnessSettings: () => null,
 }));
+vi.mock("@/components/tools/ai-canvas-expand-settings", () => ({
+  AiCanvasExpandSettings: () => null,
+}));
 
 // ---------------------------------------------------------------------------
 // Import after mocks
