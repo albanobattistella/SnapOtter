@@ -8,6 +8,7 @@ export interface OutpaintOptions {
   extendRight: number;
   extendBottom: number;
   extendLeft: number;
+  tier?: "fast" | "balanced" | "high";
 }
 
 export async function outpaint(
@@ -31,6 +32,7 @@ export async function outpaint(
       String(options.extendRight),
       String(options.extendBottom),
       String(options.extendLeft),
+      options.tier ?? "balanced",
     ],
     { onProgress },
   );
