@@ -5,9 +5,12 @@ import json
 
 
 MODEL_SIZE = 512
-BAND_SIZE = 128
-MASK_DILATE_PX = 18
-SEAM_STRIP_PX = 24
+
+TIER_PARAMS = {
+    "fast":     {"band_size": 192, "mask_dilate": 12, "seam_strip": 0,  "use_telea": False},
+    "balanced": {"band_size": 128, "mask_dilate": 18, "seam_strip": 24, "use_telea": True},
+    "high":     {"band_size": 72,  "mask_dilate": 24, "seam_strip": 36, "use_telea": True},
+}
 
 
 def emit_progress(percent, stage):
@@ -85,7 +88,7 @@ def _run_lama(session, canvas, mask, feather_radius=5):
     return np.clip(result, 0, 255).astype(np.uint8)
 
 
-def _progressive_outpaint(session, canvas, mask):
+def _progressive_outpaint(session, canvas, mask, band_size=128, progress_start=30, progress_end=75):
     """Process mask in concentric bands from original edge outward."""
     import cv2
     import numpy as np
@@ -103,7 +106,7 @@ def _progressive_outpaint(session, canvas, mask):
     temp = remaining.copy()
     while np.sum(temp > 127) > 0:
         kernel = cv2.getStructuringElement(
-            cv2.MORPH_ELLIPSE, (BAND_SIZE * 2 + 1, BAND_SIZE * 2 + 1)
+            cv2.MORPH_ELLIPSE, (band_size * 2 + 1, band_size * 2 + 1)
         )
         eroded = cv2.erode(temp, kernel, iterations=1)
         temp = eroded
@@ -115,7 +118,7 @@ def _progressive_outpaint(session, canvas, mask):
     while np.sum(remaining > 127) > 0:
         # Erode remaining mask to peel off outermost band
         kernel = cv2.getStructuringElement(
-            cv2.MORPH_ELLIPSE, (BAND_SIZE * 2 + 1, BAND_SIZE * 2 + 1)
+            cv2.MORPH_ELLIPSE, (band_size * 2 + 1, band_size * 2 + 1)
         )
         eroded = cv2.erode(remaining, kernel, iterations=1)
 
@@ -128,9 +131,9 @@ def _progressive_outpaint(session, canvas, mask):
         remaining = eroded
         band_index += 1
 
-        # Scale progress between 30% and 75%
-        progress = 30 + int(45 * band_index / total_bands)
-        emit_progress(min(progress, 75), f"AI outpainting band {band_index}/{total_bands}")
+        progress_range = progress_end - progress_start
+        progress = progress_start + int(progress_range * band_index / total_bands)
+        emit_progress(min(progress, progress_end), f"AI outpainting band {band_index}/{total_bands}")
 
     return current_canvas
 
@@ -142,6 +145,11 @@ def main():
     extend_right = int(sys.argv[4])
     extend_bottom = int(sys.argv[5])
     extend_left = int(sys.argv[6])
+
+    tier = sys.argv[7] if len(sys.argv) > 7 else "balanced"
+    if tier not in TIER_PARAMS:
+        tier = "balanced"
+    params = TIER_PARAMS[tier]
 
     try:
         emit_progress(5, "Preparing")
@@ -187,38 +195,44 @@ def main():
 
         # Dilate mask into original area for overlap
         dilate_kernel = cv2.getStructuringElement(
-            cv2.MORPH_ELLIPSE, (MASK_DILATE_PX * 2 + 1, MASK_DILATE_PX * 2 + 1)
+            cv2.MORPH_ELLIPSE, (params["mask_dilate"] * 2 + 1, params["mask_dilate"] * 2 + 1)
         )
         mask = cv2.dilate(mask, dilate_kernel, iterations=1)
 
         # Step 3: Telea pre-inpainting for gradient hints
-        emit_progress(25, "Pre-filling gradients")
-        canvas = cv2.inpaint(canvas, mask, 3, cv2.INPAINT_TELEA)
+        if params["use_telea"]:
+            emit_progress(25, "Pre-filling gradients")
+            canvas = cv2.inpaint(canvas, mask, 3, cv2.INPAINT_TELEA)
 
         # Step 4: Progressive LaMa outpainting in concentric bands
-        canvas = _progressive_outpaint(session, canvas, mask)
+        if params["use_telea"]:
+            canvas = _progressive_outpaint(session, canvas, mask, params["band_size"], 30, 75)
+        else:
+            canvas = _progressive_outpaint(session, canvas, mask, params["band_size"], 20, 85)
 
         # Step 5: Seam refinement -- second LaMa pass on thin boundary strip
-        emit_progress(80, "Refining seams")
-        seam_mask = np.zeros((new_h, new_w), dtype=np.uint8)
+        seam_strip = params["seam_strip"]
+        if seam_strip > 0:
+            emit_progress(80, "Refining seams")
+            seam_mask = np.zeros((new_h, new_w), dtype=np.uint8)
 
-        # Create thin strip along original image boundary
-        inner_kernel = cv2.getStructuringElement(
-            cv2.MORPH_ELLIPSE, (SEAM_STRIP_PX + 1, SEAM_STRIP_PX + 1)
-        )
-        outer_kernel = cv2.getStructuringElement(
-            cv2.MORPH_ELLIPSE, (SEAM_STRIP_PX * 2 + 1, SEAM_STRIP_PX * 2 + 1)
-        )
+            # Create thin strip along original image boundary
+            inner_kernel = cv2.getStructuringElement(
+                cv2.MORPH_ELLIPSE, (seam_strip + 1, seam_strip + 1)
+            )
+            outer_kernel = cv2.getStructuringElement(
+                cv2.MORPH_ELLIPSE, (seam_strip * 2 + 1, seam_strip * 2 + 1)
+            )
 
-        # Original region mask (before dilation)
-        orig_mask = np.zeros((new_h, new_w), dtype=np.uint8)
-        orig_mask[extend_top:extend_top + orig_h, extend_left:extend_left + orig_w] = 255
+            # Original region mask (before dilation)
+            orig_mask = np.zeros((new_h, new_w), dtype=np.uint8)
+            orig_mask[extend_top:extend_top + orig_h, extend_left:extend_left + orig_w] = 255
 
-        inner_edge = cv2.erode(orig_mask, inner_kernel, iterations=1)
-        outer_edge = cv2.dilate(orig_mask, outer_kernel, iterations=1)
-        seam_mask = cv2.subtract(outer_edge, inner_edge)
+            inner_edge = cv2.erode(orig_mask, inner_kernel, iterations=1)
+            outer_edge = cv2.dilate(orig_mask, outer_kernel, iterations=1)
+            seam_mask = cv2.subtract(outer_edge, inner_edge)
 
-        canvas = _run_lama(session, canvas, seam_mask)
+            canvas = _run_lama(session, canvas, seam_mask)
 
         # Step 6: Poisson blending -- paste untouched original back
         emit_progress(90, "Blending")
