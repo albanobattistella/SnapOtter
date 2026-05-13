@@ -119,9 +119,9 @@ export const en = {
       name: "Content-Aware Resize",
       description: "Intelligently resize images while preserving important content",
     },
-    "content-aware-crop": {
-      name: "Content-Aware Crop",
-      description: "Extend canvas with AI-powered fill",
+    "ai-canvas-expand": {
+      name: "AI Canvas Expand",
+      description: "Expand canvas with AI-powered fill",
     },
     colorize: {
       name: "AI Colorization",
@@ -135,6 +135,9 @@ export const en = {
     "transparency-fixer": {
       name: "PNG Transparency Fixer",
       description: "Fix fake transparent PNGs in one click",
+      removeWatermark: "Remove Watermark",
+      removeWatermarkHelp: "Detect and remove semi-transparent watermarks from stock photos",
+      requiresEraser: "Requires Object Eraser bundle",
     },
     "watermark-text": { name: "Text Watermark", description: "Add text watermark overlay" },
     "watermark-image": { name: "Image Watermark", description: "Overlay a logo as watermark" },
