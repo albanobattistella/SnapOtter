@@ -118,6 +118,7 @@ describe("fetchDecodedPreview", () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       blob: () => Promise.resolve(blob),
+      headers: { get: () => null },
     });
 
     const file = new File(["heic-data"], "photo.heic", { type: "image/heic" });
@@ -132,7 +133,7 @@ describe("fetchDecodedPreview", () => {
     const formData = opts.body as FormData;
     expect(formData.get("file")).toBe(file);
 
-    expect(result).toBe("blob:preview-url");
+    expect(result?.url).toBe("blob:preview-url");
     expect(createObjectURL).toHaveBeenCalledWith(blob);
   });
 

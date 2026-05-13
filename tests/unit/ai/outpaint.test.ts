@@ -87,6 +87,7 @@ describe("outpaint", () => {
           "20",
           "30",
           "40",
+          "balanced",
         ],
         expect.any(Object),
       );

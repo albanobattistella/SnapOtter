@@ -1535,7 +1535,11 @@ describe("useCollageStore", () => {
     const needsMock = vi.mocked(imagePreview.needsServerPreview);
     const fetchPreviewMock = vi.mocked(imagePreview.fetchDecodedPreview);
     needsMock.mockReturnValueOnce(true);
-    fetchPreviewMock.mockResolvedValueOnce("blob:preview-decoded");
+    fetchPreviewMock.mockResolvedValueOnce({
+      url: "blob:preview-decoded",
+      originalWidth: null,
+      originalHeight: null,
+    });
 
     const heicFile = new File(["heic-data"], "photo.heic", { type: "image/heic" });
     useCollageStore.getState().addImages([heicFile]);
@@ -1559,7 +1563,7 @@ describe("useCollageStore", () => {
     const fetchPreviewMock = vi.mocked(imagePreview.fetchDecodedPreview);
     needsMock.mockReturnValueOnce(true);
 
-    let resolvePreview!: (v: string | null) => void;
+    let resolvePreview!: (v: import("@/lib/image-preview").DecodedPreview | null) => void;
     fetchPreviewMock.mockReturnValueOnce(
       new Promise((resolve) => {
         resolvePreview = resolve;
@@ -1573,7 +1577,7 @@ describe("useCollageStore", () => {
     useCollageStore.getState().removeImage(0);
 
     // Now resolve the preview -- should not crash (idx === -1 path)
-    resolvePreview("blob:late-preview");
+    resolvePreview({ url: "blob:late-preview", originalWidth: null, originalHeight: null });
 
     // Give the promise chain time to settle
     await new Promise((r) => setTimeout(r, 10));
