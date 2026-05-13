@@ -309,7 +309,6 @@ export async function oidcRoutes(app: FastifyInstance): Promise<void> {
         db.update(schema.users)
           .set({
             externalId: sub,
-            authProvider: "oidc",
             updatedAt: new Date(),
           })
           .where(eq(schema.users.id, existingByEmail.id))
