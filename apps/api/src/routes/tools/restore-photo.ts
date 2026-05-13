@@ -19,13 +19,13 @@ import { updateSingleFileProgress } from "../progress.js";
 import { registerToolProcessFn } from "../tool-factory.js";
 
 const settingsSchema = z.object({
-  mode: z.enum(["auto", "light", "heavy"]).default("auto"),
   scratchRemoval: z.boolean().default(true),
   faceEnhancement: z.boolean().default(true),
   fidelity: z.number().min(0).max(1).default(0.7),
   denoise: z.boolean().default(true),
-  denoiseStrength: z.number().min(0).max(100).default(40),
+  denoiseStrength: z.number().min(0).max(100).default(25),
   colorize: z.boolean().default(false),
+  colorizeStrength: z.number().min(0).max(100).default(85),
 });
 
 /**
@@ -153,10 +153,7 @@ export function registerRestorePhoto(app: FastifyInstance) {
     }
 
     const log = request.log;
-    log.info(
-      { toolId: "restore-photo", imageSize: originalSize, mode: settings.mode },
-      "Starting photo restoration",
-    );
+    log.info({ toolId: "restore-photo", imageSize: originalSize }, "Starting photo restoration");
 
     // Reply immediately so the HTTP connection closes within proxy timeout limits.
     // The result will be delivered via the SSE progress channel.
@@ -178,13 +175,13 @@ export function registerRestorePhoto(app: FastifyInstance) {
         fileBuffer,
         join(workspacePath, "output"),
         {
-          mode: settings.mode,
           scratchRemoval: settings.scratchRemoval,
           faceEnhancement: settings.faceEnhancement,
           fidelity: settings.fidelity,
           denoise: settings.denoise,
           denoiseStrength: settings.denoiseStrength,
           colorize: settings.colorize,
+          colorizeStrength: settings.colorizeStrength,
         },
         onProgress,
       );
@@ -257,13 +254,13 @@ export function registerRestorePhoto(app: FastifyInstance) {
   registerToolProcessFn({
     toolId: "restore-photo",
     settingsSchema: z.object({
-      mode: z.enum(["auto", "light", "heavy"]).default("auto"),
       scratchRemoval: z.boolean().default(true),
       faceEnhancement: z.boolean().default(true),
       fidelity: z.number().min(0).max(1).default(0.7),
       denoise: z.boolean().default(true),
-      denoiseStrength: z.number().min(0).max(100).default(40),
+      denoiseStrength: z.number().min(0).max(100).default(25),
       colorize: z.boolean().default(false),
+      colorizeStrength: z.number().min(0).max(100).default(85),
     }),
     process: async (inputBuffer, settings, filename) => {
       const s = settings as z.infer<typeof settingsSchema>;
@@ -271,13 +268,13 @@ export function registerRestorePhoto(app: FastifyInstance) {
       const jobId = randomUUID();
       const workspacePath = await createWorkspace(jobId);
       const result = await restorePhoto(orientedBuffer, join(workspacePath, "output"), {
-        mode: s.mode,
         scratchRemoval: s.scratchRemoval,
         faceEnhancement: s.faceEnhancement,
         fidelity: s.fidelity,
         denoise: s.denoise,
         denoiseStrength: s.denoiseStrength,
         colorize: s.colorize,
+        colorizeStrength: s.colorizeStrength,
       });
       const outputFormat = await resolveOutputFormat(inputBuffer, filename);
       let outputBuffer = result.buffer;

@@ -83,17 +83,16 @@ describe("Restore Photo", () => {
     }
   }, 60_000);
 
-  it("accepts auto mode with all features enabled", async () => {
+  it("accepts all features enabled", async () => {
     const { body, contentType } = createMultipartPayload([
       { name: "file", filename: "test.png", contentType: "image/png", content: PNG },
       {
         name: "settings",
         content: JSON.stringify({
-          mode: "auto",
           scratchRemoval: true,
           faceEnhancement: true,
           denoise: true,
-          denoiseStrength: 40,
+          denoiseStrength: 25,
         }),
       },
     ]);
@@ -111,14 +110,14 @@ describe("Restore Photo", () => {
     expect([202, 501]).toContain(res.statusCode);
   }, 60_000);
 
-  it("accepts heavy mode with colorize enabled", async () => {
+  it("accepts colorize with custom strength", async () => {
     const { body, contentType } = createMultipartPayload([
       { name: "file", filename: "test.png", contentType: "image/png", content: PNG },
       {
         name: "settings",
         content: JSON.stringify({
-          mode: "heavy",
           colorize: true,
+          colorizeStrength: 50,
           fidelity: 0.9,
         }),
       },
@@ -137,13 +136,12 @@ describe("Restore Photo", () => {
     expect([202, 501]).toContain(res.statusCode);
   }, 60_000);
 
-  it("accepts light mode with features disabled", async () => {
+  it("accepts all features disabled", async () => {
     const { body, contentType } = createMultipartPayload([
       { name: "file", filename: "test.png", contentType: "image/png", content: PNG },
       {
         name: "settings",
         content: JSON.stringify({
-          mode: "light",
           scratchRemoval: false,
           faceEnhancement: false,
           denoise: false,
@@ -273,12 +271,12 @@ describe("Restore Photo", () => {
     }
   });
 
-  it("rejects invalid mode value", async () => {
+  it("rejects colorizeStrength out of range", async () => {
     const { body, contentType } = createMultipartPayload([
       { name: "file", filename: "test.png", contentType: "image/png", content: PNG },
       {
         name: "settings",
-        content: JSON.stringify({ mode: "turbo" }),
+        content: JSON.stringify({ colorizeStrength: 150 }),
       },
     ]);
 
@@ -366,4 +364,26 @@ describe("Restore Photo", () => {
 
     expect(res.statusCode).toBe(401);
   });
+
+  it("ignores old mode field gracefully", async () => {
+    const { body, contentType } = createMultipartPayload([
+      { name: "file", filename: "test.png", contentType: "image/png", content: PNG },
+      {
+        name: "settings",
+        content: JSON.stringify({ mode: "heavy", scratchRemoval: true }),
+      },
+    ]);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/tools/restore-photo",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+        "content-type": contentType,
+      },
+      body,
+    });
+
+    expect([202, 501]).toContain(res.statusCode);
+  }, 60_000);
 });
