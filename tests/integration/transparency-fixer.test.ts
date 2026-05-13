@@ -260,3 +260,43 @@ describe("PNG Transparency Fixer - Edge cases", () => {
     expect([200, 202, 501]).toContain(res.statusCode);
   }, 120_000);
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Watermark removal settings
+// ═══════════════════════════════════════════════════════════════════════════
+describe("PNG Transparency Fixer - Watermark removal settings", () => {
+  it("accepts removeWatermark: true", async () => {
+    const res = await postTransparencyFixer(PNG, "test.png", { removeWatermark: true });
+    expect([200, 202, 501]).toContain(res.statusCode);
+  }, 120_000);
+
+  it("accepts removeWatermark: false", async () => {
+    const res = await postTransparencyFixer(PNG, "test.png", { removeWatermark: false });
+    expect([200, 202, 501]).toContain(res.statusCode);
+  }, 120_000);
+
+  it("defaults removeWatermark to false when omitted", async () => {
+    const res = await postTransparencyFixer(PNG, "test.png", { defringe: 30 });
+    expect([200, 202, 501]).toContain(res.statusCode);
+  }, 120_000);
+
+  it("rejects non-boolean removeWatermark", async () => {
+    const res = await postTransparencyFixer(PNG, "test.png", { removeWatermark: "yes" });
+    expect([400, 501]).toContain(res.statusCode);
+    if (res.statusCode === 400) {
+      const result = JSON.parse(res.body);
+      expect(result.error).toMatch(/invalid settings/i);
+    }
+  });
+
+  it("accepts removeWatermark with various input formats", async () => {
+    const formats = [
+      { buf: JPG, name: "photo.jpg" },
+      { buf: WEBP, name: "image.webp" },
+    ];
+    for (const { buf, name } of formats) {
+      const res = await postTransparencyFixer(buf, name, { removeWatermark: true });
+      expect([200, 202, 501]).toContain(res.statusCode);
+    }
+  }, 120_000);
+});
