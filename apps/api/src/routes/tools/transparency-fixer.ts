@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { inpaint, removeBackground } from "@snapotter/ai";
+import { removeBackground } from "@snapotter/ai";
 import { getBundleForTool, TOOL_BUNDLE_MAP } from "@snapotter/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import sharp from "sharp";
@@ -78,98 +78,8 @@ async function applyDefringe(buffer: Buffer, intensity: number): Promise<Buffer>
     .toBuffer();
 }
 
-async function detectWatermarkMask(
-  buffer: Buffer,
-): Promise<{ mask: Buffer | null; coverage: number }> {
-  const img = sharp(buffer);
-  const meta = await img.metadata();
-  if (!meta.width || !meta.height || meta.channels !== 4) {
-    return { mask: null, coverage: 0 };
-  }
-
-  const { width, height } = meta;
-  const { data } = await img.raw().toBuffer({ resolveWithObject: true });
-  const pixelCount = width * height;
-
-  const luminance = new Float32Array(pixelCount);
-  const isForeground = new Uint8Array(pixelCount);
-  let fgCount = 0;
-
-  for (let i = 0; i < pixelCount; i++) {
-    const a = data[i * 4 + 3];
-    if (a > 10) {
-      isForeground[i] = 1;
-      fgCount++;
-      const r = data[i * 4];
-      const g = data[i * 4 + 1];
-      const b = data[i * 4 + 2];
-      luminance[i] = 0.299 * r + 0.587 * g + 0.114 * b;
-    }
-  }
-
-  if (fgCount < 100) return { mask: null, coverage: 0 };
-
-  const grayBuf = Buffer.alloc(pixelCount);
-  for (let i = 0; i < pixelCount; i++) {
-    grayBuf[i] = isForeground[i] ? Math.round(luminance[i]) : 0;
-  }
-
-  const blurRadius = Math.max(1, Math.round(Math.min(width, height) / 40));
-  const blurredGray = await sharp(grayBuf, {
-    raw: { width, height, channels: 1 },
-  })
-    .blur(blurRadius)
-    .raw()
-    .toBuffer();
-
-  const candidateMask = new Uint8Array(pixelCount);
-  let candidateCount = 0;
-  const threshold = 25;
-
-  for (let i = 0; i < pixelCount; i++) {
-    if (!isForeground[i]) continue;
-    const localAvg = blurredGray[i];
-    const deviation = luminance[i] - localAvg;
-    if (deviation > threshold) {
-      candidateMask[i] = 255;
-      candidateCount++;
-    }
-  }
-
-  if (candidateCount < 10) return { mask: null, coverage: 0 };
-
-  const rawMask = Buffer.from(candidateMask);
-
-  const eroded = await sharp(rawMask, { raw: { width, height, channels: 1 } })
-    .blur(1.5)
-    .threshold(200)
-    .raw()
-    .toBuffer();
-
-  const dilated = await sharp(eroded, { raw: { width, height, channels: 1 } })
-    .blur(2)
-    .threshold(30)
-    .raw()
-    .toBuffer();
-
-  let finalCount = 0;
-  for (let i = 0; i < pixelCount; i++) {
-    if (dilated[i] > 0) finalCount++;
-  }
-
-  const coverage = fgCount > 0 ? finalCount / fgCount : 0;
-  const minCoverage = 0.005;
-  const maxCoverage = 0.6;
-
-  if (coverage < minCoverage || coverage > maxCoverage) {
-    return { mask: null, coverage };
-  }
-
-  const maskPng = await sharp(dilated, { raw: { width, height, channels: 1 } })
-    .png()
-    .toBuffer();
-
-  return { mask: maskPng, coverage };
+async function removeWatermarkMedian(buffer: Buffer): Promise<Buffer> {
+  return sharp(buffer).median(5).toBuffer();
 }
 
 /**
@@ -181,92 +91,33 @@ async function processTransparencyFix(
   outputDir: string,
   onProgress?: (percent: number, stage: string) => void,
 ): Promise<Buffer> {
+  let workingBuffer = inputBuffer;
+
+  if (settings.removeWatermark) {
+    onProgress?.(2, "Removing watermark...");
+    workingBuffer = await removeWatermarkMedian(workingBuffer);
+  }
+
   let resultBuffer: Buffer;
-
-  const wantWatermark = settings.removeWatermark;
-  const progressScale = (p: number, lo: number, hi: number) =>
-    Math.round(lo + (p / 100) * (hi - lo));
-
-  const mattingProgress = wantWatermark
-    ? (p: number, s: string) => onProgress?.(progressScale(p, 0, 60), s)
-    : onProgress;
 
   try {
     resultBuffer = await removeBackground(
-      inputBuffer,
+      workingBuffer,
       outputDir,
       { model: DEFAULT_MODEL },
-      mattingProgress,
+      onProgress,
     );
   } catch (err) {
     const isOom = err instanceof Error && err.message.includes("out of memory");
     if (!isOom) throw err;
 
-    mattingProgress?.(5, `Retrying with fallback model (${FALLBACK_MODEL})`);
+    onProgress?.(5, `Retrying with fallback model (${FALLBACK_MODEL})`);
     resultBuffer = await removeBackground(
-      inputBuffer,
+      workingBuffer,
       outputDir,
       { model: FALLBACK_MODEL },
-      mattingProgress,
+      onProgress,
     );
-  }
-
-  if (wantWatermark) {
-    if (!isToolInstalled("erase-object")) {
-      throw new Error("Watermark removal requires the Object Eraser feature bundle");
-    }
-
-    onProgress?.(62, "Detecting watermark...");
-    const { mask } = await detectWatermarkMask(resultBuffer);
-
-    if (mask) {
-      onProgress?.(70, "Removing watermark...");
-
-      const meta = await sharp(resultBuffer).metadata();
-      const { data: mattedRaw } = await sharp(resultBuffer)
-        .raw()
-        .toBuffer({ resolveWithObject: true });
-      const w = meta.width!;
-      const h = meta.height!;
-      const alphaChannel = Buffer.alloc(w * h);
-      for (let i = 0; i < w * h; i++) {
-        alphaChannel[i] = mattedRaw[i * 4 + 3];
-      }
-
-      const rgbBuffer = await sharp(resultBuffer)
-        .flatten({ background: { r: 255, g: 255, b: 255 } })
-        .png()
-        .toBuffer();
-
-      const inpaintProgress = (p: number, s: string) => {
-        onProgress?.(progressScale(p, 70, 95), s);
-      };
-
-      const inpaintedRgb = await inpaint(rgbBuffer, mask, outputDir, inpaintProgress);
-
-      const { data: rgbRaw } = await sharp(inpaintedRgb)
-        .raw()
-        .toBuffer({ resolveWithObject: true });
-      const inpaintedMeta = await sharp(inpaintedRgb).metadata();
-      const iw = inpaintedMeta.width!;
-      const ih = inpaintedMeta.height!;
-
-      const rgbaData = Buffer.alloc(iw * ih * 4);
-      for (let i = 0; i < iw * ih; i++) {
-        rgbaData[i * 4] = rgbRaw[i * 3];
-        rgbaData[i * 4 + 1] = rgbRaw[i * 3 + 1];
-        rgbaData[i * 4 + 2] = rgbRaw[i * 3 + 2];
-        rgbaData[i * 4 + 3] = alphaChannel[i] ?? 0;
-      }
-
-      resultBuffer = await sharp(rgbaData, {
-        raw: { width: iw, height: ih, channels: 4 },
-      })
-        .png()
-        .toBuffer();
-    }
-
-    onProgress?.(96, "Finalizing...");
   }
 
   resultBuffer = await applyDefringe(resultBuffer, settings.defringe);
