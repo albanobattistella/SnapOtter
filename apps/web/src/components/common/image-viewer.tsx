@@ -263,8 +263,8 @@ export function ImageViewer({
           <div
             style={{
               ...imageWrapperStyle,
-              display: imageWrapperChildren ? "inline-flex" : "inline-block",
-              flexDirection: imageWrapperChildren ? ("column" as const) : undefined,
+              display: "inline-flex",
+              flexDirection: "column" as const,
               position: imageWrapperChildren ? ("relative" as const) : undefined,
               boxSizing: "border-box" as const,
               overflow: "hidden",
@@ -281,22 +281,13 @@ export function ImageViewer({
               onLoad={handleImageLoad}
               onError={handleImageError}
               className="select-none"
-              style={
-                imageWrapperChildren
-                  ? {
-                      display: "block",
-                      flex: "0 1 auto",
-                      minHeight: 0,
-                      maxWidth: "100%",
-                      objectFit: "contain" as const,
-                    }
-                  : {
-                      display: "block",
-                      maxWidth: "100%",
-                      maxHeight: "100%",
-                      objectFit: "contain" as const,
-                    }
-              }
+              style={{
+                display: "block",
+                flex: "0 1 auto",
+                minHeight: 0,
+                maxWidth: "100%",
+                objectFit: "contain" as const,
+              }}
               draggable={false}
             />
           </div>
