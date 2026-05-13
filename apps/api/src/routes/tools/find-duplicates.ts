@@ -153,21 +153,21 @@ export function registerFindDuplicates(app: FastifyInstance) {
     }
 
     try {
+      const skippedFiles: Array<{ filename: string; reason: string }> = [];
+      const processableFiles: FileData[] = [];
+
       for (const file of files) {
         const validation = await validateImageBuffer(file.buffer, file.filename);
         if (!validation.valid) {
-          return reply
-            .status(400)
-            .send({ error: `Invalid file "${file.filename}": ${validation.reason}` });
+          skippedFiles.push({ filename: file.filename, reason: validation.reason });
+          continue;
         }
         if (validation.format === "heif") {
           try {
             file.buffer = await decodeHeic(file.buffer);
-          } catch (err) {
-            return reply.status(422).send({
-              error: `Failed to decode "${file.filename}" (HEIC). Ensure libheif-examples is installed.`,
-              details: err instanceof Error ? err.message : String(err),
-            });
+          } catch {
+            skippedFiles.push({ filename: file.filename, reason: "Failed to decode HEIC" });
+            continue;
           }
         }
         if (needsCliDecode(validation.format)) {
@@ -177,11 +177,12 @@ export function registerFindDuplicates(app: FastifyInstance) {
           } catch {
             try {
               await sharp(file.buffer).metadata();
-            } catch (err) {
-              return reply.status(422).send({
-                error: `Failed to decode "${file.filename}" (${validation.format.toUpperCase()})`,
-                details: err instanceof Error ? err.message : String(err),
+            } catch {
+              skippedFiles.push({
+                filename: file.filename,
+                reason: `Failed to decode ${validation.format.toUpperCase()}`,
               });
+              continue;
             }
           }
         }
@@ -189,21 +190,53 @@ export function registerFindDuplicates(app: FastifyInstance) {
           try {
             file.buffer = decompressSvgz(file.buffer);
             file.buffer = sanitizeSvg(file.buffer);
-          } catch (err) {
-            return reply.status(400).send({
-              error: `Invalid SVG "${file.filename}": ${err instanceof Error ? err.message : "Unknown error"}`,
-            });
+          } catch {
+            skippedFiles.push({ filename: file.filename, reason: "Invalid SVG" });
+            continue;
           }
         }
-        file.buffer = await autoOrient(file.buffer);
+        try {
+          file.buffer = await autoOrient(file.buffer);
+        } catch {
+          skippedFiles.push({
+            filename: file.filename,
+            reason: "Failed to read image orientation",
+          });
+          continue;
+        }
+        processableFiles.push(file);
+      }
+
+      if (processableFiles.length < 2) {
+        return reply.status(400).send({
+          error:
+            processableFiles.length === 0
+              ? "No supported images found"
+              : "At least 2 processable images are required for duplicate detection",
+          skippedFiles,
+        });
       }
 
       // Extract metadata, thumbnails, and compute hashes
       const fileInfos: FileInfo[] = [];
-      for (const file of files) {
-        const info = await extractFileInfo(file);
-        info.hash = await computeDHash128(file.buffer);
-        fileInfos.push(info);
+      for (const file of processableFiles) {
+        try {
+          const info = await extractFileInfo(file);
+          info.hash = await computeDHash128(file.buffer);
+          fileInfos.push(info);
+        } catch {
+          skippedFiles.push({ filename: file.filename, reason: "Failed to compute image hash" });
+        }
+      }
+
+      if (fileInfos.length < 2) {
+        return reply.status(400).send({
+          error:
+            fileInfos.length === 0
+              ? "No images could be analyzed"
+              : "At least 2 processable images are required for duplicate detection",
+          skippedFiles,
+        });
       }
 
       // Group duplicates by hamming distance
@@ -292,10 +325,11 @@ export function registerFindDuplicates(app: FastifyInstance) {
       }
 
       return reply.send({
-        totalImages: files.length,
+        totalImages: fileInfos.length,
         duplicateGroups: groups,
-        uniqueImages: files.length - assigned.size,
+        uniqueImages: fileInfos.length - assigned.size,
         spaceSaveable,
+        skippedFiles: skippedFiles.length > 0 ? skippedFiles : undefined,
       });
     } catch (err) {
       return reply.status(422).send({

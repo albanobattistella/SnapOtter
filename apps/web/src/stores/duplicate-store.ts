@@ -16,11 +16,17 @@ export interface DuplicateGroup {
   files: DuplicateFileInfo[];
 }
 
+export interface SkippedFile {
+  filename: string;
+  reason: string;
+}
+
 export interface DuplicateResult {
   totalImages: number;
   uniqueImages: number;
   spaceSaveable: number;
   duplicateGroups: DuplicateGroup[];
+  skippedFiles?: SkippedFile[];
 }
 
 interface DuplicateState {

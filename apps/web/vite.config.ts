@@ -15,7 +15,11 @@ export default defineConfig({
     host: true,
     port: Number(process.env.PORT) || 1351,
     proxy: {
-      "/api": process.env.VITE_API_URL || "http://localhost:13490",
+      "/api": {
+        target: process.env.VITE_API_URL || "http://localhost:13490",
+        timeout: 300_000,
+        proxyTimeout: 300_000,
+      },
     },
   },
   build: {

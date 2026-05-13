@@ -1,5 +1,5 @@
-import { Download, Loader2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { Download, FolderArchive, Loader2 } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { formatHeaders } from "@/lib/api";
 import { formatFileSize } from "@/lib/download";
 import type { DuplicateResult } from "@/stores/duplicate-store";
@@ -28,13 +28,21 @@ export function FindDuplicatesSettings() {
   const [preset, setPreset] = useState<Preset | null>("similar");
   const [threshold, setThreshold] = useState(8);
   const [error, setError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const xhrRef = useRef<XMLHttpRequest | null>(null);
 
-  // Reset scan results when files change
   // biome-ignore lint/correctness/useExhaustiveDependencies: files is a store value that triggers reset when changed
   useEffect(() => {
     resetDuplicates();
     setError(null);
+    setUploadProgress(0);
   }, [files, resetDuplicates]);
+
+  useEffect(() => {
+    return () => {
+      xhrRef.current?.abort();
+    };
+  }, []);
 
   const handlePreset = (p: Preset) => {
     setPreset(p);
@@ -43,45 +51,74 @@ export function FindDuplicatesSettings() {
 
   const handleSlider = (val: number) => {
     setThreshold(val);
-    // Deselect preset if slider doesn't match any
     const match = (Object.entries(PRESET_THRESHOLDS) as [Preset, number][]).find(
       ([, t]) => t === val,
     );
     setPreset(match ? match[0] : null);
   };
 
-  const handleScan = async () => {
+  const handleScan = () => {
     if (files.length < 2) return;
 
     setScanning(true);
     setError(null);
     setResults(null);
+    setUploadProgress(0);
 
-    try {
-      const formData = new FormData();
-      for (const file of files) {
-        formData.append("file", file);
-      }
-      formData.append("threshold", String(threshold));
-
-      const res = await fetch("/api/v1/tools/find-duplicates", {
-        method: "POST",
-        headers: formatHeaders(),
-        body: formData,
-      });
-
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.error || `Failed: ${res.status}`);
-      }
-
-      const data: DuplicateResult = await res.json();
-      setResults(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Detection failed");
-    } finally {
-      setScanning(false);
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append("file", file);
     }
+    formData.append("threshold", String(threshold));
+
+    const xhr = new XMLHttpRequest();
+    xhrRef.current = xhr;
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        setUploadProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+
+    xhr.onload = () => {
+      xhrRef.current = null;
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data: DuplicateResult = JSON.parse(xhr.responseText);
+          setResults(data);
+        } catch {
+          setError("Failed to parse scan results");
+        }
+      } else {
+        try {
+          const body = JSON.parse(xhr.responseText);
+          setError(body.error || `Failed: ${xhr.status}`);
+        } catch {
+          setError(`Failed: ${xhr.status}`);
+        }
+      }
+      setScanning(false);
+    };
+
+    xhr.onerror = () => {
+      xhrRef.current = null;
+      setError("Network error during upload. Try with fewer files or check connection.");
+      setScanning(false);
+    };
+
+    xhr.ontimeout = () => {
+      xhrRef.current = null;
+      setError("Request timed out. Try with fewer files.");
+      setScanning(false);
+    };
+
+    xhr.open("POST", "/api/v1/tools/find-duplicates");
+    xhr.timeout = 300_000;
+    const headers = formatHeaders();
+    headers.forEach((value, key) => {
+      xhr.setRequestHeader(key, value);
+    });
+    xhr.send(formData);
   };
 
   const handleDownloadUnique = useCallback(async () => {
@@ -89,7 +126,6 @@ export function FindDuplicatesSettings() {
 
     const { zipSync } = await import("fflate");
 
-    // Collect filenames of "best" per group (respecting overrides) + all non-duplicate files
     const duplicateFilenames = new Set<string>();
     const bestFilenames = new Set<string>();
     for (let gi = 0; gi < results.duplicateGroups.length; gi++) {
@@ -121,6 +157,63 @@ export function FindDuplicatesSettings() {
     a.click();
     URL.revokeObjectURL(url);
   }, [files, results, bestOverrides]);
+
+  const handleDownloadGrouped = useCallback(async () => {
+    if (!results || results.duplicateGroups.length === 0) return;
+
+    const { zipSync } = await import("fflate");
+
+    const duplicateFilenames = new Set<string>();
+    const zipData: Record<string, Uint8Array> = {};
+    const usedPaths = new Set<string>();
+
+    const uniquePath = (dir: string, name: string): string => {
+      let path = `${dir}/${name}`;
+      if (!usedPaths.has(path)) {
+        usedPaths.add(path);
+        return path;
+      }
+      const dot = name.lastIndexOf(".");
+      const base = dot > 0 ? name.slice(0, dot) : name;
+      const ext = dot > 0 ? name.slice(dot) : "";
+      let i = 2;
+      while (usedPaths.has(path)) {
+        path = `${dir}/${base}-${i}${ext}`;
+        i++;
+      }
+      usedPaths.add(path);
+      return path;
+    };
+
+    for (let gi = 0; gi < results.duplicateGroups.length; gi++) {
+      const group = results.duplicateGroups[gi];
+      const similarity = Math.max(...group.files.map((f) => f.similarity));
+      const folderName = `group-${gi + 1}-${similarity}pct`;
+
+      for (const gf of group.files) {
+        duplicateFilenames.add(gf.filename);
+        const file = files.find((f) => f.name === gf.filename);
+        if (!file) continue;
+        const buf = await file.arrayBuffer();
+        zipData[uniquePath(folderName, file.name)] = new Uint8Array(buf);
+      }
+    }
+
+    const uniqueFiles = files.filter((f) => !duplicateFilenames.has(f.name));
+    for (const file of uniqueFiles) {
+      const buf = await file.arrayBuffer();
+      zipData[uniquePath("unique", file.name)] = new Uint8Array(buf);
+    }
+
+    const zipped = zipSync(zipData);
+    const blob = new Blob([zipped as Uint8Array<ArrayBuffer>], { type: "application/zip" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "duplicates-grouped.zip";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [files, results]);
 
   const handleDownloadAll = useCallback(async () => {
     const { zipSync } = await import("fflate");
@@ -204,18 +297,32 @@ export function FindDuplicatesSettings() {
 
       {error && <p className="text-xs text-red-500">{error}</p>}
 
-      {/* Scan button */}
+      {/* Scan button + progress */}
       {!results && (
-        <button
-          type="button"
-          data-testid="find-duplicates-submit"
-          onClick={handleScan}
-          disabled={!hasFiles || scanning}
-          className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          {scanning && <Loader2 className="h-4 w-4 animate-spin" />}
-          {scanning ? "Scanning..." : `Scan ${files.length} Images`}
-        </button>
+        <>
+          <button
+            type="button"
+            data-testid="find-duplicates-submit"
+            onClick={handleScan}
+            disabled={!hasFiles || scanning}
+            className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {scanning && <Loader2 className="h-4 w-4 animate-spin" />}
+            {scanning
+              ? uploadProgress < 100
+                ? `Uploading... ${uploadProgress}%`
+                : "Analyzing..."
+              : `Scan ${files.length} Images`}
+          </button>
+          {scanning && (
+            <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress < 100 ? uploadProgress : 100}%` }}
+              />
+            </div>
+          )}
+        </>
       )}
 
       {/* Results: summary + actions */}
@@ -243,25 +350,48 @@ export function FindDuplicatesSettings() {
                 </span>
               </div>
             )}
+            {results.skippedFiles && results.skippedFiles.length > 0 && (
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Skipped</span>
+                <span className="text-orange-500 font-medium">{results.skippedFiles.length}</span>
+              </div>
+            )}
           </div>
+
+          {results.skippedFiles && results.skippedFiles.length > 0 && (
+            <details className="text-xs">
+              <summary className="text-orange-500 cursor-pointer">
+                {results.skippedFiles.length} file{results.skippedFiles.length > 1 ? "s" : ""} could
+                not be analyzed
+              </summary>
+              <ul className="mt-1.5 space-y-0.5 text-muted-foreground">
+                {results.skippedFiles.map((sf) => (
+                  <li key={sf.filename} className="truncate" title={`${sf.filename}: ${sf.reason}`}>
+                    {sf.filename}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
 
           {/* Download actions */}
           {results.duplicateGroups.length > 0 && (
             <>
               <button
                 type="button"
-                onClick={handleDownloadUnique}
+                onClick={handleDownloadGrouped}
                 className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium flex items-center justify-center gap-2"
               >
-                <Download className="h-4 w-4" />
-                Download Unique Only
+                <FolderArchive className="h-4 w-4" />
+                Download Grouped
               </button>
               <button
                 type="button"
-                onClick={handleDownloadAll}
+                onClick={handleDownloadUnique}
                 className="w-full py-2.5 rounded-lg border border-primary text-primary font-medium flex items-center justify-center gap-2 hover:bg-primary/5"
               >
-                Download All
+                <Download className="h-4 w-4" />
+                Download Unique Only
               </button>
             </>
           )}
@@ -272,6 +402,7 @@ export function FindDuplicatesSettings() {
             onClick={() => {
               resetDuplicates();
               setError(null);
+              setUploadProgress(0);
             }}
             className="w-full py-2 rounded-lg border border-border text-muted-foreground text-xs hover:text-foreground hover:border-foreground/20"
           >

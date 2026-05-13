@@ -592,9 +592,10 @@ describe("Find Duplicates", () => {
       body,
     });
 
-    // Should either process (with sharp handling corrupt data gracefully)
+    // Should either process (with sharp handling corrupt data gracefully),
+    // return 400 (corrupt files skipped, not enough processable images),
     // or return 422 for processing failure
-    expect([200, 422]).toContain(res.statusCode);
+    expect([200, 400, 422]).toContain(res.statusCode);
   });
 
   // ── Branch coverage: thumbnail generation for different formats ──────
@@ -1107,6 +1108,94 @@ describe("Find Duplicates", () => {
   });
 
   // ── Threshold at 1 ────────────────────────────────────────────────
+
+  // ── Skip behavior: mixed valid/invalid files ─────────────────────
+
+  it("skips unsupported files and processes valid ones in the same batch", async () => {
+    const corruptBuf = Buffer.from("not an image at all");
+    const { body, contentType } = createMultipartPayload([
+      { name: "file", filename: "good1.png", contentType: "image/png", content: PNG },
+      { name: "file", filename: "good2.png", contentType: "image/png", content: PNG },
+      {
+        name: "file",
+        filename: "bad.xyz",
+        contentType: "application/octet-stream",
+        content: corruptBuf,
+      },
+      { name: "file", filename: "good3.jpg", contentType: "image/jpeg", content: JPG },
+    ]);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/tools/find-duplicates",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+        "content-type": contentType,
+      },
+      body,
+    });
+
+    expect(res.statusCode).toBe(200);
+    const result = JSON.parse(res.body);
+    expect(result.totalImages).toBe(3);
+    expect(result.skippedFiles).toHaveLength(1);
+    expect(result.skippedFiles[0].filename).toBe("bad.xyz");
+    expect(result.skippedFiles[0].reason).toBeTruthy();
+    expect(result.duplicateGroups).toHaveLength(1);
+  });
+
+  it("returns 400 when all files are unsupported", async () => {
+    const garbage = Buffer.from("not an image");
+    const { body, contentType } = createMultipartPayload([
+      {
+        name: "file",
+        filename: "a.xyz",
+        contentType: "application/octet-stream",
+        content: garbage,
+      },
+      {
+        name: "file",
+        filename: "b.xyz",
+        contentType: "application/octet-stream",
+        content: garbage,
+      },
+    ]);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/tools/find-duplicates",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+        "content-type": contentType,
+      },
+      body,
+    });
+
+    expect(res.statusCode).toBe(400);
+    const result = JSON.parse(res.body);
+    expect(result.skippedFiles).toHaveLength(2);
+  });
+
+  it("omits skippedFiles from response when all files are valid", async () => {
+    const { body, contentType } = createMultipartPayload([
+      { name: "file", filename: "a.png", contentType: "image/png", content: PNG },
+      { name: "file", filename: "b.png", contentType: "image/png", content: PNG },
+    ]);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/tools/find-duplicates",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+        "content-type": contentType,
+      },
+      body,
+    });
+
+    expect(res.statusCode).toBe(200);
+    const result = JSON.parse(res.body);
+    expect(result.skippedFiles).toBeUndefined();
+  });
 
   it("uses threshold 1 for very strict duplicate matching", async () => {
     const { body, contentType } = createMultipartPayload([
