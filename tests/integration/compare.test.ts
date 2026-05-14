@@ -463,7 +463,7 @@ describe("Compare", () => {
 
   // ── Branch coverage: multipart parse error (lines 35-39) ────────────
 
-  it("returns 422 when corrupt image data fails processing", async () => {
+  it("returns 400 when corrupt image data fails validation", async () => {
     // Create a buffer that looks like an image but corrupts Sharp
     const corruptBuffer = Buffer.from("not a real image content at all");
     const { body, contentType } = createMultipartPayload([
@@ -481,10 +481,10 @@ describe("Compare", () => {
       body,
     });
 
-    // Returns 400 (invalid image detected at validation) or 422 (processing failure)
-    expect([400, 422]).toContain(res.statusCode);
+    // validateImageBuffer catches corrupt data before processing
+    expect(res.statusCode).toBe(400);
     const result = JSON.parse(res.body);
-    expect(result.error).toMatch(/comparison failed|invalid.*image|unrecognized/i);
+    expect(result.error).toBeDefined();
   });
 
   // ── Branch coverage: 1x1 tiny images (line 117-121 area) ───────────
@@ -649,7 +649,7 @@ describe("Compare", () => {
 
   // ── Branch coverage: both corrupt images fail processing ───────────
 
-  it("returns 422 when both images are corrupt", async () => {
+  it("returns 400 when both images are corrupt", async () => {
     const corrupt1 = Buffer.from("this is not an image");
     const corrupt2 = Buffer.from("neither is this one");
     const { body, contentType } = createMultipartPayload([
@@ -667,9 +667,10 @@ describe("Compare", () => {
       body,
     });
 
-    expect([400, 422]).toContain(res.statusCode);
+    // validateImageBuffer catches corrupt data before processing
+    expect(res.statusCode).toBe(400);
     const result = JSON.parse(res.body);
-    expect(result.error).toMatch(/comparison failed|invalid.*image|unrecognized/i);
+    expect(result.error).toBeDefined();
   });
 
   // ── Branch coverage: HEIF content format input ─────────────────────

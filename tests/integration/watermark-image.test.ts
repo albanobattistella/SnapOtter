@@ -210,8 +210,8 @@ describe("watermark-image", () => {
 
   // ── Branch coverage: lines 164-168 (processing failure) ───────────
 
-  it("returns 422 when processing fails on corrupted main image", async () => {
-    // A buffer that passes multipart parsing but fails Sharp processing
+  it("returns 400 when main image is corrupted", async () => {
+    // A buffer that passes multipart parsing but fails image validation
     const corruptedBuffer = Buffer.alloc(100, 0xff);
     const { body, contentType } = createMultipartPayload([
       { name: "file", filename: "main.png", contentType: "image/png", content: corruptedBuffer },
@@ -226,7 +226,9 @@ describe("watermark-image", () => {
       body,
     });
 
-    expect([400, 422]).toContain(res.statusCode);
+    expect(res.statusCode).toBe(400);
+    const json = JSON.parse(res.body);
+    expect(json.error).toContain("Invalid image");
   });
 
   // ── HEIC input handling ───────────────────────────────────────────
@@ -336,7 +338,7 @@ describe("watermark-image", () => {
 
   // ── Corrupted watermark image (processing failure) ───────────────
 
-  it("returns 422 when watermark image is corrupted", async () => {
+  it("returns 400 when watermark image is corrupted", async () => {
     const corruptedWm = Buffer.alloc(50, 0xaa);
     const { body, contentType } = createMultipartPayload([
       { name: "file", filename: "main.png", contentType: "image/png", content: PNG },
@@ -351,7 +353,9 @@ describe("watermark-image", () => {
       body,
     });
 
-    expect([400, 422]).toContain(res.statusCode);
+    expect(res.statusCode).toBe(400);
+    const json = JSON.parse(res.body);
+    expect(json.error).toContain("Invalid watermark image");
   });
 
   // ── Tiny 1x1 main image ──────────────────────────────────────────

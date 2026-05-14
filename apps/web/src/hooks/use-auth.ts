@@ -12,6 +12,10 @@ interface AuthState {
   analyticsEnabled: boolean | null;
   analyticsConsentShownAt: number | null;
   analyticsConsentRemindAt: number | null;
+  oidcEnabled: boolean;
+  oidcProviderName: string | null;
+  loginMethod: string | null;
+  hasLocalPassword: boolean;
 }
 
 const USER_PERMISSIONS = [
@@ -33,6 +37,10 @@ export function useAuth() {
     analyticsEnabled: null,
     analyticsConsentShownAt: null,
     analyticsConsentRemindAt: null,
+    oidcEnabled: false,
+    oidcProviderName: null,
+    loginMethod: null,
+    hasLocalPassword: false,
   });
 
   useEffect(() => {
@@ -55,27 +63,16 @@ export function useAuth() {
               analyticsEnabled: null,
               analyticsConsentShownAt: null,
               analyticsConsentRemindAt: null,
+              oidcEnabled: false,
+              oidcProviderName: null,
+              loginMethod: null,
+              hasLocalPassword: false,
             });
           return;
         }
 
-        const token = localStorage.getItem("snapotter-token");
-        if (!token) {
-          if (!cancelled)
-            setState({
-              loading: false,
-              authEnabled: true,
-              isAuthenticated: false,
-              mustChangePassword: false,
-              role: null,
-              permissions: [],
-              analyticsEnabled: null,
-              analyticsConsentShownAt: null,
-              analyticsConsentRemindAt: null,
-            });
-          return;
-        }
-
+        // Always call /api/auth/session -- OIDC users have a session cookie
+        // (not a localStorage token), so we cannot skip based on token absence.
         const sessionRes = await fetch("/api/auth/session", {
           headers: formatHeaders(),
         });
@@ -94,6 +91,10 @@ export function useAuth() {
               analyticsEnabled: session.user?.analyticsEnabled ?? null,
               analyticsConsentShownAt: session.user?.analyticsConsentShownAt ?? null,
               analyticsConsentRemindAt: session.user?.analyticsConsentRemindAt ?? null,
+              oidcEnabled: config.oidcEnabled ?? false,
+              oidcProviderName: config.oidcProviderName ?? null,
+              loginMethod: session.user?.loginMethod ?? null,
+              hasLocalPassword: session.user?.hasLocalPassword ?? false,
             });
         } else {
           localStorage.removeItem("snapotter-token");
@@ -108,6 +109,10 @@ export function useAuth() {
               analyticsEnabled: null,
               analyticsConsentShownAt: null,
               analyticsConsentRemindAt: null,
+              oidcEnabled: config.oidcEnabled ?? false,
+              oidcProviderName: config.oidcProviderName ?? null,
+              loginMethod: null,
+              hasLocalPassword: false,
             });
         }
       } catch {

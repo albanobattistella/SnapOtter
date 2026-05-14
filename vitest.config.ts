@@ -23,8 +23,6 @@ export default defineConfig({
     globals: true,
     testTimeout: 30_000,
     hookTimeout: 30_000,
-    // Run all test files in a single forked process so integration tests share
-    // the same SQLite connection and avoid SQLITE_BUSY races on WAL setup.
     pool: "forks",
     poolOptions: {
       forks: {
@@ -44,8 +42,6 @@ export default defineConfig({
       ".worktrees/**",
       ".claude/**",
     ],
-    // These env vars are injected into process.env BEFORE test files are
-    // imported, ensuring apps/api/src/config.ts picks them up correctly.
     env: {
       AUTH_ENABLED: "true",
       DEFAULT_USERNAME: "admin",
@@ -91,6 +87,7 @@ export default defineConfig({
       "@snapotter/image-engine": path.resolve(__dirname, "packages/image-engine/src/index.ts"),
       "@snapotter/shared": path.resolve(__dirname, "packages/shared/src/index.ts"),
       fastify: path.join(apiNodeModules, "fastify"),
+      "@fastify/cookie": path.join(apiNodeModules, "@fastify/cookie"),
       "@fastify/cors": path.join(apiNodeModules, "@fastify/cors"),
       "@fastify/multipart": path.join(apiNodeModules, "@fastify/multipart"),
       "@fastify/rate-limit": path.join(apiNodeModules, "@fastify/rate-limit"),
@@ -107,6 +104,7 @@ export default defineConfig({
       jsqr: path.join(apiNodeModules, "jsqr"),
       pdfkit: path.join(apiNodeModules, "pdfkit"),
       sharp: path.join(apiNodeModules, "sharp"),
+      "openid-client": path.join(apiNodeModules, "openid-client"),
       "opentype.js": path.join(apiNodeModules, "opentype.js"),
       react: path.join(webNodeModules, "react"),
       "react-dom": path.join(webNodeModules, "react-dom"),

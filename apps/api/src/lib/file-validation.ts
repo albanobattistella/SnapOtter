@@ -229,10 +229,12 @@ export async function validateImageBuffer(
     detectedFormat = "tga";
   }
 
-  // SVGZ: gzip-compressed SVG, detected by extension + gzip magic
+  // SVGZ: gzip-compressed SVG, detected by extension + gzip magic.
+  // Return early because Sharp cannot read compressed SVGZ directly;
+  // decompression happens later in the route pipeline.
   if (!detectedFormat && ext === "svgz") {
     if (buffer.length >= 2 && buffer[0] === 0x1f && buffer[1] === 0x8b) {
-      detectedFormat = "svg";
+      return { valid: true, format: "svg", width: 0, height: 0 };
     }
   }
 

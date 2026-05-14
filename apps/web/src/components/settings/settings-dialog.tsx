@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { apiDelete, apiGet, apiPost, apiPut, clearToken } from "@/lib/api";
+import { apiDelete, apiGet, apiPost, apiPut, clearToken, formatHeaders } from "@/lib/api";
 import { cn, copyToClipboard } from "@/lib/utils";
 import { useAnalyticsStore } from "@/stores/analytics-store";
 import { useSettingsStore } from "@/stores/settings-store";
@@ -194,6 +194,10 @@ interface UserEntry {
   username: string;
   role: string;
   team: string;
+  authProvider?: string;
+  email?: string;
+  hasLocalPassword?: boolean;
+  hasOidcLink?: boolean;
   createdAt: string;
 }
 
@@ -235,10 +239,25 @@ function GeneralSection() {
     ]).finally(() => setLoading(false));
   }, []);
 
-  const handleLogout = () => {
-    clearToken();
-    localStorage.removeItem("snapotter-username");
-    window.location.href = "/login";
+  const handleLogout = async () => {
+    try {
+      const res = await fetch("/api/auth/logout", {
+        method: "POST",
+        headers: formatHeaders(),
+      });
+      const data = await res.json().catch(() => ({}));
+      clearToken();
+      localStorage.removeItem("snapotter-username");
+      if (data.logoutUrl) {
+        window.location.href = data.logoutUrl;
+      } else {
+        window.location.href = "/login";
+      }
+    } catch {
+      clearToken();
+      localStorage.removeItem("snapotter-username");
+      window.location.href = "/login";
+    }
   };
 
   const handleSave = useCallback(async () => {
@@ -1078,6 +1097,16 @@ function PeopleSection() {
                   {u.username.charAt(0).toUpperCase()}
                 </div>
                 <span className="text-sm font-medium text-foreground truncate">{u.username}</span>
+                {u.hasOidcLink && u.hasLocalPassword !== false && (
+                  <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                    Local + OIDC
+                  </span>
+                )}
+                {u.hasOidcLink && u.hasLocalPassword === false && (
+                  <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                    OIDC
+                  </span>
+                )}
               </div>
 
               {/* Role badge */}
@@ -1130,18 +1159,20 @@ function PeopleSection() {
                       <Pencil className="h-3.5 w-3.5" />
                       Edit Role / Team
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setResetPasswordUser(u);
-                        setResetPassword("");
-                        setOpenMenuId(null);
-                      }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5" />
-                      Reset Password
-                    </button>
+                    {u.hasLocalPassword !== false && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setResetPasswordUser(u);
+                          setResetPassword("");
+                          setOpenMenuId(null);
+                        }}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                        Reset Password
+                      </button>
+                    )}
                     <div className="border-t border-border my-1" />
                     <button
                       type="button"

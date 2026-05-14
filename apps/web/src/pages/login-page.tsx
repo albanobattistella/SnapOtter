@@ -1,4 +1,6 @@
 import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
 import { setToken } from "@/lib/api";
 
 const phrases = [
@@ -60,10 +62,27 @@ function RotatingPhrase() {
 }
 
 export function LoginPage() {
+  const { oidcEnabled, oidcProviderName } = useAuth();
+  const [searchParams] = useSearchParams();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const oidcError = searchParams.get("error");
+    if (oidcError) {
+      const errorMessages: Record<string, string> = {
+        oidc_auth_failed: "Authentication failed. Please try again.",
+        oidc_provider_unreachable: "Could not reach the identity provider. Please try again later.",
+        oidc_session_expired: "Login session expired. Please try again.",
+        oidc_user_not_authorized:
+          "Your account is not authorized to access this application. Contact your administrator.",
+        oidc_user_limit_reached: "User limit reached. Contact your administrator.",
+      };
+      setError(errorMessages[oidcError] || "Authentication error. Please try again.");
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -149,6 +168,21 @@ export function LoginPage() {
               {loading ? "Logging in..." : "Login"}
             </button>
           </form>
+          {oidcEnabled && (
+            <>
+              <div className="flex items-center gap-3 my-4">
+                <div className="flex-1 border-t border-border" />
+                <span className="text-sm text-muted-foreground">or</span>
+                <div className="flex-1 border-t border-border" />
+              </div>
+              <a
+                href="/api/auth/oidc/login"
+                className="w-full py-3 rounded-lg bg-secondary text-secondary-foreground font-medium hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2"
+              >
+                Sign in with {oidcProviderName || "SSO"}
+              </a>
+            </>
+          )}
         </div>
       </div>
       <div className="hidden lg:flex flex-1 bg-primary/90 items-center justify-center p-12 text-white rounded-l-3xl">
