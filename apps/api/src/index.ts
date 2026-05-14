@@ -156,9 +156,9 @@ app.addHook("onSend", async (_request, reply) => {
 });
 
 // Always register rate-limit plugin so per-route limits (login brute-force protection) work.
-// RATE_LIMIT_PER_MIN defaults to 300 via env schema; floor at 1 as a safety net.
+// RATE_LIMIT_PER_MIN=0 means no global limit (per-route limits still apply).
 await app.register(rateLimit, {
-  max: Math.max(env.RATE_LIMIT_PER_MIN, 1),
+  max: env.RATE_LIMIT_PER_MIN > 0 ? env.RATE_LIMIT_PER_MIN : 50_000,
   timeWindow: "1 minute",
   allowList: (request) => !request.url.startsWith("/api/"),
 });
