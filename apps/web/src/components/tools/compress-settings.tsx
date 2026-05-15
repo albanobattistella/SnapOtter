@@ -1,7 +1,9 @@
 import { Download, Minus, Plus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 type CompressMode = "quality" | "targetSize";
@@ -13,6 +15,7 @@ export interface CompressControlsProps {
 }
 
 export function CompressControls({ settings: initialSettings, onChange }: CompressControlsProps) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<CompressMode>("targetSize");
   const [quality, setQuality] = useState(75);
   const [targetSizeValue, setTargetSizeValue] = useState("");
@@ -47,21 +50,23 @@ export function CompressControls({ settings: initialSettings, onChange }: Compre
     <div className="space-y-4">
       {/* Mode toggle */}
       <div>
-        <p className="text-sm font-medium text-muted-foreground">Compression Mode</p>
+        <p className="text-sm font-medium text-muted-foreground">
+          {t.toolSettings.compress.compressionMode}
+        </p>
         <div className="flex gap-1 mt-1">
           <button
             type="button"
             onClick={() => setMode("targetSize")}
             className={`flex-1 text-xs py-1.5 rounded ${mode === "targetSize" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
           >
-            Target Size
+            {t.toolSettings.compress.targetSize}
           </button>
           <button
             type="button"
             onClick={() => setMode("quality")}
             className={`flex-1 text-xs py-1.5 rounded ${mode === "quality" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
           >
-            Quality
+            {t.toolSettings.compress.quality}
           </button>
         </div>
       </div>
@@ -69,7 +74,7 @@ export function CompressControls({ settings: initialSettings, onChange }: Compre
       {mode === "targetSize" ? (
         <div>
           <label htmlFor="compress-target-size" className="text-xs text-muted-foreground">
-            Target Size
+            {t.toolSettings.compress.targetSize}
           </label>
           <div className="flex gap-1.5 mt-0.5">
             <input
@@ -127,8 +132,8 @@ export function CompressControls({ settings: initialSettings, onChange }: Compre
             </button>
           </div>
           <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
-            <span>Smallest file</span>
-            <span>Best quality</span>
+            <span>{t.toolSettings.compress.smallestFile}</span>
+            <span>{t.toolSettings.compress.bestQuality}</span>
           </div>
         </div>
       )}
@@ -137,6 +142,7 @@ export function CompressControls({ settings: initialSettings, onChange }: Compre
 }
 
 export function CompressSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const {
     processFiles,
@@ -178,10 +184,17 @@ export function CompressSettings() {
       {/* Size info */}
       {originalSize != null && processedSize != null && (
         <div className="text-xs text-muted-foreground space-y-0.5">
-          <p>Original: {(originalSize / 1024).toFixed(1)} KB</p>
-          <p>Processed: {(processedSize / 1024).toFixed(1)} KB</p>
+          <p>
+            {format(t.toolSettings.compress.original, { size: (originalSize / 1024).toFixed(1) })}
+          </p>
+          <p>
+            {format(t.toolSettings.compress.processed, { size: (processedSize / 1024).toFixed(1) })}
+          </p>
           <p className="font-medium text-foreground">
-            Saved: {originalSize > 0 ? ((1 - processedSize / originalSize) * 100).toFixed(1) : "0"}%
+            {format(t.toolSettings.compress.saved, {
+              percent:
+                originalSize > 0 ? ((1 - processedSize / originalSize) * 100).toFixed(1) : "0",
+            })}
           </p>
         </div>
       )}
@@ -191,7 +204,7 @@ export function CompressSettings() {
         <ProgressCard
           active={processing}
           phase={progress.phase === "idle" ? "uploading" : progress.phase}
-          label="Compressing"
+          label={t.toolSettings.compress.progressLabel}
           stage={progress.stage}
           percent={progress.percent}
           elapsed={progress.elapsed}
@@ -203,7 +216,9 @@ export function CompressSettings() {
           disabled={!hasFile || !canProcess || processing}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {files.length > 1 ? `Compress (${files.length} files)` : "Compress"}
+          {files.length > 1
+            ? format(t.toolSettings.compress.submitBatch, { count: files.length })
+            : t.toolSettings.compress.submit}
         </button>
       )}
 
@@ -216,7 +231,7 @@ export function CompressSettings() {
           className="w-full py-2.5 rounded-lg border border-primary text-primary font-medium flex items-center justify-center gap-2 hover:bg-primary/5"
         >
           <Download className="h-4 w-4" />
-          Download
+          {t.common.download}
         </a>
       )}
     </form>

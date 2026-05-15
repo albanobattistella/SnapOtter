@@ -1,8 +1,11 @@
 import { Download, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
 import { formatHeaders } from "@/lib/api";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 export function BulkRenameSettings() {
+  const { t } = useTranslation();
   const { files, processing, error, setProcessing, setError } = useFileStore();
   const [pattern, setPattern] = useState("image-{{index}}");
   const [startIndex, setStartIndex] = useState(1);
@@ -69,7 +72,7 @@ export function BulkRenameSettings() {
     <div className="space-y-4">
       <div>
         <label htmlFor="bulk-rename-pattern" className="text-xs text-muted-foreground">
-          Pattern
+          {t.toolSettings["bulk-rename"].pattern}
         </label>
         <input
           id="bulk-rename-pattern"
@@ -85,7 +88,7 @@ export function BulkRenameSettings() {
 
       <div>
         <label htmlFor="bulk-rename-start-index" className="text-xs text-muted-foreground">
-          Start Index
+          {t.toolSettings["bulk-rename"].startIndex}
         </label>
         <input
           id="bulk-rename-start-index"
@@ -99,7 +102,7 @@ export function BulkRenameSettings() {
 
       {previewNames.length > 0 && (
         <div>
-          <p className="text-xs text-muted-foreground">Preview</p>
+          <p className="text-xs text-muted-foreground">{t.toolSettings["bulk-rename"].preview}</p>
           <div className="mt-1 space-y-0.5">
             {previewNames.map((name) => (
               <div
@@ -126,12 +129,14 @@ export function BulkRenameSettings() {
         className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
         {processing && <Loader2 className="h-4 w-4 animate-spin" />}
-        {processing ? "Renaming..." : `Rename ${files.length} Files`}
+        {processing
+          ? t.toolSettings["bulk-rename"].renaming
+          : format(t.toolSettings["bulk-rename"].submit, { count: files.length })}
       </button>
 
       {downloadReady && (
         <p className="text-xs text-green-600 flex items-center gap-1">
-          <Download className="h-3 w-3" /> ZIP downloaded successfully
+          <Download className="h-3 w-3" /> {t.toolSettings["bulk-rename"].zipDownloaded}
         </p>
       )}
     </div>

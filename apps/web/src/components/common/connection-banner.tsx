@@ -1,7 +1,9 @@
 import { CheckCircle2, Loader2, WifiOff } from "lucide-react";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useConnectionStore } from "@/stores/connection-store";
 
 export function ConnectionBanner() {
+  const { t } = useTranslation();
   const status = useConnectionStore((s) => s.status);
 
   if (status === "connected") return null;
@@ -11,19 +13,19 @@ export function ConnectionBanner() {
       bg: "bg-amber-500 dark:bg-amber-600",
       text: "text-amber-950 dark:text-amber-50",
       icon: <Loader2 className="h-4 w-4 animate-spin" />,
-      message: "Reconnecting to server\u2026",
+      message: t.errors.reconnecting,
     },
     offline: {
       bg: "bg-amber-500 dark:bg-amber-600",
       text: "text-amber-950 dark:text-amber-50",
       icon: <WifiOff className="h-4 w-4" />,
-      message: "You\u2019re offline",
+      message: t.errors.offline,
     },
     reconnected: {
       bg: "bg-emerald-500 dark:bg-emerald-600",
       text: "text-emerald-950 dark:text-emerald-50",
       icon: <CheckCircle2 className="h-4 w-4" />,
-      message: "Connected",
+      message: t.errors.connected,
     },
   }[status];
 

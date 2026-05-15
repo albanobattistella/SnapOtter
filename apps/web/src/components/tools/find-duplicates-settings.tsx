@@ -1,5 +1,6 @@
 import { Download, FolderArchive, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
 import { formatHeaders } from "@/lib/api";
 import { formatFileSize } from "@/lib/download";
 import type { DuplicateResult } from "@/stores/duplicate-store";
@@ -15,6 +16,7 @@ const PRESET_DESCRIPTIONS: Record<Preset, string> = {
 };
 
 export function FindDuplicatesSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const {
     results,

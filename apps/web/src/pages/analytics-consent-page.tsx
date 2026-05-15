@@ -1,12 +1,11 @@
-import { en } from "@snapotter/shared";
 import { Shield } from "lucide-react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useAnalyticsStore } from "@/stores/analytics-store";
 
-const t = en.analytics;
-
 export function AnalyticsConsentPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { config, configLoaded, fetchConfig, acceptAnalytics, declineAnalytics, remindLater } =
     useAnalyticsStore();
@@ -49,11 +48,15 @@ export function AnalyticsConsentPage() {
         </div>
 
         <div className="space-y-3 text-center">
-          <h1 className="text-lg font-semibold text-foreground">{t.consentTitle}</h1>
-          <p className="text-sm leading-relaxed text-muted-foreground">{t.consentDescription}</p>
+          <h1 className="text-lg font-semibold text-foreground">{t.analytics.consentTitle}</h1>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {t.analytics.consentDescription}
+          </p>
         </div>
 
-        <p className="text-center text-xs text-muted-foreground/60">{t.consentChangeable}</p>
+        <p className="text-center text-xs text-muted-foreground/60">
+          {t.analytics.consentChangeable}
+        </p>
 
         <div className="flex gap-2.5">
           <button
@@ -61,14 +64,14 @@ export function AnalyticsConsentPage() {
             onClick={handleAccept}
             className="flex-1 rounded-[10px] bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            {t.acceptButton}
+            {t.analytics.acceptButton}
           </button>
           <button
             type="button"
             onClick={handleDecline}
             className="flex-1 rounded-[10px] border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
           >
-            {t.declineButton}
+            {t.analytics.declineButton}
           </button>
         </div>
       </div>

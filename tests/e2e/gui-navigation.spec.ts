@@ -892,13 +892,13 @@ test.describe("Routing Edge Cases", () => {
     await page.goto("/privacy");
 
     await expect(page.getByRole("heading", { name: "Privacy Policy" })).toBeVisible();
-    await expect(page.getByText("Back to app")).toBeVisible();
+    await expect(page.getByText("Back")).toBeVisible();
   });
 
-  test("/privacy Back to app link navigates home", async ({ loggedInPage: page }) => {
+  test("/privacy Back link navigates home", async ({ loggedInPage: page }) => {
     await page.goto("/privacy");
 
-    await page.getByText("Back to app").click();
+    await page.getByText("Back").click();
     await expect(page).toHaveURL("/");
   });
 

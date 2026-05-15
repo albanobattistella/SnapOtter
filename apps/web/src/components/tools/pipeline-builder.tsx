@@ -16,7 +16,9 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { TOOLS } from "@snapotter/shared";
 import { FileImage, GripVertical, X } from "lucide-react";
+import { useTranslation } from "@/contexts/i18n-context";
 import { ICON_MAP } from "@/lib/icon-map";
+import { getToolName } from "@/lib/tool-i18n";
 import { cn } from "@/lib/utils";
 import type { PipelineStep } from "@/stores/pipeline-store";
 import { PipelineStepSettings } from "./pipeline-step-settings";
@@ -52,6 +54,7 @@ function SortableStep({
   onRemove,
   onUpdateSettings,
 }: SortableStepProps) {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: step.id,
   });
@@ -85,7 +88,7 @@ function SortableStep({
           role="button"
           tabIndex={0}
           onClick={onToggle}
-          className="flex items-center gap-2 p-3 w-full text-left cursor-pointer"
+          className="flex items-center gap-2 p-3 w-full text-start cursor-pointer"
         >
           {/* Drag handle */}
           {
@@ -108,11 +111,13 @@ function SortableStep({
 
           {/* Tool icon + name */}
           <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-          <span className="text-sm font-medium text-foreground">{tool.name}</span>
+          <span className="text-sm font-medium text-foreground">
+            {getToolName(t, tool.id, tool.name)}
+          </span>
 
           {/* Settings summary when collapsed */}
           {!isExpanded && summary && (
-            <span className="text-xs text-muted-foreground truncate ml-1">{summary}</span>
+            <span className="text-xs text-muted-foreground truncate ms-1">{summary}</span>
           )}
 
           <span className="flex-1" />

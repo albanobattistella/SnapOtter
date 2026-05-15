@@ -1,6 +1,7 @@
 import { Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
 import { useFileStore } from "@/stores/file-store";
 
@@ -10,6 +11,7 @@ export interface BlurFacesControlsProps {
 }
 
 export function BlurFacesControls({ settings: initialSettings, onChange }: BlurFacesControlsProps) {
+  const { t } = useTranslation();
   const [blurRadius, setBlurRadius] = useState(30);
   const [sensitivity, setSensitivity] = useState(50);
 
@@ -37,7 +39,7 @@ export function BlurFacesControls({ settings: initialSettings, onChange }: BlurF
       <div>
         <div className="flex justify-between items-center">
           <label htmlFor="blur-faces-blur-radius" className="text-xs text-muted-foreground">
-            Blur Radius
+            {t.toolSettings["blur-faces"].blurRadius}
           </label>
           <span className="text-xs font-mono text-foreground">{blurRadius}</span>
         </div>
@@ -51,8 +53,8 @@ export function BlurFacesControls({ settings: initialSettings, onChange }: BlurF
           className="w-full mt-1"
         />
         <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
-          <span>Light</span>
-          <span>Heavy</span>
+          <span>{t.toolSettings["blur-faces"].blurLight}</span>
+          <span>{t.toolSettings["blur-faces"].blurHeavy}</span>
         </div>
       </div>
 
@@ -60,7 +62,7 @@ export function BlurFacesControls({ settings: initialSettings, onChange }: BlurF
       <div>
         <div className="flex justify-between items-center">
           <label htmlFor="blur-faces-sensitivity" className="text-xs text-muted-foreground">
-            Detection Sensitivity
+            {t.toolSettings["blur-faces"].detectionSensitivity}
           </label>
           <span className="text-xs font-mono text-foreground">{sensitivity}%</span>
         </div>
@@ -74,8 +76,8 @@ export function BlurFacesControls({ settings: initialSettings, onChange }: BlurF
           className="w-full mt-1"
         />
         <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
-          <span>More faces</span>
-          <span>Fewer faces</span>
+          <span>{t.toolSettings["blur-faces"].moreFaces}</span>
+          <span>{t.toolSettings["blur-faces"].fewerFaces}</span>
         </div>
       </div>
     </div>
@@ -83,6 +85,7 @@ export function BlurFacesControls({ settings: initialSettings, onChange }: BlurF
 }
 
 export function BlurFacesSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const {
     processFiles,
@@ -128,7 +131,7 @@ export function BlurFacesSettings() {
         <ProgressCard
           active={processing}
           phase={progress.phase === "idle" ? "uploading" : progress.phase}
-          label="Blurring faces"
+          label={t.toolSettings["blur-faces"].progressLabel}
           percent={progress.percent}
           elapsed={progress.elapsed}
         />
@@ -153,7 +156,7 @@ export function BlurFacesSettings() {
           className="w-full py-2.5 rounded-lg border border-primary text-primary font-medium flex items-center justify-center gap-2 hover:bg-primary/5"
         >
           <Download className="h-4 w-4" />
-          Download
+          {t.common.download}
         </a>
       )}
     </div>

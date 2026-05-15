@@ -1,7 +1,9 @@
 import { ChevronDown, ChevronRight, Droplets } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 type OutputFormat = "png" | "webp";
@@ -17,6 +19,7 @@ export function TransparencyFixerControls({
   settings: _settings,
   onChange,
 }: TransparencyFixerControlsProps) {
+  const { t } = useTranslation();
   const [defringe, setDefringe] = useState(30);
   const [outputFormat, setOutputFormat] = useState<OutputFormat>("png");
   const [removeWatermark, setRemoveWatermark] = useState(false);
@@ -76,12 +79,12 @@ export function TransparencyFixerControls({
       </button>
 
       {advancedOpen && (
-        <div className="space-y-3 pl-1">
+        <div className="space-y-3 ps-1">
           {/* Defringe slider */}
           <div>
             <div className="flex justify-between items-center">
               <span className="text-xs text-muted-foreground">Defringe</span>
-              <span className="text-xs font-mono text-foreground tabular-nums w-8 text-right">
+              <span className="text-xs font-mono text-foreground tabular-nums w-8 text-end">
                 {defringe}
               </span>
             </div>
@@ -118,6 +121,7 @@ export function TransparencyFixerControls({
 // ── Standalone tool page wrapper ──
 
 export function TransparencyFixerSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const { processFiles, processAllFiles, processing, error, progress } =
     useToolProcessor("transparency-fixer");
@@ -160,7 +164,9 @@ export function TransparencyFixerSettings() {
           disabled={!hasFile || processing}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {hasMultiple ? `Fix Transparency (${files.length} files)` : "Fix Transparency"}
+          {hasMultiple
+            ? format(t.toolSettings["transparency-fixer"].submitBatch, { count: files.length })
+            : t.toolSettings["transparency-fixer"].submit}
         </button>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { FileImage, ImageUp, Upload } from "lucide-react";
 import { type DragEvent, useCallback, useEffect, useState } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useUrlImport } from "@/hooks/use-url-import";
 import { cn } from "@/lib/utils";
 import { UrlImportModal } from "./url-import-modal";
@@ -111,6 +112,7 @@ export function Dropzone({
   fileFilter,
   acceptDescription,
 }: DropzoneProps) {
+  const { t } = useTranslation();
   const checkFile = fileFilter ?? isImageFile;
   const resolvedAccept = expandAccept(accept);
   const [isDragging, setIsDragging] = useState(false);
@@ -129,13 +131,13 @@ export function Dropzone({
     const file = await importSingleUrl(url);
     if (file) {
       if (!checkFile(file)) {
-        setUrlError(acceptDescription ?? "This file type is not supported by this tool");
+        setUrlError(acceptDescription ?? t.dropzone.unsupportedFileType);
       } else {
         setUrlInput("");
         onUrlImport?.(file);
       }
     } else {
-      setUrlError("Could not fetch image from URL");
+      setUrlError(t.dropzone.urlFetchFailed);
     }
     setUrlLoading(false);
   }, [urlInput, importSingleUrl, onUrlImport, checkFile, acceptDescription]);
@@ -235,11 +237,9 @@ export function Dropzone({
         </div>
         <div className="flex flex-col items-center gap-1.5">
           <p className={cn("font-medium", compact ? "text-sm" : "text-base", "text-foreground/80")}>
-            Drop your images here
+            {t.dropzone.dropPrompt}
           </p>
-          <p className="text-sm text-muted-foreground/70">
-            click anywhere to browse, or paste from clipboard
-          </p>
+          <p className="text-sm text-muted-foreground/70">{t.dropzone.browseOrPaste}</p>
         </div>
         <button
           type="button"
@@ -254,10 +254,10 @@ export function Dropzone({
           )}
         >
           <Upload className="h-4 w-4" />
-          Upload
+          {t.common.upload}
         </button>
         <p className="text-xs text-muted-foreground/50">
-          {acceptDescription ?? "PNG, JPG, WebP, HEIC, RAW, PSD, and 65+ formats"}
+          {acceptDescription ?? t.dropzone.defaultFormats}
         </p>
 
         {!compact && onUrlImport && (
@@ -282,7 +282,7 @@ export function Dropzone({
                   }
                 }}
                 onClick={(e) => e.stopPropagation()}
-                placeholder="Paste image URL..."
+                placeholder={t.dropzone.urlPlaceholder}
                 className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
                 disabled={urlLoading}
               />
@@ -307,7 +307,7 @@ export function Dropzone({
               }}
               className="text-xs text-primary hover:text-primary/80"
             >
-              Import multiple URLs...
+              {t.dropzone.importMultipleUrls}
             </button>
           </>
         )}
@@ -325,7 +325,7 @@ export function Dropzone({
                   className="flex items-center justify-between text-xs text-muted-foreground px-2 py-0.5"
                 >
                   <span className="truncate">{f.name}</span>
-                  <span className="shrink-0 ml-2">{(f.size / 1024).toFixed(0)} KB</span>
+                  <span className="shrink-0 ms-2">{(f.size / 1024).toFixed(0)} KB</span>
                 </div>
               ))}
             </div>

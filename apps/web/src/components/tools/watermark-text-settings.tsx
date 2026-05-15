@@ -1,7 +1,9 @@
 import { Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 type Position = "center" | "top-left" | "top-right" | "bottom-left" | "bottom-right" | "tiled";
@@ -149,6 +151,7 @@ export function WatermarkTextControls({
 }
 
 export function WatermarkTextSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const {
     processFiles,
@@ -190,7 +193,7 @@ export function WatermarkTextSettings() {
         <ProgressCard
           active={processing}
           phase={progress.phase === "idle" ? "uploading" : progress.phase}
-          label="Adding watermark"
+          label={t.toolSettings["watermark-text"].progressLabel}
           stage={progress.stage}
           percent={progress.percent}
           elapsed={progress.elapsed}

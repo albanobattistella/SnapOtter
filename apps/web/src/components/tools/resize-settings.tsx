@@ -2,17 +2,15 @@ import { SOCIAL_MEDIA_PRESETS } from "@snapotter/shared";
 import { Download, Info, Link, Unlink } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 type ResizeTab = "presets" | "custom" | "scale" | "content-aware";
 type FitMode = "cover" | "contain" | "fill";
 
-const FIT_LABELS: Record<FitMode, string> = {
-  cover: "Crop to fit",
-  contain: "Fit inside",
-  fill: "Stretch",
-};
+const FIT_MODES: FitMode[] = ["cover", "contain", "fill"];
 
 // Group presets by platform
 const platforms = [...new Set(SOCIAL_MEDIA_PRESETS.map((p) => p.platform))];
@@ -34,6 +32,7 @@ export interface ResizeControlsProps {
 }
 
 export function ResizeControls({ settings: initialSettings, onChange }: ResizeControlsProps) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<ResizeTab>("custom");
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [width, setWidth] = useState<string>("");
@@ -127,7 +126,7 @@ export function ResizeControls({ settings: initialSettings, onChange }: ResizeCo
     <div className="flex items-end gap-2">
       <div className="flex-1">
         <label htmlFor="resize-width" className="text-xs text-muted-foreground">
-          Width (px)
+          {t.toolSettings.resize.widthPx}
         </label>
         <input
           id="resize-width"
@@ -149,7 +148,7 @@ export function ResizeControls({ settings: initialSettings, onChange }: ResizeCo
       </button>
       <div className="flex-1">
         <label htmlFor="resize-height" className="text-xs text-muted-foreground">
-          Height (px)
+          {t.toolSettings.resize.heightPx}
         </label>
         <input
           id="resize-height"
@@ -172,8 +171,8 @@ export function ResizeControls({ settings: initialSettings, onChange }: ResizeCo
         onChange={(e) => setWithoutEnlargement(e.target.checked)}
         className="rounded"
       />
-      <span>Limit to original size</span>
-      <HintIcon text="If your image is already smaller than the target, keep it as-is instead of scaling it up" />
+      <span>{t.toolSettings.resize.limitToOriginalSize}</span>
+      <HintIcon text={t.toolSettings.resize.limitToOriginalSizeHint} />
     </label>
   );
 
@@ -183,27 +182,27 @@ export function ResizeControls({ settings: initialSettings, onChange }: ResizeCo
       <div>
         <div className="flex gap-1">
           <button type="button" onClick={() => setTab("custom")} className={tabClass("custom")}>
-            Custom Size
+            {t.toolSettings.resize.customSize}
           </button>
           <button type="button" onClick={() => setTab("scale")} className={tabClass("scale")}>
-            Scale
+            {t.toolSettings.resize.scale}
           </button>
           <button type="button" onClick={() => setTab("presets")} className={tabClass("presets")}>
-            Presets
+            {t.toolSettings.resize.presets}
           </button>
           <button
             type="button"
             onClick={() => setTab("content-aware")}
             className={tabClass("content-aware")}
           >
-            Content-Aware
+            {t.toolSettings.resize.contentAware}
           </button>
         </div>
       </div>
 
       {/* Presets tab */}
       {tab === "presets" && (
-        <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+        <div className="space-y-3 max-h-[50vh] overflow-y-auto pe-1">
           {platforms.map((platform) => (
             <div key={platform}>
               <p className="text-xs font-medium text-muted-foreground mb-1.5">{platform}</p>
@@ -244,16 +243,20 @@ export function ResizeControls({ settings: initialSettings, onChange }: ResizeCo
 
           {/* Fit mode */}
           <div>
-            <p className="text-xs text-muted-foreground">Fit Mode</p>
+            <p className="text-xs text-muted-foreground">{t.toolSettings.resize.fitMode}</p>
             <div className="flex gap-1 mt-1">
-              {(Object.keys(FIT_LABELS) as FitMode[]).map((f) => (
+              {FIT_MODES.map((f) => (
                 <button
                   key={f}
                   type="button"
                   onClick={() => setFit(f)}
                   className={`flex-1 text-xs py-1.5 rounded ${fit === f ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
                 >
-                  {FIT_LABELS[f]}
+                  {f === "cover"
+                    ? t.toolSettings.resize.cropToFit
+                    : f === "contain"
+                      ? t.toolSettings.resize.fitInside
+                      : t.toolSettings.resize.stretch}
                 </button>
               ))}
             </div>
@@ -311,7 +314,7 @@ export function ResizeControls({ settings: initialSettings, onChange }: ResizeCo
               onChange={(e) => setSquareMode(e.target.checked)}
               className="rounded"
             />
-            Resize to square
+            {t.toolSettings.resize.resizeToSquare}
           </label>
 
           {/* Face protection */}
@@ -322,7 +325,7 @@ export function ResizeControls({ settings: initialSettings, onChange }: ResizeCo
               onChange={(e) => setProtectFaces(e.target.checked)}
               className="rounded"
             />
-            Protect faces
+            {t.toolSettings.resize.protectFaces}
           </label>
 
           {/* Blur radius */}
@@ -369,6 +372,7 @@ export function ResizeControls({ settings: initialSettings, onChange }: ResizeCo
 }
 
 export function ResizeSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const standardResize = useToolProcessor("resize");
   const contentAwareResize = useToolProcessor("content-aware-resize");
@@ -420,7 +424,7 @@ export function ResizeSettings() {
         <ProgressCard
           active={processing}
           phase={progress.phase === "idle" ? "uploading" : progress.phase}
-          label="Resizing"
+          label={t.toolSettings.resize.progressLabel}
           stage={progress.stage}
           percent={progress.percent}
           elapsed={progress.elapsed}
@@ -432,7 +436,9 @@ export function ResizeSettings() {
           disabled={!canProcess}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {files.length > 1 ? `Resize (${files.length} files)` : "Resize"}
+          {files.length > 1
+            ? format(t.toolSettings.resize.submitBatch, { count: files.length })
+            : t.toolSettings.resize.submit}
         </button>
       )}
 
@@ -445,7 +451,7 @@ export function ResizeSettings() {
           className="w-full py-2.5 rounded-lg border border-primary text-primary font-medium flex items-center justify-center gap-2 hover:bg-primary/5"
         >
           <Download className="h-4 w-4" />
-          Download
+          {t.common.download}
         </a>
       )}
     </form>

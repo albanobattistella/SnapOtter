@@ -1,7 +1,9 @@
 import { Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 const QUICK_SCALES = [2, 3, 4, 6, 8];
@@ -29,6 +31,7 @@ export interface UpscaleControlsProps {
 }
 
 export function UpscaleControls({ settings: initialSettings, onChange }: UpscaleControlsProps) {
+  const { t } = useTranslation();
   const [scale, setScale] = useState(2);
   const [model, setModel] = useState<"auto" | "realesrgan" | "lanczos">("auto");
   const [faceEnhance, setFaceEnhance] = useState(false);
@@ -70,7 +73,9 @@ export function UpscaleControls({ settings: initialSettings, onChange }: Upscale
       {/* Scale factor */}
       <div>
         <div className="flex justify-between items-center">
-          <p className="text-sm font-medium text-muted-foreground">Scale Factor</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            {t.toolSettings.upscale.scaleFactor}
+          </p>
           <span className="text-sm font-mono font-medium">{scale}x</span>
         </div>
         <div className="flex gap-1 mt-1.5">
@@ -130,14 +135,16 @@ export function UpscaleControls({ settings: initialSettings, onChange }: Upscale
             onChange={(e) => setFaceEnhance(e.target.checked)}
             className="rounded border-border"
           />
-          <span className="text-sm text-foreground">Enhance faces</span>
+          <span className="text-sm text-foreground">{t.toolSettings.upscale.enhanceFaces}</span>
         </label>
       )}
 
       {/* Noise Reduction */}
       <div>
         <div className="flex justify-between items-center">
-          <p className="text-sm font-medium text-muted-foreground">Noise Reduction</p>
+          <p className="text-sm font-medium text-muted-foreground">
+            {t.toolSettings.upscale.noiseReduction}
+          </p>
           <span className="text-sm font-mono font-medium">
             {denoise === 0 ? "Off" : denoise.toFixed(1)}
           </span>
@@ -198,6 +205,7 @@ export function UpscaleControls({ settings: initialSettings, onChange }: Upscale
 }
 
 export function UpscaleSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const {
     processFiles,
@@ -242,7 +250,7 @@ export function UpscaleSettings() {
         <ProgressCard
           active={processing}
           phase={progress.phase === "idle" ? "uploading" : progress.phase}
-          label={hasMultiple ? `Upscaling ${files.length} images` : "Upscaling image"}
+          label={t.toolSettings.upscale.progressLabel}
           percent={progress.percent}
           elapsed={progress.elapsed}
         />
@@ -255,8 +263,11 @@ export function UpscaleSettings() {
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {hasMultiple
-            ? `Upscale ${(settings.scale as number) ?? 2}x (${files.length} files)`
-            : `Upscale ${(settings.scale as number) ?? 2}x`}
+            ? format(t.toolSettings.upscale.submitBatch, {
+                scale: (settings.scale as number) ?? 2,
+                count: files.length,
+              })
+            : format(t.toolSettings.upscale.submit, { scale: (settings.scale as number) ?? 2 })}
         </button>
       )}
 

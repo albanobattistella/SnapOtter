@@ -31,7 +31,7 @@ export function EditorStatusBar() {
             const val = Number.parseFloat(e.target.value);
             if (!Number.isNaN(val) && val > 0) setZoom(val / 100);
           }}
-          className="w-14 bg-transparent text-right text-xs border-none outline-none"
+          className="w-14 bg-transparent text-end text-xs border-none outline-none"
           min={0.01}
           max={6400}
           step={0.1}

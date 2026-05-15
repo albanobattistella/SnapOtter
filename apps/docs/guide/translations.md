@@ -1,78 +1,129 @@
 # Translation guide
 
-SnapOtter ships with English by default. The i18n system is designed so adding a new language is straightforward.
+SnapOtter ships with 21 languages out of the box. The i18n system uses a lightweight custom runtime with TypeScript-enforced locale completeness and dynamic code-splitting.
+
+## Supported languages
+
+| Code | Language | Native Name | Direction |
+|------|----------|-------------|-----------|
+| `en` | English | English | LTR |
+| `zh-CN` | Chinese (Simplified) | 简体中文 | LTR |
+| `zh-TW` | Chinese (Traditional) | 繁體中文 | LTR |
+| `ja` | Japanese | 日本語 | LTR |
+| `ko` | Korean | 한국어 | LTR |
+| `es` | Spanish | Español | LTR |
+| `fr` | French | Français | LTR |
+| `it` | Italian | Italiano | LTR |
+| `pt-BR` | Portuguese (Brazil) | Português (Brasil) | LTR |
+| `de` | German | Deutsch | LTR |
+| `nl` | Dutch | Nederlands | LTR |
+| `sv` | Swedish | Svenska | LTR |
+| `ru` | Russian | Русский | LTR |
+| `pl` | Polish | Polski | LTR |
+| `uk` | Ukrainian | Українська | LTR |
+| `ar` | Arabic | العربية | RTL |
+| `tr` | Turkish | Türkçe | LTR |
+| `hi` | Hindi | हिन्दी | LTR |
+| `vi` | Vietnamese | Tiếng Việt | LTR |
+| `id` | Indonesian | Bahasa Indonesia | LTR |
+| `th` | Thai | ไทย | LTR |
+
+## How language detection works
+
+SnapOtter uses a three-tier resolution order:
+
+1. **User preference** -- stored in `localStorage("snapotter-locale")` and synced to user settings when authenticated
+2. **Browser auto-detect** -- walks the `navigator.languages` array with BCP 47 prefix matching
+3. **Instance default** -- the admin's `DEFAULT_LOCALE` env var (fetched from `GET /api/v1/config/locale`)
+4. **English fallback** -- always available
+
+Users can change language from:
+- The **footer Globe selector** (desktop, always visible)
+- The **login page** language selector (pre-auth)
+- The **Settings > General** section (per-user preference)
+- The **mobile sidebar** language dropdown
+- The **Settings > System** section sets the instance-wide default (admin only)
 
 ## How translations work
 
-All UI strings live in `packages/shared/src/i18n/`. The reference file is `en.ts`, which exports a typed object with every string the app uses. Other languages are separate files (e.g., `de.ts`, `fr.ts`) that export the same shape.
+All UI strings live in `packages/shared/src/i18n/`. The reference file is `en.ts`, which exports a typed object with every string the app uses (~1500 keys). Other languages are separate files (e.g., `de.ts`, `fr.ts`) that export the same shape.
 
-The `TranslationKeys` type is derived from the English file, so TypeScript will catch any missing keys in any translation file.
+The `TranslationKeys` type uses `DeepStringRecord` to accept any string value while enforcing the key structure. TypeScript catches missing keys in any translation file at compile time.
+
+Only the active locale is loaded at runtime via dynamic `import()`, keeping the main bundle small.
+
+## Using translations in components
+
+```tsx
+import { useTranslation } from "@/contexts/i18n-context";
+import { format, plural } from "@/lib/format";
+
+function MyComponent() {
+  const { t, locale, setLocale } = useTranslation();
+  
+  return (
+    <div>
+      <h1>{t.common.settings}</h1>
+      <p>{format(t.settings.people.deleteConfirm, { username: "admin" })}</p>
+      <p>{plural(count, t.automate.fileCount, t.automate.fileCountPlural)}</p>
+    </div>
+  );
+}
+```
 
 ## Requesting a translation
 
-To request a new language or report a mistranslation, open a [GitHub Issue](https://github.com/snapotter-hq/snapotter/issues) with:
+To request a new language or report a mistranslation, open a [GitHub Issue](https://github.com/snapotter-hq/SnapOtter/issues) with:
 
 - The language name and locale code (e.g., German / `de`)
 - Any specific strings or sections you want translated
 - If you have a translation ready, paste the translated strings directly in the issue
 
-We do not accept pull requests. Submitting translations via issues is the right path.
-
 ## How to create a translation (for your own fork)
-
-If you are running a fork and want to add a language yourself:
 
 ### 1. Copy the reference file
 
 ```bash
-cp packages/shared/src/i18n/en.ts packages/shared/src/i18n/de.ts
+cp packages/shared/src/i18n/en.ts packages/shared/src/i18n/XX.ts
 ```
 
 ### 2. Translate the strings
 
-Open your new file and translate every string value. Keep the object structure and keys exactly the same - only change the values.
+Open your new file and translate every string value. Keep the object structure and keys exactly the same.
 
 ```ts
-// packages/shared/src/i18n/de.ts
-export const de = {
+import type { TranslationKeys } from "./en.js";
+
+export const xx: TranslationKeys = {
   common: {
-    upload: "Vom Computer hochladen",
-    process: "Verarbeiten",
-    download: "Herunterladen",
-    cancel: "Abbrechen",
+    upload: "Your translation here",
     // ... translate all entries
   },
-  tools: {
-    resize: {
-      name: "Grosse andern",
-      description: "Grosse nach Pixeln, Prozent oder Social-Media-Vorgaben andern",
-    },
-    // ... translate all tool entries
-  },
-  // ... translate all sections: settings, auth, pipeline, nav
+  // ... translate all sections
 } as const;
 ```
 
-Things to keep in mind:
+Rules:
+- Do not translate object keys, only string values
+- Keep `as const` at the end
+- Import `TranslationKeys` from `./en.js` and type your export
+- Keep `{variable}` placeholders exactly as-is
+- Arrays (`rotatingPhrases`, `progressMessages`) must have the same number of entries
+- Do not translate: SnapOtter, JPEG, PNG, WebP, EXIF, API, and other technical terms
 
-- Do not translate object keys, only values.
-- Keep the `as const` assertion at the end.
-- If a string is the same in your language (technical terms, proper nouns), leave the English value.
+### 3. Register the locale
 
-### 3. Export the new language
-
-Edit `packages/shared/src/i18n/index.ts` to include your language:
+Add your locale to `SUPPORTED_LOCALES` in `packages/shared/src/i18n/index.ts`:
 
 ```ts
-export type { TranslationKeys } from "./en.js";
-export { en } from "./en.js";
-export { de } from "./de.js";
+{ code: "xx", name: "Language Name", nativeName: "Native Name", dir: "ltr" },
 ```
 
 ### 4. Verify
 
 ```bash
 pnpm typecheck    # catches missing or mistyped keys
+pnpm lint         # formatting check
 pnpm dev          # manually verify strings appear correctly
 ```
 
@@ -80,13 +131,25 @@ pnpm dev          # manually verify strings appear correctly
 
 When adding a new feature that needs new UI strings:
 
-1. Add the new keys to `packages/shared/src/i18n/en.ts` first. This is the reference file.
-2. Run `pnpm typecheck` to make sure all language files still satisfy the `TranslationKeys` type.
+1. Add the new keys to `en.ts` first (the reference file)
+2. Run `pnpm typecheck` -- every locale file will fail if missing the new key
+3. Add the new key to all locale files (use English as a temporary fallback)
+
+## Configuration
+
+Set the instance default language via environment variable:
+
+```yaml
+DEFAULT_LOCALE: "de"  # German as the default for all new users
+```
 
 ## File reference
 
 | File | Purpose |
 |------|---------|
-| `packages/shared/src/i18n/en.ts` | English strings (reference locale) |
-| `packages/shared/src/i18n/index.ts` | Exports all locales and the `TranslationKeys` type |
-| `packages/shared/src/constants.ts` | Tool registry (names/descriptions also live here) |
+| `packages/shared/src/i18n/en.ts` | English strings (reference locale, ~1500 keys) |
+| `packages/shared/src/i18n/index.ts` | `SUPPORTED_LOCALES`, `loadTranslations()`, type exports |
+| `packages/shared/src/i18n/<locale>.ts` | Per-language translation files |
+| `apps/web/src/contexts/i18n-context.tsx` | `I18nProvider`, `useTranslation()` hook |
+| `apps/web/src/lib/format.ts` | `format()`, `plural()`, `formatFileSize()` helpers |
+| `apps/api/src/routes/config.ts` | `GET /api/v1/config/locale` public endpoint |

@@ -1,6 +1,15 @@
-import { FolderOpen, LayoutGrid, Menu, Settings as SettingsIcon, Workflow, X } from "lucide-react";
+import {
+  FolderOpen,
+  Globe,
+  LayoutGrid,
+  Menu,
+  Settings as SettingsIcon,
+  Workflow,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { useConnectionStore } from "@/stores/connection-store";
@@ -30,6 +39,7 @@ export function AppLayout({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const { t, locale, setLocale, supportedLocales } = useTranslation();
   const isMobile = useMobile();
   const connectionStatus = useConnectionStore((s) => s.status);
   const bannerVisible = connectionStatus !== "connected";
@@ -85,6 +95,22 @@ export function AppLayout({
               onNavClick={() => setMobileSidebarOpen(false)}
               expanded
             />
+            <div className="border-t border-border p-3">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Globe className="h-4 w-4" />
+                <select
+                  value={locale}
+                  onChange={(e) => setLocale(e.target.value)}
+                  className="flex-1 bg-transparent text-sm text-foreground border-none outline-none"
+                >
+                  {supportedLocales.map((l) => (
+                    <option key={l.code} value={l.code}>
+                      {l.nativeName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           </div>
         </>
       )}
@@ -122,7 +148,7 @@ export function AppLayout({
         {!isMobile && (
           <div className="text-center text-xs text-muted-foreground py-2 border-t border-border">
             <Link to="/privacy" className="hover:text-foreground transition-colors">
-              Privacy Policy
+              {t.common.privacyPolicy}
             </Link>
           </div>
         )}
@@ -133,17 +159,17 @@ export function AppLayout({
       {/* Mobile bottom nav */}
       {isMobile && (
         <nav className="fixed bottom-0 left-0 right-0 z-30 bg-background/95 backdrop-blur-sm border-t border-border flex items-center justify-around px-2 py-1.5">
-          <MobileNavItem icon={LayoutGrid} label="Tools" href="/" />
-          <MobileNavItem icon={Workflow} label="Automate" href="/automate" />
-          <MobileNavItem icon={ImageEditIcon} label="Editor" href="/editor" />
-          <MobileNavItem icon={FolderOpen} label="Files" href="/files" />
+          <MobileNavItem icon={LayoutGrid} label={t.appLayout.mobileNavTools} href="/" />
+          <MobileNavItem icon={Workflow} label={t.appLayout.mobileNavAutomate} href="/automate" />
+          <MobileNavItem icon={ImageEditIcon} label={t.appLayout.mobileNavEditor} href="/editor" />
+          <MobileNavItem icon={FolderOpen} label={t.appLayout.mobileNavFiles} href="/files" />
           <button
             type="button"
             onClick={() => setSettingsOpen(true)}
             className="flex flex-col items-center gap-0.5 px-3 py-1 text-muted-foreground"
           >
             <SettingsIcon className="h-5 w-5" />
-            <span className="text-[10px]">Settings</span>
+            <span className="text-[10px]">{t.appLayout.mobileNavSettings}</span>
           </button>
         </nav>
       )}

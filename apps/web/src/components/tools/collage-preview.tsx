@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { type DragEvent, useCallback, useEffect, useRef, useState } from "react";
 import { isImageFile } from "@/components/common/dropzone";
+import { useTranslation } from "@/contexts/i18n-context";
 import { type CollageTemplate, getTemplateById } from "@/lib/collage-templates";
 import { cn } from "@/lib/utils";
 import type { CellTransform, CollageImage } from "@/stores/collage-store";
@@ -50,6 +51,7 @@ function displayUrl(img: CollageImage): string {
 }
 
 export function CollagePreview() {
+  const { t } = useTranslation();
   const images = useCollageStore((s) => s.images);
   const templateId = useCollageStore((s) => s.templateId);
   const phase = useCollageStore((s) => s.phase);
@@ -570,7 +572,7 @@ function CollageCell({
             onChange={handleZoomSlider}
             className="flex-1 h-1.5 accent-white cursor-pointer"
           />
-          <span className="text-white text-xs font-mono w-8 text-right shrink-0">
+          <span className="text-white text-xs font-mono w-8 text-end shrink-0">
             {transform.zoom.toFixed(1)}x
           </span>
           <button

@@ -1,7 +1,9 @@
 import { Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 export interface TextOverlayControlsProps {
@@ -155,6 +157,7 @@ export function TextOverlayControls({
 }
 
 export function TextOverlaySettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const {
     processFiles,

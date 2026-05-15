@@ -190,7 +190,7 @@ export function HistoryPanel() {
         >
           <Redo2 size={14} />
         </button>
-        <span className="ml-auto text-[10px] text-muted-foreground">{pastLength} / 50</span>
+        <span className="ms-auto text-[10px] text-muted-foreground">{pastLength} / 50</span>
       </div>
 
       {/* History list */}
@@ -206,7 +206,7 @@ export function HistoryPanel() {
               type="button"
               onClick={() => jumpToState(entry)}
               className={cn(
-                "flex items-center gap-2 w-full px-2 py-1.5 text-left text-xs transition-colors",
+                "flex items-center gap-2 w-full px-2 py-1.5 text-start text-xs transition-colors",
                 isCurrent && "bg-primary/10 text-foreground font-medium",
                 isFuture && "text-muted-foreground/40",
                 !isCurrent &&

@@ -163,7 +163,7 @@ function TemplateGallery() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search templates..."
-            className={cn(INPUT_CLASS, "pl-8")}
+            className={cn(INPUT_CLASS, "ps-8")}
           />
         </div>
 
@@ -183,7 +183,7 @@ function TemplateGallery() {
               )}
             >
               {cat.label}
-              <span className="ml-1 opacity-70">({categoryCounts[cat.id] ?? 0})</span>
+              <span className="ms-1 opacity-70">({categoryCounts[cat.id] ?? 0})</span>
             </button>
           ))}
         </div>
@@ -281,7 +281,7 @@ function LayoutPicker() {
               data-testid={`layout-${key}`}
               onClick={() => setCustomLayout(key)}
               className={cn(
-                "relative rounded-lg border-2 p-3 transition-all text-left",
+                "relative rounded-lg border-2 p-3 transition-all text-start",
                 selected === key
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary/40",

@@ -2,7 +2,9 @@ import { ChevronDown, ChevronRight, Download } from "lucide-react";
 import type React from "react";
 import { useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 type Method = "adaptive" | "unsharp-mask" | "high-pass";
@@ -29,6 +31,7 @@ const PRESETS: Preset[] = [
 ];
 
 export function SharpeningSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const {
     processFiles,
@@ -103,7 +106,7 @@ export function SharpeningSettings() {
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       {/* Method selector */}
-      <SectionLabel>Method</SectionLabel>
+      <SectionLabel>{t.toolSettings.sharpening.method}</SectionLabel>
       <div className="grid grid-cols-3 gap-1">
         {(["adaptive", "unsharp-mask", "high-pass"] as const).map((m) => (
           <button
@@ -127,7 +130,7 @@ export function SharpeningSettings() {
       {/* Presets (adaptive only) */}
       {method === "adaptive" && (
         <>
-          <SectionLabel>Presets</SectionLabel>
+          <SectionLabel>{t.toolSettings.sharpening.presets}</SectionLabel>
           <div className="grid grid-cols-4 gap-1">
             {PRESETS.map((p) => (
               <button
@@ -199,7 +202,7 @@ export function SharpeningSettings() {
       </div>
 
       {/* Noise reduction */}
-      <SectionLabel>Noise Reduction</SectionLabel>
+      <SectionLabel>{t.toolSettings.sharpening.noiseReduction}</SectionLabel>
       <div className="grid grid-cols-4 gap-1">
         {(["off", "light", "medium", "strong"] as const).map((d) => (
           <button
@@ -228,7 +231,7 @@ export function SharpeningSettings() {
       </button>
 
       {advancedOpen && (
-        <div className="space-y-2 pl-1">
+        <div className="space-y-2 ps-1">
           {method === "adaptive" && (
             <>
               <SliderControl
@@ -359,7 +362,7 @@ export function SharpeningSettings() {
         <ProgressCard
           active={processing}
           phase={progress.phase === "idle" ? "uploading" : progress.phase}
-          label="Sharpening"
+          label={t.toolSettings.sharpening.progressLabel}
           stage={progress.stage}
           percent={progress.percent}
           elapsed={progress.elapsed}
@@ -371,7 +374,9 @@ export function SharpeningSettings() {
           disabled={!hasFile || processing}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {files.length > 1 ? `Sharpen (${files.length} files)` : "Sharpen"}
+          {files.length > 1
+            ? format(t.toolSettings.sharpening.submitBatch, { count: files.length })
+            : t.toolSettings.sharpening.submit}
         </button>
       )}
 
@@ -424,9 +429,9 @@ function SliderControl({
       <div className="flex justify-between items-center">
         <label htmlFor={id} className={`text-xs ${color || "text-muted-foreground"}`}>
           {label}
-          {hint && <span className="text-[10px] text-muted-foreground/60 ml-1">({hint})</span>}
+          {hint && <span className="text-[10px] text-muted-foreground/60 ms-1">({hint})</span>}
         </label>
-        <span className="text-xs font-mono text-foreground tabular-nums w-10 text-right">
+        <span className="text-xs font-mono text-foreground tabular-nums w-10 text-end">
           {displayValue}
         </span>
       </div>

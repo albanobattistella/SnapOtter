@@ -11,7 +11,9 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 type EnhancementMode = "auto" | "portrait" | "landscape" | "low-light" | "food" | "document";
@@ -144,6 +146,7 @@ export function ImageEnhancementControls({
   onChange,
   onPreviewFilter,
 }: ImageEnhancementControlsProps) {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const [mode, setMode] = useState<EnhancementMode>("auto");
   const [intensity, setIntensity] = useState(50);
@@ -283,7 +286,7 @@ export function ImageEnhancementControls({
 
       {/* Mode selector */}
       <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-        Enhancement Mode
+        {t.toolSettings.imageEnhancement.enhancementMode}
       </p>
       <div className="grid grid-cols-3 gap-1">
         {MODES.map(({ value, label, icon: Icon }) => (
@@ -307,7 +310,7 @@ export function ImageEnhancementControls({
       <div className="pt-1">
         <div className="flex justify-between items-center">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-            Intensity
+            {t.toolSettings.imageEnhancement.intensity}
           </p>
           <span className="text-xs font-mono text-foreground tabular-nums">{intensity}%</span>
         </div>
@@ -326,7 +329,7 @@ export function ImageEnhancementControls({
         <div className="flex items-center gap-2">
           <Wand2 className="h-3.5 w-3.5 text-muted-foreground" />
           <div>
-            <p className="text-xs font-medium">Deep Enhance (AI)</p>
+            <p className="text-xs font-medium">{t.toolSettings.imageEnhancement.deepEnhance}</p>
             <p className="text-[10px] text-muted-foreground">
               Removes noise and artifacts using AI
             </p>
@@ -358,7 +361,7 @@ export function ImageEnhancementControls({
       {analysis && !analyzing && (
         <div className="space-y-2">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
-            Detected Issues
+            {t.toolSettings.imageEnhancement.detectedIssues}
           </p>
           {analysis.issues.length === 0 ? (
             <p className="text-xs text-muted-foreground">

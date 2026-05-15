@@ -1,7 +1,9 @@
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "@/contexts/i18n-context";
 
 export function PrivacyPolicyPage() {
+  const { t } = useTranslation();
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="max-w-2xl mx-auto px-6 py-12">
@@ -10,10 +12,10 @@ export function PrivacyPolicyPage() {
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to app
+          {t.common.back}
         </Link>
 
-        <h1 className="text-3xl font-bold mb-2">Privacy Policy</h1>
+        <h1 className="text-3xl font-bold mb-2">{t.common.privacyPolicy}</h1>
         <p className="text-sm text-muted-foreground mb-8">Last updated: April 22, 2026</p>
 
         <div className="space-y-6 text-sm leading-relaxed text-muted-foreground">
@@ -42,13 +44,13 @@ export function PrivacyPolicyPage() {
               SnapOtter includes optional, anonymous product analytics. When you choose to
               participate, the following is collected:
             </p>
-            <ul className="list-disc pl-5 mt-2 space-y-1">
+            <ul className="list-disc ps-5 mt-2 space-y-1">
               <li>Which tools you use (e.g., "crop tool used")</li>
               <li>Error reports without file data</li>
               <li>App version and performance metrics</li>
             </ul>
             <p className="mt-2 font-medium">What is never collected:</p>
-            <ul className="list-disc pl-5 mt-2 space-y-1">
+            <ul className="list-disc ps-5 mt-2 space-y-1">
               <li>Your images, PDFs, and files</li>
               <li>File names and contents</li>
               <li>Any personal information or IP addresses</li>

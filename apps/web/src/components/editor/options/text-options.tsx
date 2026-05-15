@@ -191,7 +191,7 @@ function FontDropdown({ value, onChange }: { value: string; onChange: (name: str
               key={name}
               onClick={() => handleSelect(name)}
               className={cn(
-                "w-full text-left px-3 py-1.5 text-sm hover:bg-muted transition-colors",
+                "w-full text-start px-3 py-1.5 text-sm hover:bg-muted transition-colors",
                 value === name && "bg-muted font-medium",
               )}
               style={{ fontFamily: name }}
@@ -212,7 +212,7 @@ function FontDropdown({ value, onChange }: { value: string; onChange: (name: str
               key={name}
               onClick={() => handleSelect(name)}
               className={cn(
-                "w-full text-left px-3 py-1.5 text-sm hover:bg-muted transition-colors",
+                "w-full text-start px-3 py-1.5 text-sm hover:bg-muted transition-colors",
                 value === name && "bg-muted font-medium",
               )}
               style={{ fontFamily: name }}

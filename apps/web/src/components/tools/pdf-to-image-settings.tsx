@@ -1,5 +1,7 @@
 import { Download, FileUp, Loader2, X } from "lucide-react";
 import { useCallback, useRef } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
+import { format } from "@/lib/format";
 import { usePdfToImageStore } from "@/stores/pdf-to-image-store";
 
 const FORMAT_OPTIONS = [
@@ -37,6 +39,7 @@ const COLOR_MODE_OPTIONS = [
 const LOSSY_FORMATS = ["jpg", "webp", "avif", "heic", "heif", "jxl"];
 
 export function PdfToImageSettings() {
+  const { t } = useTranslation();
   const store = usePdfToImageStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -79,7 +82,7 @@ export function PdfToImageSettings() {
           className="border-2 border-dashed border-border rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition-colors w-full"
         >
           <FileUp className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Drop a PDF here or click to select</p>
+          <p className="text-sm text-muted-foreground">{t.toolSettings["pdf-to-image"].dropPdf}</p>
           <input
             ref={fileInputRef}
             type="file"
@@ -115,7 +118,9 @@ export function PdfToImageSettings() {
 
       {/* Output Format - grid buttons */}
       <div>
-        <p className="text-xs text-muted-foreground mb-1.5">Output Format</p>
+        <p className="text-xs text-muted-foreground mb-1.5">
+          {t.toolSettings["pdf-to-image"].outputFormat}
+        </p>
         <div className="grid grid-cols-4 gap-1">
           {FORMAT_OPTIONS.map((opt) => (
             <button
@@ -138,7 +143,9 @@ export function PdfToImageSettings() {
       {isLossy && (
         <div>
           <div className="flex justify-between items-center">
-            <p className="text-xs text-muted-foreground">Quality</p>
+            <p className="text-xs text-muted-foreground">
+              {t.toolSettings["pdf-to-image"].quality}
+            </p>
             <span className="text-xs font-mono text-foreground">{store.quality}</span>
           </div>
           <input
@@ -154,7 +161,9 @@ export function PdfToImageSettings() {
 
       {/* DPI presets + custom */}
       <div>
-        <p className="text-xs text-muted-foreground mb-1.5">Resolution (DPI)</p>
+        <p className="text-xs text-muted-foreground mb-1.5">
+          {t.toolSettings["pdf-to-image"].resolutionDpi}
+        </p>
         <div className="grid grid-cols-5 gap-1">
           {DPI_PRESETS.map((opt) => (
             <button
@@ -204,7 +213,9 @@ export function PdfToImageSettings() {
 
       {/* Color Mode */}
       <div>
-        <p className="text-xs text-muted-foreground mb-1.5">Color Mode</p>
+        <p className="text-xs text-muted-foreground mb-1.5">
+          {t.toolSettings["pdf-to-image"].colorMode}
+        </p>
         <div className="grid grid-cols-3 gap-1">
           {COLOR_MODE_OPTIONS.map((opt) => (
             <button
@@ -226,7 +237,7 @@ export function PdfToImageSettings() {
       {/* Page range input */}
       <div>
         <label htmlFor="pdf-pages" className="text-xs text-muted-foreground">
-          Pages
+          {t.toolSettings["pdf-to-image"].pages}
         </label>
         <input
           id="pdf-pages"
@@ -256,7 +267,7 @@ export function PdfToImageSettings() {
       >
         {store.processing && <Loader2 className="h-4 w-4 animate-spin" />}
         {store.processing
-          ? "Converting..."
+          ? t.toolSettings["pdf-to-image"].converting
           : `Convert ${selectedCount} page${selectedCount !== 1 ? "s" : ""}`}
       </button>
 

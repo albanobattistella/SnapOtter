@@ -1,7 +1,9 @@
 import { Download } from "lucide-react";
 import { useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 const SIMULATION_TYPES = [
@@ -65,6 +67,7 @@ const SIMULATION_TYPES = [
 const TYPE_MAP = new Map(SIMULATION_TYPES.flatMap((g) => g.types.map((t) => [t.value, t])));
 
 export function ColorBlindnessSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const {
     processFiles,
@@ -95,7 +98,7 @@ export function ColorBlindnessSettings() {
     <div className="space-y-4">
       <div>
         <label htmlFor="cb-simulation-type" className="text-xs text-muted-foreground">
-          Simulation Type
+          {t.toolSettings["color-blindness"].simulationType}
         </label>
         <select
           id="cb-simulation-type"
@@ -131,7 +134,7 @@ export function ColorBlindnessSettings() {
         <ProgressCard
           active={processing}
           phase={progress.phase === "idle" ? "uploading" : progress.phase}
-          label="Simulating color blindness"
+          label={t.toolSettings["color-blindness"].progressLabel}
           stage={progress.stage}
           percent={progress.percent}
           elapsed={progress.elapsed}
@@ -144,7 +147,9 @@ export function ColorBlindnessSettings() {
           disabled={!hasFile || processing}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {files.length > 1 ? `Simulate (${files.length} files)` : "Simulate"}
+          {files.length > 1
+            ? format(t.toolSettings["color-blindness"].submitBatch, { count: files.length })
+            : t.toolSettings["color-blindness"].submit}
         </button>
       )}
 
@@ -156,7 +161,7 @@ export function ColorBlindnessSettings() {
           className="w-full py-2.5 rounded-lg border border-primary text-primary font-medium flex items-center justify-center gap-2 hover:bg-primary/5"
         >
           <Download className="h-4 w-4" />
-          Download
+          {t.common.download}
         </a>
       )}
     </div>

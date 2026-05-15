@@ -1,4 +1,4 @@
-import { APP_VERSION, CATEGORIES, TOOLS } from "@snapotter/shared";
+import { APP_VERSION, CATEGORIES, SUPPORTED_LOCALES, TOOLS } from "@snapotter/shared";
 import {
   Check,
   Copy,
@@ -27,8 +27,11 @@ import {
   X,
 } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useAuth } from "@/hooks/use-auth";
 import { apiDelete, apiGet, apiPost, apiPut, clearToken, formatHeaders } from "@/lib/api";
+import { format, plural } from "@/lib/format";
+import { getCategoryName, getToolDescription, getToolName } from "@/lib/tool-i18n";
 import { cn, copyToClipboard } from "@/lib/utils";
 import { useAnalyticsStore } from "@/stores/analytics-store";
 import { useSettingsStore } from "@/stores/settings-store";
@@ -62,24 +65,62 @@ interface NavItem {
   requiredPermission?: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { id: "general", label: "General", icon: Settings },
-  { id: "system", label: "System Settings", icon: Monitor, requiredPermission: "settings:write" },
-  { id: "security", label: "Security", icon: Shield },
-  { id: "people", label: "People", icon: Users, requiredPermission: "users:manage" },
-  { id: "teams", label: "Teams", icon: UsersRound, requiredPermission: "teams:manage" },
-  { id: "roles", label: "Roles", icon: Shield, requiredPermission: "users:manage" },
-  { id: "audit-log", label: "Audit Log", icon: FileText, requiredPermission: "audit:read" },
-  { id: "api-keys", label: "API Keys", icon: Key },
-  { id: "ai-features", label: "AI Features", icon: Sparkles, requiredPermission: "settings:write" },
-  { id: "tools", label: "Tools", icon: Wrench },
-  { id: "analytics", label: "Product Analytics", icon: Eye },
-  { id: "about", label: "About", icon: Info },
-];
+function useNavItems() {
+  const { t } = useTranslation();
+  return useMemo<NavItem[]>(
+    () => [
+      { id: "general", label: t.settings.nav.general, icon: Settings },
+      {
+        id: "system",
+        label: t.settings.nav.systemSettings,
+        icon: Monitor,
+        requiredPermission: "settings:write",
+      },
+      { id: "security", label: t.settings.nav.security, icon: Shield },
+      {
+        id: "people",
+        label: t.settings.nav.people,
+        icon: Users,
+        requiredPermission: "users:manage",
+      },
+      {
+        id: "teams",
+        label: t.settings.nav.teams,
+        icon: UsersRound,
+        requiredPermission: "teams:manage",
+      },
+      {
+        id: "roles",
+        label: t.settings.nav.roles,
+        icon: Shield,
+        requiredPermission: "users:manage",
+      },
+      {
+        id: "audit-log",
+        label: t.settings.nav.auditLog,
+        icon: FileText,
+        requiredPermission: "audit:read",
+      },
+      { id: "api-keys", label: t.settings.nav.apiKeys, icon: Key },
+      {
+        id: "ai-features",
+        label: t.settings.nav.aiFeatures,
+        icon: Sparkles,
+        requiredPermission: "settings:write",
+      },
+      { id: "tools", label: t.settings.nav.tools, icon: Wrench },
+      { id: "analytics", label: t.settings.nav.productAnalytics, icon: Eye },
+      { id: "about", label: t.settings.nav.about, icon: Info },
+    ],
+    [t],
+  );
+}
 
 export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   const [section, setSection] = useState<Section>("general");
   const { hasPermission } = useAuth();
+  const { t } = useTranslation();
+  const NAV_ITEMS = useNavItems();
 
   const visibleNavItems = NAV_ITEMS.filter(
     (item) => !item.requiredPermission || hasPermission(item.requiredPermission),
@@ -115,7 +156,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
         {/* Sidebar nav */}
         <div className="w-48 border-r border-border bg-muted/30 p-3 space-y-1 shrink-0">
           <div className="flex items-center justify-between mb-4 px-2">
-            <h2 className="text-sm font-semibold text-foreground">Settings</h2>
+            <h2 className="text-sm font-semibold text-foreground">{t.settings.heading}</h2>
           </div>
           {visibleNavItems.map((item) => (
             <button
@@ -211,6 +252,7 @@ interface TeamEntry {
 /* ────────────────────── General ────────────────────── */
 
 function GeneralSection() {
+  const { t, locale, setLocale, supportedLocales } = useTranslation();
   const { authEnabled } = useAuth();
   const [user, setUser] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -265,12 +307,12 @@ function GeneralSection() {
     setSaveMsg(null);
     try {
       await apiPut("/v1/settings", { defaultToolView });
-      setSaveMsg("Settings saved.");
+      setSaveMsg(t.settings.general.saveSuccess);
       useSettingsStore.setState({
         defaultToolView: defaultToolView as "sidebar" | "fullscreen",
       });
     } catch {
-      setSaveMsg("Failed to save settings.");
+      setSaveMsg(t.settings.general.saveFailed);
     } finally {
       setSaving(false);
       setTimeout(() => setSaveMsg(null), 3000);
@@ -283,8 +325,8 @@ function GeneralSection() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-foreground">General</h3>
-        <p className="text-sm text-muted-foreground mt-1">User preferences and display settings.</p>
+        <h3 className="text-lg font-semibold text-foreground">{t.settings.general.heading}</h3>
+        <p className="text-sm text-muted-foreground mt-1">{t.settings.general.description}</p>
       </div>
 
       {/* User info */}
@@ -298,7 +340,7 @@ function GeneralSection() {
             )}
           </div>
           <div>
-            <p className="font-medium text-foreground">{loading ? "Loading..." : username}</p>
+            <p className="font-medium text-foreground">{loading ? t.common.loading : username}</p>
             <p className="text-xs text-muted-foreground capitalize">{role}</p>
           </div>
         </div>
@@ -309,25 +351,47 @@ function GeneralSection() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
             <LogOut className="h-3.5 w-3.5" />
-            Log out
+            {t.settings.general.logOut}
           </button>
         )}
       </div>
 
       {/* Default view */}
-      <SettingRow label="Default Tool View" description="How tools are displayed on the home page">
+      <SettingRow
+        label={t.settings.general.defaultToolViewLabel}
+        description={t.settings.general.defaultToolViewDescription}
+      >
         <select
           value={defaultToolView}
           onChange={(e) => setDefaultToolView(e.target.value)}
           className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground"
         >
-          <option value="sidebar">Sidebar</option>
-          <option value="fullscreen">Fullscreen Grid</option>
+          <option value="sidebar">{t.settings.general.sidebarOption}</option>
+          <option value="fullscreen">{t.settings.general.fullscreenGridOption}</option>
         </select>
       </SettingRow>
 
-      {/* Version */}
-      <SettingRow label="App Version" description="Current version of SnapOtter">
+      <SettingRow
+        label={t.settings.system.languageLabel}
+        description={t.settings.system.languageDescription}
+      >
+        <select
+          value={locale}
+          onChange={(e) => setLocale(e.target.value)}
+          className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground"
+        >
+          {supportedLocales.map((l) => (
+            <option key={l.code} value={l.code}>
+              {l.nativeName}
+            </option>
+          ))}
+        </select>
+      </SettingRow>
+
+      <SettingRow
+        label={t.settings.general.appVersionLabel}
+        description={t.settings.general.appVersionDescription}
+      >
         <span className="text-sm font-mono text-muted-foreground">{APP_VERSION}</span>
       </SettingRow>
 
@@ -339,13 +403,13 @@ function GeneralSection() {
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
           {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          Save Settings
+          {t.settings.general.saveButton}
         </button>
         {saveMsg && (
           <span
             className={cn(
               "text-sm",
-              saveMsg.includes("Failed")
+              saveMsg === t.settings.general.saveFailed
                 ? "text-destructive"
                 : "text-green-600 dark:text-green-400",
             )}
@@ -361,6 +425,7 @@ function GeneralSection() {
 /* ────────────────────── System ────────────────────── */
 
 function SystemSection() {
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -394,14 +459,14 @@ function SystemSection() {
         const theme = settings.defaultTheme as "light" | "dark" | "system";
         useThemeStore.getState().setTheme(theme);
       }
-      setSaveMsg("Settings saved.");
+      setSaveMsg(t.settings.system.saveSuccess);
     } catch {
-      setSaveMsg("Failed to save settings.");
+      setSaveMsg(t.settings.system.saveFailed);
     } finally {
       setSaving(false);
       setTimeout(() => setSaveMsg(null), 3000);
     }
-  }, [settings]);
+  }, [settings, t]);
 
   if (loading) {
     return (
@@ -414,11 +479,14 @@ function SystemSection() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-foreground">System Settings</h3>
-        <p className="text-sm text-muted-foreground mt-1">Server-side configuration and limits.</p>
+        <h3 className="text-lg font-semibold text-foreground">{t.settings.system.heading}</h3>
+        <p className="text-sm text-muted-foreground mt-1">{t.settings.system.description}</p>
       </div>
 
-      <SettingRow label="File Upload Limit (MB)" description="Maximum file size per upload">
+      <SettingRow
+        label={t.settings.system.fileUploadLimitLabel}
+        description={t.settings.system.fileUploadLimitDescription}
+      >
         <input
           type="number"
           value={settings.fileUploadLimitMb || "100"}
@@ -428,31 +496,41 @@ function SystemSection() {
         />
       </SettingRow>
 
-      <SettingRow label="Default Theme" description="Theme applied for new sessions">
+      <SettingRow
+        label={t.settings.system.defaultThemeLabel}
+        description={t.settings.system.defaultThemeDescription}
+      >
         <select
           value={settings.defaultTheme || "system"}
           onChange={(e) => updateSetting("defaultTheme", e.target.value)}
           className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground"
         >
-          <option value="light">Light</option>
-          <option value="dark">Dark</option>
-          <option value="system">System</option>
+          <option value="light">{t.settings.system.lightOption}</option>
+          <option value="dark">{t.settings.system.darkOption}</option>
+          <option value="system">{t.settings.system.systemOption}</option>
         </select>
       </SettingRow>
 
-      <SettingRow label="Language" description="Language for the interface">
+      <SettingRow
+        label={t.settings.system.languageLabel}
+        description={t.settings.system.languageDescription}
+      >
         <select
           value={settings.defaultLocale || "en"}
           onChange={(e) => updateSetting("defaultLocale", e.target.value)}
           className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground"
         >
-          <option value="en">English</option>
+          {SUPPORTED_LOCALES.map((l) => (
+            <option key={l.code} value={l.code}>
+              {l.nativeName}
+            </option>
+          ))}
         </select>
       </SettingRow>
 
       <SettingRow
-        label="Login Attempt Limit"
-        description="Max failed login attempts per minute before lockout"
+        label={t.settings.system.loginAttemptLimitLabel}
+        description={t.settings.system.loginAttemptLimitDescription}
       >
         <input
           type="number"
@@ -465,11 +543,13 @@ function SystemSection() {
       </SettingRow>
 
       <div className="pt-4 border-t border-border">
-        <h4 className="text-sm font-semibold text-foreground mb-3">File Management</h4>
+        <h4 className="text-sm font-semibold text-foreground mb-3">
+          {t.settings.fileManagement.title}
+        </h4>
       </div>
       <SettingRow
-        label="Max File Age (hours)"
-        description="How long processed files are kept before automatic cleanup"
+        label={t.settings.fileManagement.maxAge}
+        description={t.settings.fileManagement.maxAgeDescription}
       >
         <input
           type="number"
@@ -480,8 +560,8 @@ function SystemSection() {
         />
       </SettingRow>
       <SettingRow
-        label="Startup Cleanup"
-        description="Clean up old temporary files when the server starts"
+        label={t.settings.fileManagement.startupCleanup}
+        description={t.settings.fileManagement.startupCleanupDescription}
       >
         <button
           type="button"
@@ -510,13 +590,13 @@ function SystemSection() {
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
           {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          Save Settings
+          {t.settings.system.saveButton}
         </button>
         {saveMsg && (
           <span
             className={cn(
               "text-sm",
-              saveMsg.includes("Failed")
+              saveMsg === t.settings.system.saveFailed
                 ? "text-destructive"
                 : "text-green-600 dark:text-green-400",
             )}
@@ -532,6 +612,7 @@ function SystemSection() {
 /* ────────────────────── Security ────────────────────── */
 
 function SecuritySection() {
+  const { t } = useTranslation();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -544,11 +625,11 @@ function SecuritySection() {
     async (e: React.FormEvent) => {
       e.preventDefault();
       if (newPassword !== confirmPassword) {
-        setMessage({ type: "error", text: "Passwords do not match" });
+        setMessage({ type: "error", text: t.settings.security.passwordsMismatch });
         return;
       }
       if (newPassword.length < 4) {
-        setMessage({ type: "error", text: "Password must be at least 4 characters" });
+        setMessage({ type: "error", text: t.settings.security.passwordTooShort });
         return;
       }
 
@@ -556,15 +637,15 @@ function SecuritySection() {
       setMessage(null);
       try {
         await apiPost("/auth/change-password", { currentPassword, newPassword });
-        setMessage({ type: "success", text: "Password changed successfully" });
+        setMessage({ type: "success", text: t.settings.security.changeSuccess });
         setCurrentPassword("");
         setNewPassword("");
         setConfirmPassword("");
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Failed to change password";
+        const msg = err instanceof Error ? err.message : t.settings.security.changeFailed;
         setMessage({
           type: "error",
-          text: msg.includes("401") ? "Current password is incorrect" : msg,
+          text: msg.includes("401") ? t.settings.security.currentPasswordIncorrect : msg,
         });
       } finally {
         setSubmitting(false);
@@ -576,12 +657,14 @@ function SecuritySection() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-foreground">Security</h3>
-        <p className="text-sm text-muted-foreground mt-1">Password and authentication settings.</p>
+        <h3 className="text-lg font-semibold text-foreground">{t.settings.security.heading}</h3>
+        <p className="text-sm text-muted-foreground mt-1">{t.settings.security.description}</p>
       </div>
 
       <form onSubmit={handleChangePassword} className="space-y-4">
-        <h4 className="text-sm font-medium text-foreground">Change Password</h4>
+        <h4 className="text-sm font-medium text-foreground">
+          {t.settings.security.changePasswordHeading}
+        </h4>
 
         <div className="space-y-3 max-w-sm">
           <div className="relative">
@@ -589,8 +672,8 @@ function SecuritySection() {
               type={showCurrent ? "text" : "password"}
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder="Current Password"
-              className="w-full px-3 py-2 pr-10 rounded-lg border border-border bg-background text-sm text-foreground"
+              placeholder={t.settings.security.currentPasswordPlaceholder}
+              className="w-full px-3 py-2 pe-10 rounded-lg border border-border bg-background text-sm text-foreground"
               required
             />
             <button
@@ -607,8 +690,8 @@ function SecuritySection() {
               type={showNew ? "text" : "password"}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="New Password"
-              className="w-full px-3 py-2 pr-10 rounded-lg border border-border bg-background text-sm text-foreground"
+              placeholder={t.settings.security.newPasswordPlaceholder}
+              className="w-full px-3 py-2 pe-10 rounded-lg border border-border bg-background text-sm text-foreground"
               required
             />
             <button
@@ -624,7 +707,7 @@ function SecuritySection() {
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Confirm New Password"
+            placeholder={t.settings.security.confirmPasswordPlaceholder}
             className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground"
             required
           />
@@ -648,15 +731,13 @@ function SecuritySection() {
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
             {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-            Change Password
+            {t.settings.security.changePasswordButton}
           </button>
         </div>
       </form>
 
       <div className="border-t border-border pt-4">
-        <p className="text-sm text-muted-foreground">
-          Login attempt limits can be configured in System Settings.
-        </p>
+        <p className="text-sm text-muted-foreground">{t.settings.security.loginAttemptLimitNote}</p>
       </div>
     </div>
   );
@@ -665,6 +746,7 @@ function SecuritySection() {
 /* ────────────────────── People ────────────────────── */
 
 function PeopleSection() {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<UserEntry[]>([]);
   const [maxUsers, setMaxUsers] = useState(5);
   const [loading, setLoading] = useState(true);
@@ -748,11 +830,13 @@ function PeopleSection() {
         setNewRole("user");
         setNewTeam("Default");
         setShowAddForm(false);
-        setActionMsg({ type: "success", text: "User created successfully" });
+        setActionMsg({ type: "success", text: t.settings.people.createSuccess });
         await loadUsers();
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Failed to create user";
-        setAddError(msg.includes("403") ? `User limit reached (${maxUsers} max)` : msg);
+        const msg = err instanceof Error ? err.message : t.settings.people.createFailed;
+        setAddError(
+          msg.includes("403") ? format(t.settings.people.userLimitReached, { max: maxUsers }) : msg,
+        );
       } finally {
         setAdding(false);
         setTimeout(() => setActionMsg(null), 3000);
@@ -763,13 +847,16 @@ function PeopleSection() {
 
   const handleDeleteUser = useCallback(
     async (id: string, username: string) => {
-      if (!confirm(`Delete user "${username}"? This cannot be undone.`)) return;
+      if (!confirm(format(t.settings.people.deleteConfirm, { username }))) return;
       try {
         await apiDelete(`/auth/users/${id}`);
-        setActionMsg({ type: "success", text: `User "${username}" deleted` });
+        setActionMsg({
+          type: "success",
+          text: format(t.settings.people.deleteSuccess, { username }),
+        });
         await loadUsers();
       } catch {
-        setActionMsg({ type: "error", text: "Failed to delete user" });
+        setActionMsg({ type: "error", text: t.settings.people.deleteFailed });
       }
       setOpenMenuId(null);
       setTimeout(() => setActionMsg(null), 3000);
@@ -787,13 +874,13 @@ function PeopleSection() {
           team: editTeam,
         });
         setEditingUser(null);
-        setActionMsg({ type: "success", text: "User updated" });
+        setActionMsg({ type: "success", text: t.settings.people.updateSuccess });
         await loadUsers();
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to update user";
         setActionMsg({
           type: "error",
-          text: msg.includes("400") ? "Cannot remove your own admin role" : msg,
+          text: msg.includes("400") ? t.settings.people.cannotRemoveOwnAdmin : msg,
         });
       }
       setTimeout(() => setActionMsg(null), 3000);
@@ -811,7 +898,7 @@ function PeopleSection() {
         });
         setResetPasswordUser(null);
         setResetPassword("");
-        setActionMsg({ type: "success", text: "Password reset successfully" });
+        setActionMsg({ type: "success", text: t.settings.people.resetSuccess });
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to reset password";
         setActionMsg({ type: "error", text: msg });
@@ -833,17 +920,19 @@ function PeopleSection() {
     <div className="space-y-5">
       {/* Header */}
       <div>
-        <h3 className="text-lg font-semibold text-foreground">People</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage workspace members and their permissions
-        </p>
+        <h3 className="text-lg font-semibold text-foreground">{t.settings.people.heading}</h3>
+        <p className="text-sm text-muted-foreground mt-1">{t.settings.people.description}</p>
       </div>
 
       {/* User count */}
       <p className="text-sm text-muted-foreground">
         {maxUsers > 0
-          ? `${users.length} / ${maxUsers} users`
-          : `${users.length} ${users.length === 1 ? "user" : "users"}`}
+          ? `${users.length} / ${maxUsers} ${plural(maxUsers, format(t.settings.people.userCount, { count: "" }), format(t.settings.people.userCountPlural, { count: "" })).trim()}`
+          : plural(
+              users.length,
+              format(t.settings.people.userCount, { count: users.length }),
+              format(t.settings.people.userCountPlural, { count: users.length }),
+            )}
       </p>
 
       {/* Action message */}
@@ -868,8 +957,8 @@ function PeopleSection() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search members..."
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground"
+            placeholder={t.settings.people.searchPlaceholder}
+            className="w-full ps-9 pe-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground"
           />
         </div>
         <button
@@ -885,10 +974,14 @@ function PeopleSection() {
               ? "bg-muted text-muted-foreground cursor-not-allowed"
               : "bg-primary text-primary-foreground hover:bg-primary/90",
           )}
-          title={atLimit ? `User limit reached (${maxUsers} max)` : "Add a new member"}
+          title={
+            atLimit
+              ? format(t.settings.people.userLimitReached, { max: maxUsers })
+              : t.settings.people.addMembersButton
+          }
         >
           <UserPlus className="h-4 w-4" />
-          Add Members
+          {t.settings.people.addMembersButton}
         </button>
       </div>
 
@@ -898,13 +991,15 @@ function PeopleSection() {
           onSubmit={handleAddUser}
           className="p-4 rounded-lg border border-border bg-muted/20 space-y-3"
         >
-          <h4 className="text-sm font-medium text-foreground">New Member</h4>
+          <h4 className="text-sm font-medium text-foreground">
+            {t.settings.people.newMemberHeading}
+          </h4>
           <div className="grid grid-cols-2 gap-3">
             <input
               type="text"
               value={newUsername}
               onChange={(e) => setNewUsername(e.target.value)}
-              placeholder="Username"
+              placeholder={t.settings.people.usernamePlaceholder}
               required
               className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground"
             />
@@ -912,7 +1007,7 @@ function PeopleSection() {
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Password"
+              placeholder={t.auth.password}
               required
               minLength={8}
               className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground"
@@ -926,14 +1021,14 @@ function PeopleSection() {
                 availableRoles.map((r) => (
                   <option key={r.name} value={r.name}>
                     {r.name.charAt(0).toUpperCase() + r.name.slice(1)} —{" "}
-                    {r.description || "No description"}
+                    {r.description || t.settings.people.noDescription}
                   </option>
                 ))
               ) : (
                 <>
-                  <option value="user">User — Basic tool access</option>
-                  <option value="editor">Editor — All files &amp; pipelines</option>
-                  <option value="admin">Admin — Full access</option>
+                  <option value="user">{t.settings.people.roleUserDescription}</option>
+                  <option value="editor">{t.settings.people.roleEditorDescription}</option>
+                  <option value="admin">{t.settings.people.roleAdminDescription}</option>
                 </>
               )}
             </select>
@@ -942,9 +1037,9 @@ function PeopleSection() {
               onChange={(e) => setNewTeam(e.target.value)}
               className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground"
             >
-              {teams.map((t) => (
-                <option key={t.id} value={t.name}>
-                  {t.name}
+              {teams.map((tm) => (
+                <option key={tm.id} value={tm.name}>
+                  {tm.name}
                 </option>
               ))}
               {teams.length === 0 && <option value="Default">Default</option>}
@@ -957,27 +1052,28 @@ function PeopleSection() {
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               {adding && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              Create
+              {t.common.create}
             </button>
             <button
               type="button"
               onClick={() => setShowAddForm(false)}
               className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted transition-colors"
             >
-              Cancel
+              {t.common.cancel}
             </button>
           </div>
           {addError && <p className="text-sm text-destructive">{addError}</p>}
         </form>
       )}
 
-      {/* Edit user modal */}
       {editingUser && (
         <form
           onSubmit={handleUpdateUser}
           className="p-4 rounded-lg border border-primary/30 bg-primary/5 space-y-3"
         >
-          <h4 className="text-sm font-medium text-foreground">Edit {editingUser.username}</h4>
+          <h4 className="text-sm font-medium text-foreground">
+            {t.common.edit} {editingUser.username}
+          </h4>
           <div className="flex flex-wrap gap-3">
             <select
               value={editRole}
@@ -988,14 +1084,14 @@ function PeopleSection() {
                 availableRoles.map((r) => (
                   <option key={r.name} value={r.name}>
                     {r.name.charAt(0).toUpperCase() + r.name.slice(1)} —{" "}
-                    {r.description || "No description"}
+                    {r.description || t.settings.people.noDescription}
                   </option>
                 ))
               ) : (
                 <>
-                  <option value="user">User — Basic tool access</option>
-                  <option value="editor">Editor — All files &amp; pipelines</option>
-                  <option value="admin">Admin — Full access</option>
+                  <option value="user">{t.settings.people.roleUserDescription}</option>
+                  <option value="editor">{t.settings.people.roleEditorDescription}</option>
+                  <option value="admin">{t.settings.people.roleAdminDescription}</option>
                 </>
               )}
             </select>
@@ -1004,9 +1100,9 @@ function PeopleSection() {
               onChange={(e) => setEditTeam(e.target.value)}
               className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground w-40"
             >
-              {teams.map((t) => (
-                <option key={t.id} value={t.name}>
-                  {t.name}
+              {teams.map((tm) => (
+                <option key={tm.id} value={tm.name}>
+                  {tm.name}
                 </option>
               ))}
               {teams.length === 0 && <option value="Default">Default</option>}
@@ -1015,34 +1111,35 @@ function PeopleSection() {
               type="submit"
               className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
             >
-              Save
+              {t.common.save}
             </button>
             <button
               type="button"
               onClick={() => setEditingUser(null)}
               className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted transition-colors"
             >
-              Cancel
+              {t.common.cancel}
             </button>
           </div>
         </form>
       )}
 
-      {/* Reset password modal */}
       {resetPasswordUser && (
         <form
           onSubmit={handleResetPassword}
           className="p-4 rounded-lg border border-orange-500/30 bg-orange-500/5 space-y-3"
         >
           <h4 className="text-sm font-medium text-foreground">
-            Reset password for {resetPasswordUser.username}
+            {format(t.settings.people.resetPasswordHeading, {
+              username: resetPasswordUser.username,
+            })}
           </h4>
           <div className="flex flex-wrap gap-3">
             <input
               type="password"
               value={resetPassword}
               onChange={(e) => setResetPassword(e.target.value)}
-              placeholder="New password (min 8 chars)"
+              placeholder={t.settings.people.newPasswordLabel}
               required
               minLength={8}
               className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground w-60"
@@ -1051,7 +1148,7 @@ function PeopleSection() {
               type="submit"
               className="px-4 py-2 rounded-lg bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors"
             >
-              Reset Password
+              {t.settings.people.resetPasswordButton}
             </button>
             <button
               type="button"
@@ -1061,12 +1158,10 @@ function PeopleSection() {
               }}
               className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted transition-colors"
             >
-              Cancel
+              {t.common.cancel}
             </button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            This will invalidate all sessions and API keys for this user.
-          </p>
+          <p className="text-xs text-muted-foreground">{t.settings.people.resetPasswordWarning}</p>
         </form>
       )}
 
@@ -1074,16 +1169,16 @@ function PeopleSection() {
       <div className="border border-border rounded-lg overflow-hidden">
         {/* Table header */}
         <div className="grid grid-cols-[1fr_100px_120px_60px] gap-2 px-4 py-2.5 bg-muted/40 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          <span>User</span>
-          <span>Role</span>
-          <span>Team</span>
+          <span>{t.settings.people.tableHeaderUser}</span>
+          <span>{t.settings.people.tableHeaderRole}</span>
+          <span>{t.settings.people.tableHeaderTeam}</span>
           <span />
         </div>
 
         {/* Table rows */}
         {filteredUsers.length === 0 ? (
           <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-            {search ? "No members match your search." : "No users found."}
+            {search ? t.settings.people.noSearchResults : t.settings.people.noUsersFound}
           </div>
         ) : (
           filteredUsers.map((u) => (
@@ -1098,13 +1193,13 @@ function PeopleSection() {
                 </div>
                 <span className="text-sm font-medium text-foreground truncate">{u.username}</span>
                 {u.hasOidcLink && u.hasLocalPassword !== false && (
-                  <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                    Local + OIDC
+                  <span className="ms-1.5 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                    {t.auth.methodBoth}
                   </span>
                 )}
                 {u.hasOidcLink && u.hasLocalPassword === false && (
-                  <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                    OIDC
+                  <span className="ms-1.5 text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                    {t.auth.methodOidc}
                   </span>
                 )}
               </div>
@@ -1157,7 +1252,7 @@ function PeopleSection() {
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                     >
                       <Pencil className="h-3.5 w-3.5" />
-                      Edit Role / Team
+                      {t.settings.people.editRoleTeamAction}
                     </button>
                     {u.hasLocalPassword !== false && (
                       <button
@@ -1170,7 +1265,7 @@ function PeopleSection() {
                         className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
-                        Reset Password
+                        {t.settings.people.resetPasswordAction}
                       </button>
                     )}
                     <div className="border-t border-border my-1" />
@@ -1180,7 +1275,7 @@ function PeopleSection() {
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                      Delete User
+                      {t.settings.people.deleteUserAction}
                     </button>
                   </div>
                 )}
@@ -1196,6 +1291,7 @@ function PeopleSection() {
 /* ────────────────────── API Keys ────────────────────── */
 
 function ApiKeysSection() {
+  const { t } = useTranslation();
   const [keys, setKeys] = useState<ApiKeyEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [newKey, setNewKey] = useState<string | null>(null);
@@ -1257,7 +1353,7 @@ function ApiKeysSection() {
 
   const deleteKey = useCallback(
     async (id: number) => {
-      if (!confirm("Delete this API key? Any integrations using it will stop working.")) return;
+      if (!confirm(t.settings.apiKeys.deleteConfirm)) return;
       try {
         await apiDelete(`/v1/api-keys/${id}`);
         await loadKeys();
@@ -1279,10 +1375,8 @@ function ApiKeysSection() {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-foreground">API Keys</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage API keys for programmatic access to SnapOtter.
-        </p>
+        <h3 className="text-lg font-semibold text-foreground">{t.settings.apiKeys.heading}</h3>
+        <p className="text-sm text-muted-foreground mt-1">{t.settings.apiKeys.description}</p>
       </div>
 
       {/* Generate new key */}
@@ -1291,7 +1385,7 @@ function ApiKeysSection() {
           type="text"
           value={keyName}
           onChange={(e) => setKeyName(e.target.value)}
-          placeholder="Key name (optional)"
+          placeholder={t.settings.apiKeys.keyNamePlaceholder}
           className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground w-48"
         />
         <button
@@ -1301,7 +1395,7 @@ function ApiKeysSection() {
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
           {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
-          Generate API Key
+          {t.settings.apiKeys.generateButton}
         </button>
       </div>
 
@@ -1312,7 +1406,9 @@ function ApiKeysSection() {
           onClick={() => setShowScoping(!showScoping)}
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
         >
-          {showScoping ? "Remove permission scoping" : "Restrict permissions (optional)"}
+          {showScoping
+            ? t.settings.apiKeys.removeScopingLabel
+            : t.settings.apiKeys.restrictPermissionsLabel}
         </button>
 
         {showScoping && (
@@ -1377,16 +1473,16 @@ function ApiKeysSection() {
               {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
             </button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Store this key securely. It will not be shown again.
-          </p>
+          <p className="text-xs text-muted-foreground">{t.settings.apiKeys.keyWarning}</p>
         </div>
       )}
 
       {/* Existing keys list */}
       {keys.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-sm font-medium text-foreground">Existing Keys</h4>
+          <h4 className="text-sm font-medium text-foreground">
+            {t.settings.apiKeys.existingKeysHeading}
+          </h4>
           {keys.map((k) => (
             <div
               key={k.id}
@@ -1422,9 +1518,7 @@ function ApiKeysSection() {
       )}
 
       {keys.length === 0 && !newKey && (
-        <p className="text-sm text-muted-foreground">
-          No API keys yet. Generate one to get started.
-        </p>
+        <p className="text-sm text-muted-foreground">{t.settings.apiKeys.emptyState}</p>
       )}
     </div>
   );
@@ -1433,6 +1527,7 @@ function ApiKeysSection() {
 /* ────────────────────── Teams ────────────────────── */
 
 function TeamsSection() {
+  const { t } = useTranslation();
   const [teams, setTeams] = useState<TeamEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -1477,13 +1572,13 @@ function TeamsSection() {
         await apiPost("/v1/teams", { name: newTeamName.trim() });
         setNewTeamName("");
         setShowCreateForm(false);
-        setActionMsg({ type: "success", text: "Team created successfully" });
+        setActionMsg({ type: "success", text: t.settings.teams.createSuccess });
         await loadTeams();
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to create team";
         setActionMsg({
           type: "error",
-          text: msg.includes("409") ? "A team with that name already exists" : msg,
+          text: msg.includes("409") ? t.settings.teams.duplicateName : msg,
         });
       } finally {
         setCreating(false);
@@ -1500,7 +1595,7 @@ function TeamsSection() {
         await apiPut(`/v1/teams/${id}`, { name: editingTeamName.trim() });
         setEditingTeamId(null);
         setEditingTeamName("");
-        setActionMsg({ type: "success", text: "Team renamed" });
+        setActionMsg({ type: "success", text: t.settings.teams.renameSuccess });
         await loadTeams();
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to rename team";
@@ -1513,7 +1608,7 @@ function TeamsSection() {
 
   const handleDelete = useCallback(
     async (id: number, name: string) => {
-      if (!confirm(`Delete team "${name}"? Members will be unassigned.`)) return;
+      if (!confirm(format(t.settings.teams.deleteConfirm, { name }))) return;
       try {
         await apiDelete(`/v1/teams/${id}`);
         setActionMsg({ type: "success", text: `Team "${name}" deleted` });
@@ -1522,7 +1617,7 @@ function TeamsSection() {
         const msg = err instanceof Error ? err.message : "Failed to delete team";
         setActionMsg({
           type: "error",
-          text: msg.includes("400") ? "Cannot delete the default team or a team with members" : msg,
+          text: msg.includes("400") ? t.settings.teams.cannotDeleteDefault : msg,
         });
       }
       setOpenMenuId(null);
@@ -1542,10 +1637,8 @@ function TeamsSection() {
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="text-lg font-semibold text-foreground">Teams</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          Organize members into teams for better management.
-        </p>
+        <h3 className="text-lg font-semibold text-foreground">{t.settings.teams.heading}</h3>
+        <p className="text-sm text-muted-foreground mt-1">{t.settings.teams.description}</p>
       </div>
 
       {actionMsg && (
@@ -1568,7 +1661,7 @@ function TeamsSection() {
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
         >
           <UsersRound className="h-4 w-4" />
-          Create New Team
+          {t.settings.teams.createButton}
         </button>
       </div>
 
@@ -1577,13 +1670,13 @@ function TeamsSection() {
           onSubmit={handleCreate}
           className="p-4 rounded-lg border border-border bg-muted/20 space-y-3"
         >
-          <h4 className="text-sm font-medium text-foreground">New Team</h4>
+          <h4 className="text-sm font-medium text-foreground">{t.settings.teams.newTeamHeading}</h4>
           <div className="flex items-center gap-3">
             <input
               type="text"
               value={newTeamName}
               onChange={(e) => setNewTeamName(e.target.value)}
-              placeholder="Team name"
+              placeholder={t.settings.teams.teamNamePlaceholder}
               required
               className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground flex-1"
             />
@@ -1593,14 +1686,14 @@ function TeamsSection() {
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
               {creating && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-              Create
+              {t.common.create}
             </button>
             <button
               type="button"
               onClick={() => setShowCreateForm(false)}
               className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted transition-colors"
             >
-              Cancel
+              {t.common.cancel}
             </button>
           </div>
         </form>
@@ -1608,21 +1701,23 @@ function TeamsSection() {
 
       <div className="border border-border rounded-lg overflow-hidden">
         <div className="grid grid-cols-[1fr_100px_60px] gap-2 px-4 py-2.5 bg-muted/40 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          <span>Team Name</span>
-          <span>Members</span>
+          <span>{t.settings.teams.tableHeaderTeamName}</span>
+          <span>{t.settings.teams.totalMembers}</span>
           <span />
         </div>
 
         {teams.length === 0 ? (
-          <div className="px-4 py-8 text-center text-sm text-muted-foreground">No teams found.</div>
+          <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+            {t.settings.teams.emptyState}
+          </div>
         ) : (
-          teams.map((t) => (
+          teams.map((tm) => (
             <div
-              key={t.id}
+              key={tm.id}
               className="grid grid-cols-[1fr_100px_60px] gap-2 items-center px-4 py-3 border-b border-border last:border-0 hover:bg-muted/20 transition-colors"
             >
               <div className="min-w-0">
-                {editingTeamId === t.id ? (
+                {editingTeamId === tm.id ? (
                   <div className="flex items-center gap-2">
                     <input
                       type="text"
@@ -1631,42 +1726,42 @@ function TeamsSection() {
                       className="px-2 py-1 rounded border border-border bg-background text-sm text-foreground w-40"
                       ref={(el) => el?.focus()}
                       onKeyDown={(e) => {
-                        if (e.key === "Enter") handleRename(t.id);
+                        if (e.key === "Enter") handleRename(tm.id);
                         if (e.key === "Escape") setEditingTeamId(null);
                       }}
                     />
                     <button
                       type="button"
-                      onClick={() => handleRename(t.id)}
+                      onClick={() => handleRename(tm.id)}
                       className="text-xs text-primary hover:underline"
                     >
-                      Save
+                      {t.common.save}
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingTeamId(null)}
                       className="text-xs text-muted-foreground hover:underline"
                     >
-                      Cancel
+                      {t.common.cancel}
                     </button>
                   </div>
                 ) : (
-                  <span className="text-sm font-medium text-foreground truncate">{t.name}</span>
+                  <span className="text-sm font-medium text-foreground truncate">{tm.name}</span>
                 )}
               </div>
-              <span className="text-sm text-muted-foreground">{t.memberCount}</span>
+              <span className="text-sm text-muted-foreground">{tm.memberCount}</span>
               <div className="flex items-center gap-1 justify-end relative">
                 <button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setOpenMenuId(openMenuId === t.id ? null : t.id);
+                    setOpenMenuId(openMenuId === tm.id ? null : tm.id);
                   }}
                   className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <MoreVertical className="h-4 w-4" />
                 </button>
-                {openMenuId === t.id && (
+                {openMenuId === tm.id && (
                   <div
                     role="menu"
                     className="absolute right-0 top-8 z-50 w-36 rounded-lg border border-border bg-background shadow-lg py-1"
@@ -1674,23 +1769,23 @@ function TeamsSection() {
                     <button
                       type="button"
                       onClick={() => {
-                        setEditingTeamId(t.id);
-                        setEditingTeamName(t.name);
+                        setEditingTeamId(tm.id);
+                        setEditingTeamName(tm.name);
                         setOpenMenuId(null);
                       }}
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                     >
                       <Pencil className="h-3.5 w-3.5" />
-                      Rename
+                      {t.settings.teams.renameAction}
                     </button>
                     <div className="border-t border-border my-1" />
                     <button
                       type="button"
-                      onClick={() => handleDelete(t.id, t.name)}
+                      onClick={() => handleDelete(tm.id, tm.name)}
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                      Delete
+                      {t.settings.teams.deleteAction}
                     </button>
                   </div>
                 )}
@@ -1720,6 +1815,7 @@ const PERMISSION_GROUPS = [
 ];
 
 function RolesSection() {
+  const { t } = useTranslation();
   const [roles, setRoles] = useState<RoleEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -1763,13 +1859,13 @@ function RolesSection() {
         setNewDescription("");
         setNewPermissions([]);
         setShowCreateForm(false);
-        setActionMsg({ type: "success", text: "Role created successfully" });
+        setActionMsg({ type: "success", text: t.settings.roles.createSuccess });
         await loadRoles();
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to create role";
         setActionMsg({
           type: "error",
-          text: msg.includes("409") ? "A role with that name already exists" : msg,
+          text: msg.includes("409") ? t.settings.roles.duplicateRoleError : msg,
         });
       }
       setTimeout(() => setActionMsg(null), 3000);
@@ -1788,7 +1884,7 @@ function RolesSection() {
           permissions: editPermissions,
         });
         setEditingRole(null);
-        setActionMsg({ type: "success", text: "Role updated" });
+        setActionMsg({ type: "success", text: t.settings.roles.updateSuccess });
         await loadRoles();
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Failed to update role";
@@ -1834,10 +1930,8 @@ function RolesSection() {
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="text-lg font-semibold text-foreground">Roles</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage roles and their permissions. Built-in roles cannot be modified.
-        </p>
+        <h3 className="text-lg font-semibold text-foreground">{t.settings.roles.heading}</h3>
+        <p className="text-sm text-muted-foreground mt-1">{t.settings.roles.description}</p>
       </div>
 
       {actionMsg && (
@@ -1860,7 +1954,7 @@ function RolesSection() {
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-4 w-4" />
-          Create Custom Role
+          {t.settings.roles.createButton}
         </button>
       </div>
 
@@ -1870,13 +1964,13 @@ function RolesSection() {
           onSubmit={handleCreate}
           className="p-4 rounded-lg border border-border bg-muted/20 space-y-3"
         >
-          <h4 className="text-sm font-medium text-foreground">New Role</h4>
+          <h4 className="text-sm font-medium text-foreground">{t.settings.roles.newRoleHeading}</h4>
           <div className="grid grid-cols-2 gap-3">
             <input
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="Role name"
+              placeholder={t.settings.roles.roleNamePlaceholder}
               required
               className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground"
             />
@@ -1884,12 +1978,14 @@ function RolesSection() {
               type="text"
               value={newDescription}
               onChange={(e) => setNewDescription(e.target.value)}
-              placeholder="Description (optional)"
+              placeholder={t.settings.roles.descriptionPlaceholder}
               className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground"
             />
           </div>
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2">Permissions</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2">
+              {t.settings.roles.permissionsLabel}
+            </p>
             <div className="grid grid-cols-2 gap-3">
               {PERMISSION_GROUPS.map((group) => (
                 <div key={group.label} className="space-y-1">
@@ -1938,13 +2034,15 @@ function RolesSection() {
           onSubmit={handleUpdate}
           className="p-4 rounded-lg border border-primary/30 bg-primary/5 space-y-3"
         >
-          <h4 className="text-sm font-medium text-foreground">Edit Role: {editingRole.name}</h4>
+          <h4 className="text-sm font-medium text-foreground">
+            {format(t.settings.roles.editHeading, { name: editingRole.name })}
+          </h4>
           <div className="grid grid-cols-2 gap-3">
             <input
               type="text"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              placeholder="Role name"
+              placeholder={t.settings.roles.roleNamePlaceholder}
               required
               className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground"
             />
@@ -1952,12 +2050,14 @@ function RolesSection() {
               type="text"
               value={editDescription}
               onChange={(e) => setEditDescription(e.target.value)}
-              placeholder="Description (optional)"
+              placeholder={t.settings.roles.descriptionPlaceholder}
               className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground"
             />
           </div>
           <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2">Permissions</p>
+            <p className="text-xs font-medium text-muted-foreground mb-2">
+              {t.settings.roles.permissionsLabel}
+            </p>
             <div className="grid grid-cols-2 gap-3">
               {PERMISSION_GROUPS.map((group) => (
                 <div key={group.label} className="space-y-1">
@@ -1998,7 +2098,9 @@ function RolesSection() {
       {/* Role cards */}
       <div className="space-y-3">
         {roles.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">No roles found.</p>
+          <p className="text-sm text-muted-foreground text-center py-8">
+            {t.settings.roles.emptyState}
+          </p>
         ) : (
           roles.map((role) => (
             <div
@@ -2013,7 +2115,7 @@ function RolesSection() {
                   {role.isBuiltin && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-muted text-xs font-medium text-muted-foreground">
                       <Lock className="h-3 w-3" />
-                      Built-in
+                      {t.settings.roles.builtInBadge}
                     </span>
                   )}
                   <span className="inline-block px-2 py-0.5 rounded-full bg-primary/10 text-xs font-medium text-primary">
@@ -2108,6 +2210,7 @@ function formatRelativeTime(iso: string): string {
 }
 
 function AuditLogSection() {
+  const { t } = useTranslation();
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -2148,13 +2251,13 @@ function AuditLogSection() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-foreground">Audit Log</h3>
+        <h3 className="text-lg font-semibold text-foreground">{t.settings.auditLog.heading}</h3>
         <select
           value={actionFilter}
           onChange={(e) => handleFilterChange(e.target.value)}
           className="text-sm border border-border rounded-lg px-2 py-1.5 bg-background text-foreground"
         >
-          <option value="">All actions</option>
+          <option value="">{t.settings.auditLog.allActionsFilter}</option>
           {AUDIT_ACTIONS.map((a) => (
             <option key={a} value={a}>
               {a.replaceAll("_", " ")}
@@ -2168,16 +2271,26 @@ function AuditLogSection() {
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
       ) : entries.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-8">No audit log entries.</p>
+        <p className="text-sm text-muted-foreground text-center py-8">
+          {t.settings.auditLog.emptyState}
+        </p>
       ) : (
         <div className="border border-border rounded-lg overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-3 py-2 font-medium text-muted-foreground">Time</th>
-                <th className="text-left px-3 py-2 font-medium text-muted-foreground">User</th>
-                <th className="text-left px-3 py-2 font-medium text-muted-foreground">Action</th>
-                <th className="text-left px-3 py-2 font-medium text-muted-foreground">Target</th>
+                <th className="text-start px-3 py-2 font-medium text-muted-foreground">
+                  {t.settings.auditLog.tableHeaderTime}
+                </th>
+                <th className="text-start px-3 py-2 font-medium text-muted-foreground">
+                  {t.settings.auditLog.tableHeaderUser}
+                </th>
+                <th className="text-start px-3 py-2 font-medium text-muted-foreground">
+                  {t.settings.auditLog.tableHeaderAction}
+                </th>
+                <th className="text-start px-3 py-2 font-medium text-muted-foreground">
+                  {t.settings.auditLog.tableHeaderTarget}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -2251,6 +2364,7 @@ function AuditLogSection() {
 /* ────────────────────── Tools ────────────────────── */
 
 function ToolsSection() {
+  const { t } = useTranslation();
   const [disabledTools, setDisabledTools] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -2317,15 +2431,13 @@ function ToolsSection() {
   return (
     <div className="space-y-5">
       <div>
-        <h3 className="text-lg font-semibold text-foreground">Tools</h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          Enable or disable individual tools. Disabled tools are hidden from all users.
-        </p>
+        <h3 className="text-lg font-semibold text-foreground">{t.settings.tools.heading}</h3>
+        <p className="text-sm text-muted-foreground mt-1">{t.settings.tools.description}</p>
       </div>
 
       {showRestartBanner && (
         <div className="px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-sm text-amber-700 dark:text-amber-400">
-          Restart required for changes to take effect.
+          {t.settings.tools.restartBanner}
         </div>
       )}
 
@@ -2335,8 +2447,8 @@ function ToolsSection() {
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search tools..."
-          className="w-full pl-9 pr-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground"
+          placeholder={t.settings.tools.searchPlaceholder}
+          className="w-full ps-9 pe-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground"
         />
       </div>
 
@@ -2344,7 +2456,7 @@ function ToolsSection() {
         {CATEGORIES.filter((cat) => groupedTools.has(cat.id)).map((category) => (
           <div key={category.id}>
             <h4 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider mb-2">
-              {category.name}
+              {getCategoryName(t, category.id, category.name)}
             </h4>
             <div className="space-y-1">
               {groupedTools.get(category.id)?.map((tool) => {
@@ -2355,14 +2467,18 @@ function ToolsSection() {
                     className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-muted/20 transition-colors"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-foreground">{tool.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{tool.description}</p>
+                      <p className="text-sm font-medium text-foreground">
+                        {getToolName(t, tool.id, tool.name)}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {getToolDescription(t, tool.id, tool.description)}
+                      </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => toggleTool(tool.id)}
                       className={cn(
-                        "w-11 h-6 rounded-full transition-colors relative shrink-0 ml-3",
+                        "w-11 h-6 rounded-full transition-colors relative shrink-0 ms-3",
                         !isDisabled ? "bg-primary" : "bg-muted-foreground/30",
                       )}
                     >
@@ -2383,13 +2499,13 @@ function ToolsSection() {
 
       {filteredTools.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-4">
-          No tools match your search.
+          {t.settings.tools.noSearchResults}
         </p>
       )}
 
       {loadFailed && (
         <div className="px-4 py-3 rounded-lg border border-red-500/30 bg-red-500/10 text-sm text-red-700 dark:text-red-400">
-          Failed to load tool settings. Saving is disabled to prevent data loss.
+          {t.settings.tools.loadFailedError}
         </div>
       )}
 
@@ -2401,7 +2517,7 @@ function ToolsSection() {
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
           {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          Save Tool Settings
+          {t.settings.tools.saveButton}
         </button>
         <span className="text-xs text-muted-foreground">
           {disabledTools.length} tool{disabledTools.length !== 1 ? "s" : ""} disabled
@@ -2414,6 +2530,7 @@ function ToolsSection() {
 /* ────────────────────── Analytics ────────────────────── */
 
 function AnalyticsSection() {
+  const { t } = useTranslation();
   const { consent, config, configLoaded, fetchConfig, toggleAnalytics } = useAnalyticsStore();
 
   useEffect(() => {
@@ -2428,16 +2545,14 @@ function AnalyticsSection() {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="text-sm font-medium text-foreground">Product Analytics</h3>
-        <p className="text-xs text-muted-foreground mt-1">
-          Share anonymous usage data to help improve SnapOtter.
-        </p>
-        <p className="text-xs text-muted-foreground">Your images never leave your machine.</p>
+        <h3 className="text-sm font-medium text-foreground">{t.analytics.settingsTitle}</h3>
+        <p className="text-xs text-muted-foreground mt-1">{t.analytics.settingsDescription}</p>
+        <p className="text-xs text-muted-foreground">{t.analytics.settingsPrivacy}</p>
       </div>
 
       {disabled ? (
         <p className="text-xs text-muted-foreground italic">
-          Product analytics has been disabled by the server administrator.
+          {t.analytics.settingsDisabledByAdmin}
         </p>
       ) : (
         <div className="flex items-center justify-between">
@@ -2468,7 +2583,7 @@ function AnalyticsSection() {
         rel="noopener noreferrer"
         className="text-xs text-primary hover:underline"
       >
-        Learn more
+        {t.analytics.learnMore}
       </a>
     </div>
   );
@@ -2477,10 +2592,11 @@ function AnalyticsSection() {
 /* ────────────────────── About ────────────────────── */
 
 function AboutSection() {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-foreground">About</h3>
+        <h3 className="text-lg font-semibold text-foreground">{t.settings.about.heading}</h3>
       </div>
 
       <div className="p-4 rounded-lg border border-border bg-muted/20 space-y-3">
@@ -2490,10 +2606,7 @@ function AboutSection() {
             <span className="text-primary">SnapOtter</span>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground">
-          A self-hosted, privacy-first image processing suite with 51 tools. Resize, compress,
-          convert, watermark, and automate your image workflows without sending data to the cloud.
-        </p>
+        <p className="text-sm text-muted-foreground">{t.settings.about.appDescription}</p>
         <div className="flex items-center gap-4 text-sm">
           <span className="text-muted-foreground">Version:</span>
           <span className="font-mono text-foreground">{APP_VERSION}</span>
@@ -2501,7 +2614,7 @@ function AboutSection() {
       </div>
 
       <div className="space-y-2">
-        <h4 className="text-sm font-medium text-foreground">Links</h4>
+        <h4 className="text-sm font-medium text-foreground">{t.settings.about.linksHeading}</h4>
         <div className="flex flex-col gap-1.5">
           <a
             href="https://github.com/snapotter-hq/snapotter"
@@ -2509,7 +2622,7 @@ function AboutSection() {
             rel="noopener noreferrer"
             className="text-sm text-primary hover:underline"
           >
-            GitHub Repository
+            {t.settings.about.githubLink}
           </a>
           <a
             href="https://docs.snapotter.com/"
@@ -2517,7 +2630,7 @@ function AboutSection() {
             rel="noopener noreferrer"
             className="text-sm text-primary hover:underline"
           >
-            Documentation
+            {t.settings.about.docsLink}
           </a>
           <a
             href="/api/docs"
@@ -2525,7 +2638,7 @@ function AboutSection() {
             rel="noopener noreferrer"
             className="text-sm text-primary hover:underline"
           >
-            API Reference (Swagger)
+            {t.settings.about.apiRefLink}
           </a>
         </div>
       </div>
@@ -2550,7 +2663,7 @@ function SettingRow({
         <p className="text-sm font-medium text-foreground">{label}</p>
         <p className="text-xs text-muted-foreground">{description}</p>
       </div>
-      <div className="shrink-0 ml-4">{children}</div>
+      <div className="shrink-0 ms-4">{children}</div>
     </div>
   );
 }

@@ -776,7 +776,7 @@ export function EditMetadataSettings() {
                   <button
                     type="button"
                     onClick={() => loadTemplate(t.name)}
-                    className="flex-1 text-left text-xs px-2 py-1 rounded-md border border-input hover:bg-muted/50 truncate"
+                    className="flex-1 text-start text-xs px-2 py-1 rounded-md border border-input hover:bg-muted/50 truncate"
                   >
                     {t.name}
                   </button>

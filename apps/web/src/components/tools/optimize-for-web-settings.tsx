@@ -330,7 +330,7 @@ export function OptimizeForWebSettings() {
           {preview.processedSize != null && (
             <div className="text-xs text-muted-foreground">
               Optimized: {formatSize(preview.processedSize)}
-              <span className="ml-1 font-medium uppercase text-[10px]">
+              <span className="ms-1 font-medium uppercase text-[10px]">
                 {FORMAT_LABELS[format]}
               </span>
             </div>

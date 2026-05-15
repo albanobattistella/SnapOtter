@@ -858,7 +858,7 @@ export function BeautifyControls({
                       <button
                         type="button"
                         onClick={() => handleRemoveStop(i)}
-                        className="ml-auto p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+                        className="ms-auto p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
                       >
                         <X className="h-3 w-3" />
                       </button>

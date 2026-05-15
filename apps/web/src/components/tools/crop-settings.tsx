@@ -2,7 +2,9 @@ import { ArrowLeftRight, Download, Grid3x3 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Crop } from "react-image-crop";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 const ASPECT_PRESETS = [
@@ -34,6 +36,7 @@ export function CropSettings({
   onAspectChange,
   onGridToggle,
 }: CropSettingsProps) {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const { processFiles, processAllFiles, processing, error, downloadUrl, progress } =
     useToolProcessor("crop");
@@ -216,7 +219,7 @@ export function CropSettings({
       {/* Aspect Ratio */}
       <div>
         <div className="flex items-center justify-between mb-1">
-          <p className="text-xs text-muted-foreground">Aspect Ratio</p>
+          <p className="text-xs text-muted-foreground">{t.toolSettings.crop.aspectRatio}</p>
           {aspect !== undefined && (
             <button
               type="button"
@@ -288,7 +291,7 @@ export function CropSettings({
 
       {/* Position & Size */}
       <div>
-        <p className="text-xs text-muted-foreground">Position & Size</p>
+        <p className="text-xs text-muted-foreground">{t.toolSettings.crop.positionAndSize}</p>
         <div className="grid grid-cols-2 gap-2 mt-1">
           <div>
             <label htmlFor="crop-x" className="text-[10px] text-muted-foreground">
@@ -358,7 +361,7 @@ export function CropSettings({
           className="accent-primary h-3.5 w-3.5"
         />
         <Grid3x3 className="h-3.5 w-3.5" />
-        Rule of Thirds
+        {t.toolSettings.crop.ruleOfThirds}
       </label>
 
       {/* Error */}
@@ -369,7 +372,7 @@ export function CropSettings({
         <ProgressCard
           active={processing}
           phase={progress.phase === "idle" ? "uploading" : progress.phase}
-          label="Cropping"
+          label={t.toolSettings.crop.progressLabel}
           stage={progress.stage}
           percent={progress.percent}
           elapsed={progress.elapsed}
@@ -381,7 +384,9 @@ export function CropSettings({
           disabled={!canSubmit}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {files.length > 1 ? `Crop (${files.length} files)` : "Crop"}
+          {files.length > 1
+            ? format(t.toolSettings.crop.submitBatch, { count: files.length })
+            : t.toolSettings.crop.submit}
         </button>
       )}
 
@@ -394,7 +399,7 @@ export function CropSettings({
           className="w-full py-2.5 rounded-lg border border-primary text-primary font-medium flex items-center justify-center gap-2 hover:bg-primary/5"
         >
           <Download className="h-4 w-4" />
-          Download
+          {t.common.download}
         </a>
       )}
     </form>
@@ -409,6 +414,7 @@ export interface CropControlsProps {
 }
 
 export function CropControls({ settings: initialSettings, onChange }: CropControlsProps) {
+  const { t } = useTranslation();
   const [left, setLeft] = useState(0);
   const [top, setTop] = useState(0);
   const [width, setWidth] = useState("");
@@ -443,7 +449,7 @@ export function CropControls({ settings: initialSettings, onChange }: CropContro
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label htmlFor="pipeline-crop-left" className="text-xs text-muted-foreground">
-            Left offset (px)
+            {t.toolSettings.crop.leftOffsetPx}
           </label>
           <input
             id="pipeline-crop-left"
@@ -456,7 +462,7 @@ export function CropControls({ settings: initialSettings, onChange }: CropContro
         </div>
         <div>
           <label htmlFor="pipeline-crop-top" className="text-xs text-muted-foreground">
-            Top offset (px)
+            {t.toolSettings.crop.topOffsetPx}
           </label>
           <input
             id="pipeline-crop-top"

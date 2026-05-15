@@ -2,8 +2,10 @@ import { CATEGORIES, TOOLS } from "@snapotter/shared";
 import { FileImage, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { SearchBar } from "@/components/common/search-bar";
+import { useTranslation } from "@/contexts/i18n-context";
 import { apiGet } from "@/lib/api";
 import { ICON_MAP } from "@/lib/icon-map";
+import { getCategoryName, getToolDescription, getToolName } from "@/lib/tool-i18n";
 import { cn } from "@/lib/utils";
 
 const EXCLUDED_TOOLS = new Set(["pipeline", "compare", "find-duplicates", "collage", "compose"]);
@@ -14,6 +16,7 @@ interface ToolPaletteProps {
 }
 
 export function ToolPalette({ onAddStep, className }: ToolPaletteProps) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [disabledTools, setDisabledTools] = useState<string[]>([]);
   const [experimentalEnabled, setExperimentalEnabled] = useState(false);
@@ -87,7 +90,7 @@ export function ToolPalette({ onAddStep, className }: ToolPaletteProps) {
                   <div className="flex items-center gap-1.5 mb-1.5 px-1">
                     <CatIcon className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
-                      {cat.name}
+                      {getCategoryName(t, cat.id, cat.name)}
                     </span>
                   </div>
                   <div className="space-y-0.5">
@@ -111,21 +114,24 @@ interface ToolItemProps {
 }
 
 function ToolItem({ tool, onAdd }: ToolItemProps) {
+  const { t } = useTranslation();
   const Icon = (ICON_MAP[tool.icon] as React.ComponentType<{ className?: string }>) ?? FileImage;
 
   return (
     <button
       type="button"
       onClick={() => onAdd(tool.id)}
-      className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg hover:bg-muted text-left transition-colors group"
+      className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg hover:bg-muted text-start transition-colors group"
     >
       <div className="p-1.5 rounded-md bg-muted group-hover:bg-primary/10 transition-colors shrink-0">
         <Icon className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-sm font-medium text-foreground leading-tight">{tool.name}</div>
+        <div className="text-sm font-medium text-foreground leading-tight">
+          {getToolName(t, tool.id, tool.name)}
+        </div>
         <div className="text-[11px] text-muted-foreground truncate leading-tight">
-          {tool.description}
+          {getToolDescription(t, tool.id, tool.description)}
         </div>
       </div>
       <Plus className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />

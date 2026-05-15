@@ -20,6 +20,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { create } from "zustand";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
 import { formatHeaders } from "@/lib/api";
 import { useFileStore } from "@/stores/file-store";
@@ -324,7 +325,7 @@ function CountryOption({
       }`}
     >
       <span>{spec.flag}</span>
-      <span className="flex-1 text-left">{spec.name}</span>
+      <span className="flex-1 text-start">{spec.name}</span>
       <span className="text-muted-foreground/60 tabular-nums text-[10px]">
         {formatDimensions(doc)}
       </span>
@@ -336,6 +337,7 @@ function CountryOption({
 // ── Settings panel (left side) ─────────────────────────────────────
 
 export function PassportPhotoSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const { error } = useToolProcessor("passport-photo");
 
@@ -574,9 +576,9 @@ export function PassportPhotoSettings() {
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground hover:border-primary/50 transition-colors"
         >
           <span>{selectedSpec.flag}</span>
-          <span className="flex-1 text-left truncate">
+          <span className="flex-1 text-start truncate">
             {selectedSpec.name}
-            <span className="text-muted-foreground ml-1.5 text-xs">
+            <span className="text-muted-foreground ms-1.5 text-xs">
               {formatDimensions(docSpec)}
             </span>
           </span>
@@ -605,7 +607,7 @@ export function PassportPhotoSettings() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search countries..."
-                  className="w-full pl-7 pr-2 py-1.5 rounded border border-border bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
+                  className="w-full ps-7 pe-2 py-1.5 rounded border border-border bg-background text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
                 />
               </div>
             </div>
@@ -626,7 +628,7 @@ export function PassportPhotoSettings() {
                   }`}
                 >
                   <span>{"\u2699\uFE0F"}</span>
-                  <span className="flex-1 text-left">Custom Dimensions</span>
+                  <span className="flex-1 text-start">Custom Dimensions</span>
                   {isCustom && <Check className="h-3 w-3 text-primary shrink-0" />}
                 </button>
               )}
@@ -894,6 +896,7 @@ export function PassportPhotoSettings() {
 // ── Preview panel (right side) ────────────────────────────────────
 
 export function PassportPhotoPreview() {
+  const { t } = useTranslation();
   const {
     analyzeResult,
     countryCode,
@@ -1154,7 +1157,7 @@ export function PassportPhotoPreview() {
             <RotateCcw className="h-3.5 w-3.5" />
           </button>
         )}
-        <span className="text-[10px] text-muted-foreground ml-auto">
+        <span className="text-[10px] text-muted-foreground ms-auto">
           {pxDims.w}x{pxDims.h}px
         </span>
       </div>

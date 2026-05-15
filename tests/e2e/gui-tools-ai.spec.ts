@@ -632,13 +632,6 @@ test.describe("GUI AI Tools", () => {
       await expect(submitBtn).toHaveText(/Colorize/);
     });
 
-    test("shows color intensity slider after upload", async ({ loggedInPage: page }) => {
-      await page.goto("/colorize");
-      await uploadTestImage(page);
-
-      await expect(page.getByText("Color Intensity")).toBeVisible();
-    });
-
     test("switching AI model changes active button", async ({ loggedInPage: page }) => {
       await page.goto("/colorize");
       await uploadTestImage(page);

@@ -1,7 +1,9 @@
 import { Download, Redo, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { formatHeaders } from "@/lib/api";
+import { format } from "@/lib/format";
 import { generateId } from "@/lib/utils";
 import { useFileStore } from "@/stores/file-store";
 import type { EraserCanvasRef } from "./eraser-canvas";
@@ -36,6 +38,7 @@ export function EraseObjectSettings({
   onMaskCenter,
   maskedFileCount,
 }: EraseObjectSettingsProps) {
+  const { t } = useTranslation();
   const {
     files,
     entries,
@@ -386,7 +389,7 @@ export function EraseObjectSettings({
       <div>
         <div className="flex justify-between items-center">
           <label htmlFor="eraser-brush-size" className="text-xs text-muted-foreground">
-            Brush Size
+            {t.toolSettings["erase-object"].brushSize}
           </label>
           <span className="text-xs font-mono text-foreground">{brushSize}px</span>
         </div>
@@ -400,8 +403,8 @@ export function EraseObjectSettings({
           className="w-full mt-1"
         />
         <div className="flex justify-between text-[10px] text-muted-foreground mt-0.5">
-          <span>Fine</span>
-          <span>Wide</span>
+          <span>{t.toolSettings["erase-object"].fine}</span>
+          <span>{t.toolSettings["erase-object"].wide}</span>
         </div>
       </div>
 
@@ -493,7 +496,7 @@ export function EraseObjectSettings({
         <ProgressCard
           active={processing}
           phase={progressPhase === "idle" ? "uploading" : progressPhase}
-          label={progressStage || "Erasing object"}
+          label={progressStage || t.toolSettings["erase-object"].progressLabel}
           percent={progressPercent}
           elapsed={elapsed}
         />
@@ -505,7 +508,9 @@ export function EraseObjectSettings({
           disabled={!hasFile || (!hasStrokes && maskedFileCount === 0) || processing}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {maskedFileCount > 1 ? `Erase All (${maskedFileCount})` : "Erase Object"}
+          {maskedFileCount > 1
+            ? format(t.toolSettings["erase-object"].submitBatch, { count: maskedFileCount })
+            : t.toolSettings["erase-object"].submit}
         </button>
       )}
 

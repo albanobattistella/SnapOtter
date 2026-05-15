@@ -467,8 +467,8 @@ function LayerRow({
       className={cn(
         "flex items-center gap-1.5 px-1.5 py-1 rounded cursor-pointer select-none group",
         "hover:bg-muted/50 transition-colors",
-        isActive && "bg-primary/10 border-l-2 border-primary",
-        !isActive && "border-l-2 border-transparent",
+        isActive && "bg-primary/10 border-s-2 border-primary",
+        !isActive && "border-s-2 border-transparent",
       )}
       role="option"
       aria-selected={isActive}
@@ -545,7 +545,7 @@ function LayerRow({
           <button
             type="button"
             className={cn(
-              "block text-xs truncate text-left bg-transparent border-0 p-0 w-full cursor-pointer",
+              "block text-xs truncate text-start bg-transparent border-0 p-0 w-full cursor-pointer",
               isActive ? "text-foreground font-medium" : "text-muted-foreground",
             )}
             onClick={handleNameClick}
@@ -645,7 +645,7 @@ function LayerContextMenu({
             item.action();
           }}
           className={cn(
-            "flex items-center gap-2 w-full px-3 py-1.5 text-xs text-left transition-colors",
+            "flex items-center gap-2 w-full px-3 py-1.5 text-xs text-start transition-colors",
             item.disabled
               ? "text-muted-foreground/40 cursor-not-allowed"
               : "text-foreground hover:bg-muted",
@@ -1000,7 +1000,7 @@ function EffectSlider({
         onChange={(e) => onChange(Number(e.target.value))}
         className="flex-1 min-w-0"
       />
-      <span className="text-[10px] font-mono text-foreground tabular-nums w-11 text-right shrink-0">
+      <span className="text-[10px] font-mono text-foreground tabular-nums w-11 text-end shrink-0">
         {value}
         {suffix}
       </span>

@@ -1,7 +1,9 @@
 import type { FeatureBundleState } from "@snapotter/shared";
 import { Clock, Download, Loader2, RefreshCw, RotateCcw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
 import { apiGet } from "@/lib/api";
+import { format } from "@/lib/format";
 import { useFeaturesStore } from "@/stores/features-store";
 
 function formatBytes(bytes: number): string {
@@ -52,6 +54,7 @@ const PROGRESS_MESSAGES = [
 ];
 
 export function AiFeaturesSection() {
+  const { t } = useTranslation();
   const {
     bundles,
     fetch,
@@ -95,10 +98,8 @@ export function AiFeaturesSection() {
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-foreground">AI Features</h3>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage AI model bundles for advanced image processing.
-          </p>
+          <h3 className="text-lg font-semibold text-foreground">{t.settings.aiFeatures.title}</h3>
+          <p className="text-sm text-muted-foreground mt-1">{t.settings.aiFeatures.description}</p>
         </div>
         <button
           type="button"
@@ -107,7 +108,7 @@ export function AiFeaturesSection() {
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
           <Download className="h-4 w-4" />
-          Install All
+          {t.settings.aiFeatures.installAll}
         </button>
       </div>
 
@@ -130,7 +131,7 @@ export function AiFeaturesSection() {
 
       {diskUsage !== null && (
         <p className="text-xs text-muted-foreground pt-2 border-t border-border">
-          Disk usage: {formatBytes(diskUsage)}
+          {format(t.settings.aiFeatures.diskUsage, { size: formatBytes(diskUsage) })}
         </p>
       )}
     </div>
@@ -163,6 +164,7 @@ function BundleCard({
   isQueued: boolean;
   startTime: number | null;
 }) {
+  const { t } = useTranslation();
   const [confirming, setConfirming] = useState(false);
   const [messageIndex, setMessageIndex] = useState(() =>
     Math.floor(Math.random() * PROGRESS_MESSAGES.length),
@@ -197,24 +199,30 @@ function BundleCard({
             {bundle.description} (~{bundle.estimatedSize})
           </p>
         </div>
-        <div className="flex items-center gap-3 shrink-0 ml-4">
+        <div className="flex items-center gap-3 shrink-0 ms-4">
           <div className="flex items-center gap-1.5">
             {status === "installed" && (
               <>
                 <span className="bg-green-500 rounded-full h-2 w-2" />
-                <span className="text-xs text-muted-foreground">Installed</span>
+                <span className="text-xs text-muted-foreground">
+                  {t.settings.aiFeatures.installed}
+                </span>
               </>
             )}
             {status === "not_installed" && !error && (
               <>
                 <span className="bg-muted-foreground rounded-full h-2 w-2" />
-                <span className="text-xs text-muted-foreground">Not installed</span>
+                <span className="text-xs text-muted-foreground">
+                  {t.settings.aiFeatures.notInstalled}
+                </span>
               </>
             )}
             {status === "queued" && (
               <>
                 <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Queued</span>
+                <span className="text-xs text-muted-foreground">
+                  {t.settings.aiFeatures.queued}
+                </span>
               </>
             )}
             {status === "installing" && progress && (
@@ -240,7 +248,7 @@ function BundleCard({
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               <Download className="h-3.5 w-3.5" />
-              Install
+              {t.settings.aiFeatures.install}
             </button>
           )}
           {status === "installed" && !confirming && (
@@ -251,7 +259,7 @@ function BundleCard({
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted transition-colors"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
-                Repair
+                {t.settings.aiFeatures.repair}
               </button>
               <button
                 type="button"
@@ -259,7 +267,7 @@ function BundleCard({
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                Uninstall
+                {t.settings.aiFeatures.uninstall}
               </button>
             </div>
           )}
@@ -274,14 +282,14 @@ function BundleCard({
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:bg-destructive/90 transition-colors"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                Confirm
+                {t.common.confirm}
               </button>
               <button
                 type="button"
                 onClick={() => setConfirming(false)}
                 className="px-3 py-1.5 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted transition-colors"
               >
-                Cancel
+                {t.common.cancel}
               </button>
             </div>
           )}
@@ -292,7 +300,7 @@ function BundleCard({
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium opacity-50"
             >
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              Installing...
+              {t.settings.aiFeatures.installing}
             </button>
           )}
           {(status === "error" || error) && !isInstalling && !isQueued && (
@@ -302,7 +310,7 @@ function BundleCard({
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               <RotateCcw className="h-3.5 w-3.5" />
-              Retry
+              {t.common.retry}
             </button>
           )}
         </div>
@@ -319,7 +327,7 @@ function BundleCard({
             <p className="text-xs text-muted-foreground italic">
               {PROGRESS_MESSAGES[messageIndex]}
             </p>
-            {eta && <p className="text-xs text-muted-foreground shrink-0 ml-2">{eta}</p>}
+            {eta && <p className="text-xs text-muted-foreground shrink-0 ms-2">{eta}</p>}
           </div>
         </div>
       )}

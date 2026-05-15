@@ -28,7 +28,7 @@ export function CollapsibleSection({
         ) : (
           <ChevronRight className="h-3 w-3 shrink-0" />
         )}
-        <span className="flex-1 text-left">{title}</span>
+        <span className="flex-1 text-start">{title}</span>
         {warning && <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />}
         {badge && (
           <span className="px-1.5 py-0.5 rounded bg-muted text-muted-foreground text-[10px]">

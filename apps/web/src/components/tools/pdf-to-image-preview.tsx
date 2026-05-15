@@ -82,7 +82,7 @@ export function PdfToImagePreview() {
             {store.results.length} page
             {store.results.length !== 1 ? "s" : ""} converted
             {totalSize > 0 && (
-              <span className="text-muted-foreground font-normal ml-1">
+              <span className="text-muted-foreground font-normal ms-1">
                 ({formatSize(totalSize)})
               </span>
             )}
@@ -187,7 +187,7 @@ export function PdfToImagePreview() {
                 key={thumb.page}
                 type="button"
                 onClick={() => store.togglePage(thumb.page)}
-                className={`relative rounded-lg border overflow-hidden text-left transition-all ${
+                className={`relative rounded-lg border overflow-hidden text-start transition-all ${
                   isSelected
                     ? "border-primary ring-1 ring-primary/30"
                     : "border-border opacity-50 hover:opacity-75"

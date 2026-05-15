@@ -45,7 +45,7 @@ export function SliderRow({
             onChange(Math.max(min, Math.min(max, v)));
           }
         }}
-        className="w-14 px-1 py-0.5 text-xs text-right bg-muted border border-border rounded text-foreground"
+        className="w-14 px-1 py-0.5 text-xs text-end bg-muted border border-border rounded text-foreground"
       />
     </div>
   );

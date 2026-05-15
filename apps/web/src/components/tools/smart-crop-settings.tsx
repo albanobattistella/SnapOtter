@@ -2,7 +2,9 @@ import { SMART_CROP_FACE_PRESETS, SOCIAL_MEDIA_PRESETS } from "@snapotter/shared
 import { ArrowLeftRight, Info } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 type CropMode = "subject" | "face" | "trim";
@@ -36,6 +38,7 @@ export interface SmartCropControlsProps {
 }
 
 export function SmartCropControls({ settings: initialSettings, onChange }: SmartCropControlsProps) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<CropMode>("subject");
   const [subjectTab, setSubjectTab] = useState<SubjectTab>("custom");
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
@@ -261,13 +264,13 @@ export function SmartCropControls({ settings: initialSettings, onChange }: Smart
           onClick={() => setMode("subject")}
           className={modeTabClass("subject")}
         >
-          Subject Focus
+          {t.toolSettings["smart-crop"].subjectFocus}
         </button>
         <button type="button" onClick={() => setMode("face")} className={modeTabClass("face")}>
-          Face Focus
+          {t.toolSettings["smart-crop"].faceFocus}
         </button>
         <button type="button" onClick={() => setMode("trim")} className={modeTabClass("trim")}>
-          Auto Trim
+          {t.toolSettings["smart-crop"].autoTrim}
         </button>
       </div>
 
@@ -293,7 +296,7 @@ export function SmartCropControls({ settings: initialSettings, onChange }: Smart
           </div>
 
           {subjectTab === "presets" ? (
-            <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-[50vh] overflow-y-auto pe-1">
               {platforms.map((platform) => (
                 <div key={platform}>
                   <p className="text-xs font-medium text-muted-foreground mb-1.5">{platform}</p>
@@ -333,7 +336,9 @@ export function SmartCropControls({ settings: initialSettings, onChange }: Smart
           {/* Strategy toggle */}
           <div>
             <div className="flex items-center gap-1.5 mb-1">
-              <span className="text-xs text-muted-foreground">Detection Strategy</span>
+              <span className="text-xs text-muted-foreground">
+                {t.toolSettings["smart-crop"].detectionStrategy}
+              </span>
               <HintIcon text="Attention finds the most visually salient region. Entropy finds the area with most detail and information." />
             </div>
             <div className="flex gap-1">
@@ -546,6 +551,7 @@ export function SmartCropControls({ settings: initialSettings, onChange }: Smart
 }
 
 export function SmartCropSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const { processFiles, processAllFiles, processing, error, progress } =
     useToolProcessor("smart-crop");

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "@/contexts/i18n-context";
 import { formatFileSize, triggerDownload } from "@/lib/download";
 import { ICON_MAP } from "@/lib/icon-map";
 import { getSuggestedTools } from "@/lib/suggested-tools";
@@ -33,6 +34,7 @@ export function ReviewPanel({
   onUndo,
   currentToolId,
 }: ReviewPanelProps) {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(true);
   const [isSuggestionsExpanded, setIsSuggestionsExpanded] = useState(true);
   const navigate = useNavigate();
@@ -66,7 +68,7 @@ export function ReviewPanel({
         onClick={() => setIsExpanded(!isExpanded)}
         className="flex items-center justify-between w-full text-sm font-medium text-muted-foreground hover:text-foreground"
       >
-        <span>Review</span>
+        <span>{t.reviewPanel.reviewHeading}</span>
         {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
       </button>
 
@@ -99,7 +101,7 @@ export function ReviewPanel({
               className="flex-1 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted flex items-center justify-center gap-1.5 text-xs font-medium"
             >
               <Undo2 className="h-3.5 w-3.5" />
-              Undo
+              {t.reviewPanel.undoButton}
             </button>
             <button
               type="button"
@@ -107,7 +109,7 @@ export function ReviewPanel({
               className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground flex items-center justify-center gap-1.5 text-xs font-medium hover:bg-primary/90"
             >
               <Download className="h-3.5 w-3.5" />
-              Download
+              {t.common.download}
             </button>
           </div>
 
@@ -117,7 +119,7 @@ export function ReviewPanel({
             className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted text-xs font-medium"
           >
             <PenTool className="h-3.5 w-3.5" />
-            Open in Editor
+            {t.reviewPanel.openInEditor}
           </Link>
 
           {/* Suggested tools */}
@@ -129,7 +131,7 @@ export function ReviewPanel({
                 onClick={() => setIsSuggestionsExpanded(!isSuggestionsExpanded)}
                 className="flex items-center justify-between w-full text-xs font-medium text-muted-foreground hover:text-foreground"
               >
-                <span>Continue editing</span>
+                <span>{t.reviewPanel.continueEditing}</span>
                 {isSuggestionsExpanded ? (
                   <ChevronDown className="h-3.5 w-3.5" />
                 ) : (
@@ -151,7 +153,7 @@ export function ReviewPanel({
                         className="flex items-center gap-2 w-full px-2 py-1.5 rounded text-xs text-muted-foreground hover:text-foreground hover:bg-muted group"
                       >
                         <ToolIcon className="h-3.5 w-3.5 shrink-0" />
-                        <span className="flex-1 text-left">{tool.name}</span>
+                        <span className="flex-1 text-start">{tool.name}</span>
                         <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 shrink-0" />
                       </button>
                     );

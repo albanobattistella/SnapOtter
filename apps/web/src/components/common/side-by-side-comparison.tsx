@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
+import { format } from "@/lib/format";
 
 interface SideBySideComparisonProps {
   beforeSrc: string;
@@ -19,6 +21,7 @@ export function SideBySideComparison({
   beforeSize,
   afterSize,
 }: SideBySideComparisonProps) {
+  const { t } = useTranslation();
   const [beforeDims, setBeforeDims] = useState<{ w: number; h: number } | null>(null);
   const [afterDims, setAfterDims] = useState<{ w: number; h: number } | null>(null);
 
@@ -34,7 +37,7 @@ export function SideBySideComparison({
         {/* Original */}
         <div className="flex-1 flex flex-col items-center gap-2">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Original
+            {t.comparison.original}
           </span>
           <div className="w-full rounded-lg border border-border overflow-hidden flex items-center justify-center bg-muted/30 p-2 min-h-[200px] max-h-[60vh]">
             <img
@@ -61,7 +64,7 @@ export function SideBySideComparison({
         {/* Processed */}
         <div className="flex-1 flex flex-col items-center gap-2">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Processed
+            {t.comparison.processed}
           </span>
           <div className="w-full rounded-lg border border-border overflow-hidden flex items-center justify-center bg-muted/30 p-2 min-h-[200px] max-h-[60vh]">
             <img
@@ -92,8 +95,10 @@ export function SideBySideComparison({
           className={`text-sm font-medium ${Number(savingsPercent) > 0 ? "text-green-600 dark:text-green-400" : "text-red-500"}`}
         >
           {Number(savingsPercent) > 0
-            ? `${savingsPercent}% smaller`
-            : `${Math.abs(Number(savingsPercent))}% larger`}
+            ? format(t.toolSettings["optimize-for-web"].smaller, { percent: savingsPercent })
+            : format(t.toolSettings["optimize-for-web"].larger, {
+                percent: Math.abs(Number(savingsPercent)),
+              })}
         </p>
       )}
     </div>

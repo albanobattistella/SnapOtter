@@ -86,13 +86,13 @@ export function SelectionOptions() {
       {/* Selection type toggle */}
       {!isMagicWand && (
         <div className="flex items-center gap-1">
-          <span className="mr-1 text-xs text-muted-foreground">Type:</span>
+          <span className="me-1 text-xs text-muted-foreground">Type:</span>
           <ToggleButton
             active={selectionType === "rect" && isMarquee}
             onClick={() => handleTypeChange("rect")}
             label="Rectangular"
           >
-            <Square className="mr-1 h-3.5 w-3.5" />
+            <Square className="me-1 h-3.5 w-3.5" />
             Rect
           </ToggleButton>
           <ToggleButton
@@ -100,11 +100,11 @@ export function SelectionOptions() {
             onClick={() => handleTypeChange("ellipse")}
             label="Elliptical"
           >
-            <Circle className="mr-1 h-3.5 w-3.5" />
+            <Circle className="me-1 h-3.5 w-3.5" />
             Ellipse
           </ToggleButton>
           <ToggleButton active={isLasso} onClick={() => handleTypeChange("lasso")} label="Lasso">
-            <PenTool className="mr-1 h-3.5 w-3.5" />
+            <PenTool className="me-1 h-3.5 w-3.5" />
             Lasso
           </ToggleButton>
         </div>
@@ -121,7 +121,7 @@ export function SelectionOptions() {
 
       {/* Selection mode buttons */}
       <div className="flex items-center gap-1">
-        <span className="mr-1 text-xs text-muted-foreground">Mode:</span>
+        <span className="me-1 text-xs text-muted-foreground">Mode:</span>
         <ToggleButton
           active={selectionMode === "new"}
           onClick={() => handleModeChange("new")}
@@ -134,7 +134,7 @@ export function SelectionOptions() {
           onClick={() => handleModeChange("add")}
           label="Add to Selection"
         >
-          <Plus className="mr-0.5 h-3 w-3" />
+          <Plus className="me-0.5 h-3 w-3" />
           Add
         </ToggleButton>
         <ToggleButton
@@ -142,7 +142,7 @@ export function SelectionOptions() {
           onClick={() => handleModeChange("subtract")}
           label="Subtract from Selection"
         >
-          <Minus className="mr-0.5 h-3 w-3" />
+          <Minus className="me-0.5 h-3 w-3" />
           Sub
         </ToggleButton>
       </div>

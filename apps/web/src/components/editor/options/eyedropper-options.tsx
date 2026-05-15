@@ -33,7 +33,7 @@ export function EyedropperOptions({
     <div className="flex items-center gap-3">
       {/* Sample size dropdown */}
       <div className="relative">
-        <span className="text-xs text-muted-foreground mr-1.5">Sample:</span>
+        <span className="text-xs text-muted-foreground me-1.5">Sample:</span>
         <button
           type="button"
           onClick={() => setOpen(!open)}
@@ -84,7 +84,7 @@ export function EyedropperOptions({
                     setOpen(false);
                   }}
                   className={cn(
-                    "w-full text-left px-3 py-1.5 text-xs transition-colors",
+                    "w-full text-start px-3 py-1.5 text-xs transition-colors",
                     s.value === sampleSize
                       ? "bg-primary text-primary-foreground"
                       : "text-foreground hover:bg-muted",

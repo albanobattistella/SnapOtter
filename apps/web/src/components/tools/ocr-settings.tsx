@@ -1,7 +1,9 @@
 import { Check, ChevronDown, ChevronRight, Copy, Download, Info } from "lucide-react";
 import { useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { formatHeaders } from "@/lib/api";
+import { format } from "@/lib/format";
 import { copyToClipboard, generateId } from "@/lib/utils";
 import { useFileStore } from "@/stores/file-store";
 
@@ -100,6 +102,7 @@ function ocrOneFile(
 }
 
 export function OcrSettings() {
+  const { t } = useTranslation();
   const { files, processing, error, setProcessing, setError } = useFileStore();
 
   const [quality, setQuality] = useState<OcrQuality>("balanced");
@@ -219,7 +222,7 @@ export function OcrSettings() {
   return (
     <div className="space-y-3">
       {/* Quality selector */}
-      <SectionLabel>Quality</SectionLabel>
+      <SectionLabel>{t.toolSettings.ocr.quality}</SectionLabel>
       <div className="grid grid-cols-3 gap-1.5">
         {QUALITY_OPTIONS.map((opt) => (
           <button
@@ -245,7 +248,9 @@ export function OcrSettings() {
           onChange={(e) => handleEnhanceToggle(e.target.checked)}
           className="rounded border-border accent-primary"
         />
-        <span className="text-sm text-muted-foreground">Enhance before scanning</span>
+        <span className="text-sm text-muted-foreground">
+          {t.toolSettings.ocr.enhanceBeforeScanning}
+        </span>
         <span
           title="Automatically deskews, enhances contrast, removes noise, and upscales the image before scanning for better accuracy."
           className="inline-flex items-center justify-center w-4 h-4 rounded-full border border-muted-foreground/40 text-muted-foreground/60 text-[10px] cursor-help"
@@ -263,7 +268,7 @@ export function OcrSettings() {
         >
           {langOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
           Language
-          <span className="ml-auto text-primary text-[10px] normal-case font-normal">
+          <span className="ms-auto text-primary text-[10px] normal-case font-normal">
             {langLabel}
           </span>
         </button>
@@ -290,7 +295,7 @@ export function OcrSettings() {
         <ProgressCard
           active={processing}
           phase={progressPhase === "idle" ? "uploading" : progressPhase}
-          label="Extracting text"
+          label={t.toolSettings.ocr.progressLabel}
           stage={progressStage}
           percent={progressPercent}
           elapsed={elapsed}
@@ -303,7 +308,9 @@ export function OcrSettings() {
           disabled={!hasFile || processing}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {files.length > 1 ? `Extract Text (${files.length} files)` : "Extract Text"}
+          {files.length > 1
+            ? format(t.toolSettings.ocr.submitBatch, { count: files.length })
+            : t.toolSettings.ocr.submit}
         </button>
       )}
 
@@ -311,7 +318,9 @@ export function OcrSettings() {
       {text !== null && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-muted-foreground">Extracted Text</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              {t.toolSettings.ocr.extractedText}
+            </span>
             <div className="flex items-center gap-3">
               {text.length > 0 && (
                 <button
@@ -342,7 +351,9 @@ export function OcrSettings() {
                 rows={Math.min(16, Math.max(8, text.split("\n").length + 2))}
                 className="w-full px-2 py-1.5 rounded border border-border bg-muted text-xs text-foreground font-mono resize-y"
               />
-              <p className="text-[10px] text-muted-foreground">{text.length} characters</p>
+              <p className="text-[10px] text-muted-foreground">
+                {format(t.toolSettings.ocr.characters, { count: text.length })}
+              </p>
             </>
           ) : (
             <p className="text-xs text-muted-foreground italic py-4 text-center">

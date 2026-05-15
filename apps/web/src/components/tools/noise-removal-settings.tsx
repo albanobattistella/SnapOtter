@@ -1,7 +1,9 @@
 import { Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 type Tier = "quick" | "balanced" | "quality" | "maximum";
@@ -203,6 +205,7 @@ export function NoiseRemovalControls({
 }
 
 export function NoiseRemovalSettings() {
+  const { t } = useTranslation();
   const { files, entries } = useFileStore();
   const {
     processFiles,
@@ -271,7 +274,9 @@ export function NoiseRemovalSettings() {
           disabled={!hasFile || processing}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {hasMultiple ? `Remove Noise (${files.length} files)` : "Remove Noise"}
+          {hasMultiple
+            ? format(t.toolSettings["noise-removal"].submitBatch, { count: files.length })
+            : t.toolSettings["noise-removal"].submit}
         </button>
       )}
 

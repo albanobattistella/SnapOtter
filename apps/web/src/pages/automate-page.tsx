@@ -26,15 +26,18 @@ import { ThumbnailStrip } from "@/components/common/thumbnail-strip";
 import { AppLayout } from "@/components/layout/app-layout";
 import { PipelineBuilder } from "@/components/tools/pipeline-builder";
 import { ToolPalette } from "@/components/tools/tool-palette";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useMobile } from "@/hooks/use-mobile";
 import { usePipelineProcessor } from "@/hooks/use-pipeline-processor";
 import { formatHeaders, getFileDownloadUrl } from "@/lib/api";
 import { formatFileSize } from "@/lib/download";
+import { format } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { useFileStore } from "@/stores/file-store";
 import { type SavedPipeline, usePipelineStore } from "@/stores/pipeline-store";
 
 export function AutomatePage() {
+  const { t } = useTranslation();
   const {
     files,
     entries,
@@ -273,19 +276,19 @@ export function AutomatePage() {
         const data = JSON.parse(text);
 
         if (data.format !== "snapotter-pipeline") {
-          setImportError("Not a valid SnapOtter pipeline file");
+          setImportError(t.automate.invalidPipelineFile);
           return;
         }
         if (typeof data.version !== "number" || data.version > 1) {
-          setImportError("This pipeline was created with a newer version of SnapOtter");
+          setImportError(t.automate.newerVersion);
           return;
         }
         if (!data.name || typeof data.name !== "string") {
-          setImportError("Pipeline file is missing a name");
+          setImportError(t.automate.missingName);
           return;
         }
         if (!Array.isArray(data.steps) || data.steps.length === 0) {
-          setImportError("Pipeline file has no steps");
+          setImportError(t.automate.noSteps);
           return;
         }
 
@@ -313,7 +316,7 @@ export function AutomatePage() {
           setSavedPipelines(listData.pipelines || []);
         }
       } catch {
-        setImportError("Could not read pipeline file");
+        setImportError(t.automate.couldNotRead);
       }
     };
     input.click();
@@ -366,7 +369,7 @@ export function AutomatePage() {
           {/* Mobile header */}
           <div className="flex items-center gap-2 px-4 py-3 border-b border-border shrink-0">
             <Workflow className="h-5 w-5 text-primary" />
-            <h1 className="text-base font-semibold text-foreground flex-1">Automate</h1>
+            <h1 className="text-base font-semibold text-foreground flex-1">{t.automate.title}</h1>
             {hasFile && (
               <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                 {files.length} file{files.length !== 1 ? "s" : ""}
@@ -385,7 +388,7 @@ export function AutomatePage() {
                   className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-primary border border-dashed border-primary/40 rounded-lg hover:bg-primary/5 transition-colors"
                 >
                   <FolderOpen className="h-4 w-4" />
-                  Import from Library
+                  {t.automate.importFromLibrary}
                 </button>
               </div>
             )}
@@ -455,7 +458,7 @@ export function AutomatePage() {
             {hasFile && !hasProcessed && currentEntry?.status === "failed" && (
               <div className="mb-3 rounded-lg border border-border p-3 text-center">
                 <p className="text-sm text-red-500">
-                  {currentEntry.error ?? "Processing failed for this file"}
+                  {currentEntry.error ?? t.toolPage.processingFailed}
                 </p>
               </div>
             )}
@@ -493,8 +496,8 @@ export function AutomatePage() {
                   phase={progress.phase === "idle" ? "processing" : progress.phase}
                   label={
                     files.length > 1
-                      ? `Processing ${files.length} files...`
-                      : "Processing pipeline..."
+                      ? format(t.automate.processingMultiple, { count: files.length })
+                      : t.automate.processingPipeline
                   }
                   stage={progress.stage}
                   percent={progress.percent}
@@ -513,7 +516,7 @@ export function AutomatePage() {
               className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Play className="h-4 w-4" />
-              {files.length <= 1 ? "Process" : `Process (${files.length})`}
+              {files.length <= 1 ? t.common.process : `${t.common.process} (${files.length})`}
             </button>
             {hasProcessed && batchZipBlob && (
               <button
@@ -545,7 +548,7 @@ export function AutomatePage() {
               />
               <div className="fixed inset-x-0 bottom-0 z-50 bg-background border-t border-border rounded-t-2xl shadow-xl max-h-[70vh] flex flex-col animate-in slide-in-from-bottom">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-                  <h2 className="text-sm font-semibold text-foreground">Add Tool</h2>
+                  <h2 className="text-sm font-semibold text-foreground">{t.automate.addTool}</h2>
                   <button
                     type="button"
                     onClick={() => setMobileToolPaletteOpen(false)}
@@ -582,8 +585,8 @@ export function AutomatePage() {
               <Layers className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-sm font-semibold text-foreground">Tool Palette</h2>
-              <p className="text-xs text-muted-foreground">Click to add to pipeline</p>
+              <h2 className="text-sm font-semibold text-foreground">{t.automate.toolPalette}</h2>
+              <p className="text-xs text-muted-foreground">{t.automate.clickToAdd}</p>
             </div>
           </div>
 
@@ -594,7 +597,7 @@ export function AutomatePage() {
           <div className="px-3 py-2 border-t border-border shrink-0">
             <div className="flex items-center justify-between mb-1.5">
               <h3 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">
-                Saved
+                {t.automate.savedLabel}
               </h3>
               <button
                 type="button"
@@ -612,7 +615,7 @@ export function AutomatePage() {
               </div>
             )}
             {savedPipelines.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">No saved pipelines</p>
+              <p className="text-xs text-muted-foreground italic">{t.automate.noSavedPipelines}</p>
             ) : showAllSaved ? (
               <div className="space-y-1 max-h-36 overflow-y-auto">
                 {savedPipelines.map((p) => (
@@ -620,10 +623,10 @@ export function AutomatePage() {
                     <button
                       type="button"
                       onClick={() => handleLoadPipeline(p)}
-                      className="flex-1 text-left text-xs text-foreground hover:text-primary truncate py-1 px-2 rounded hover:bg-muted"
+                      className="flex-1 text-start text-xs text-foreground hover:text-primary truncate py-1 px-2 rounded hover:bg-muted"
                     >
                       {p.name}
-                      <span className="text-muted-foreground ml-1">
+                      <span className="text-muted-foreground ms-1">
                         ({p.steps.length} step{p.steps.length !== 1 ? "s" : ""})
                       </span>
                     </button>
@@ -660,10 +663,10 @@ export function AutomatePage() {
                     <button
                       type="button"
                       onClick={() => handleLoadPipeline(p)}
-                      className="flex-1 text-left text-xs text-foreground hover:text-primary truncate py-1 px-2 rounded hover:bg-muted"
+                      className="flex-1 text-start text-xs text-foreground hover:text-primary truncate py-1 px-2 rounded hover:bg-muted"
                     >
                       {p.name}
-                      <span className="text-muted-foreground ml-1">
+                      <span className="text-muted-foreground ms-1">
                         ({p.steps.length} step{p.steps.length !== 1 ? "s" : ""})
                       </span>
                     </button>
@@ -697,11 +700,13 @@ export function AutomatePage() {
           <div className="flex items-center gap-3 px-5 py-3 border-b border-border shrink-0">
             <Workflow className="h-5 w-5 text-primary" />
             <div className="flex-1 min-w-0">
-              <h1 className="text-lg font-semibold text-foreground">Pipeline Builder</h1>
+              <h1 className="text-lg font-semibold text-foreground">
+                {t.automate.pipelineBuilder}
+              </h1>
               <p className="text-xs text-muted-foreground">
                 {steps.length === 0
-                  ? "Add tools from the palette to get started"
-                  : `${steps.length} step${steps.length !== 1 ? "s" : ""} configured`}
+                  ? t.automate.addToolsPrompt
+                  : `${steps.length} ${steps.length !== 1 ? "steps" : "step"} configured`}
               </p>
             </div>
 
@@ -744,14 +749,16 @@ export function AutomatePage() {
               </div>
             ) : (
               <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs text-muted-foreground italic">No files loaded</span>
+                <span className="text-xs text-muted-foreground italic">
+                  {t.automate.noFilesLoaded}
+                </span>
                 <button
                   type="button"
                   onClick={() => setLibraryModalOpen(true)}
                   className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
                 >
                   <FolderOpen className="h-3 w-3" />
-                  Import from Library
+                  {t.automate.importFromLibrary}
                 </button>
               </div>
             )}
@@ -804,7 +811,9 @@ export function AutomatePage() {
                 className="px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium flex items-center gap-2 hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Play className="h-4 w-4" />
-                {files.length <= 1 ? "Process" : `Process All (${files.length})`}
+                {files.length <= 1
+                  ? t.common.process
+                  : format(t.automate.processAllButton, { count: files.length })}
               </button>
 
               {hasProcessed && batchZipBlob && (
@@ -814,7 +823,7 @@ export function AutomatePage() {
                   className="px-4 py-2.5 rounded-lg border border-primary text-primary font-medium flex items-center gap-2 hover:bg-primary/5"
                 >
                   <Download className="h-4 w-4" />
-                  Download ZIP
+                  {t.automate.downloadZip}
                 </button>
               )}
 
@@ -837,14 +846,14 @@ export function AutomatePage() {
                     type="text"
                     value={saveName}
                     onChange={(e) => setSaveName(e.target.value)}
-                    placeholder="Pipeline name"
+                    placeholder={t.automate.pipelineName}
                     className="text-sm px-2.5 py-1.5 rounded border border-border bg-background text-foreground placeholder:text-muted-foreground w-36"
                   />
                   <input
                     type="text"
                     value={saveDescription}
                     onChange={(e) => setSaveDescription(e.target.value)}
-                    placeholder="Description"
+                    placeholder={t.automate.descriptionPlaceholder}
                     className="text-sm px-2.5 py-1.5 rounded border border-border bg-background text-foreground placeholder:text-muted-foreground w-36"
                   />
                   <button
@@ -853,7 +862,7 @@ export function AutomatePage() {
                     disabled={!saveName.trim() || saving}
                     className="px-3 py-1.5 rounded bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
                   >
-                    {saving ? "..." : "Save"}
+                    {saving ? "..." : t.common.save}
                   </button>
                   <button
                     type="button"
@@ -889,10 +898,10 @@ export function AutomatePage() {
                   <ChevronDown className="h-4 w-4 text-muted-foreground" />
                 )}
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Preview
+                  {t.automate.preview}
                 </span>
                 {hasFile && hasProcessed && processedSize != null && (
-                  <span className="text-xs text-muted-foreground ml-auto">
+                  <span className="text-xs text-muted-foreground ms-auto">
                     {formatFileSize(originalSize ?? 0)} &rarr; {formatFileSize(processedSize)}
                   </span>
                 )}
@@ -948,7 +957,7 @@ export function AutomatePage() {
                           className="flex items-center gap-2 px-4 py-2 text-sm text-primary border border-dashed border-primary/40 rounded-lg hover:bg-primary/5 transition-colors"
                         >
                           <FolderOpen className="h-4 w-4" />
-                          Import from Library
+                          {t.automate.importFromLibrary}
                         </button>
                       </div>
                     )}
@@ -956,7 +965,7 @@ export function AutomatePage() {
                     {hasFile && !hasProcessed && currentEntry?.status === "failed" && (
                       <div className="flex flex-col items-center justify-center gap-2 h-full text-center px-4">
                         <p className="text-sm text-red-500">
-                          {currentEntry.error ?? "Processing failed for this file"}
+                          {currentEntry.error ?? t.toolPage.processingFailed}
                         </p>
                       </div>
                     )}

@@ -13,6 +13,7 @@ import {
 import QRCodeStyling from "qr-code-styling";
 import { useCallback, useRef } from "react";
 import { CollapsibleSection } from "@/components/common/collapsible-section";
+import { useTranslation } from "@/contexts/i18n-context";
 import {
   type ContentType,
   type CornerDotType,
@@ -345,6 +346,7 @@ function PillButton({
 // ── Main settings component ──────────────────────────────────────────
 
 export function QrGenerateSettings() {
+  const { t } = useTranslation();
   const store = useQrStore();
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -515,7 +517,7 @@ export function QrGenerateSettings() {
           </label>
 
           {store.dotGradientEnabled && (
-            <div className="space-y-2 pl-2 border-l-2 border-primary/20 ml-1">
+            <div className="space-y-2 ps-2 border-s-2 border-primary/20 ms-1">
               <div className="flex gap-2">
                 <div className="flex-1">
                   <label htmlFor="qr-gradient-from" className="text-[10px] text-muted-foreground">
@@ -764,7 +766,7 @@ export function QrGenerateSettings() {
                   key={value}
                   type="button"
                   onClick={() => store.setDownloadFormat(value)}
-                  className={`text-left px-2 py-1.5 rounded transition-colors ${
+                  className={`text-start px-2 py-1.5 rounded transition-colors ${
                     store.downloadFormat === value
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground hover:text-foreground"

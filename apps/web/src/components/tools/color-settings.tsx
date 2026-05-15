@@ -275,10 +275,10 @@ export function ColorControls({
       >
         {channelsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         Color Channels
-        {hasChannelChanges && <span className="ml-auto text-primary text-[10px]">modified</span>}
+        {hasChannelChanges && <span className="ms-auto text-primary text-[10px]">modified</span>}
       </button>
       {channelsOpen && (
-        <div className="space-y-2 pl-1">
+        <div className="space-y-2 ps-1">
           <SliderControl
             label="Red"
             value={red}
@@ -457,11 +457,9 @@ function SliderControl({
       <div className="flex justify-between items-center">
         <label htmlFor={id} className={`text-xs ${color || "text-muted-foreground"}`}>
           {label}
-          {hint && <span className="text-[10px] text-muted-foreground/60 ml-1">({hint})</span>}
+          {hint && <span className="text-[10px] text-muted-foreground/60 ms-1">({hint})</span>}
         </label>
-        <span className="text-xs font-mono text-foreground tabular-nums w-8 text-right">
-          {value}
-        </span>
+        <span className="text-xs font-mono text-foreground tabular-nums w-8 text-end">{value}</span>
       </div>
       <input
         id={id}

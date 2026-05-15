@@ -1,6 +1,7 @@
 import { APP_VERSION } from "@snapotter/shared";
 import { BookOpen, ExternalLink, Github, Keyboard, X } from "lucide-react";
 import { useEffect } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
 import { formatShortcut } from "@/hooks/use-keyboard-shortcuts";
 
 interface HelpDialogProps {
@@ -23,6 +24,7 @@ const SHORTCUTS = [
 ];
 
 export function HelpDialog({ open, onClose }: HelpDialogProps) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!open) return;
     const handler = (e: KeyboardEvent) => {
@@ -45,7 +47,7 @@ export function HelpDialog({ open, onClose }: HelpDialogProps) {
       <div className="relative bg-background border border-border rounded-xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
-          <h2 className="text-lg font-semibold text-foreground">Help</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t.help.heading}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -61,7 +63,7 @@ export function HelpDialog({ open, onClose }: HelpDialogProps) {
           <section className="space-y-2">
             <div className="flex items-center gap-2 text-foreground">
               <BookOpen className="h-4 w-4" />
-              <h3 className="text-sm font-semibold">Getting Started</h3>
+              <h3 className="text-sm font-semibold">{t.help.gettingStarted.heading}</h3>
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Select a tool from the sidebar or search for one with <Kbd keys="mod+k" />. Upload an
@@ -74,7 +76,7 @@ export function HelpDialog({ open, onClose }: HelpDialogProps) {
           <section className="space-y-3">
             <div className="flex items-center gap-2 text-foreground">
               <Keyboard className="h-4 w-4" />
-              <h3 className="text-sm font-semibold">Keyboard Shortcuts</h3>
+              <h3 className="text-sm font-semibold">{t.help.keyboardShortcuts.heading}</h3>
             </div>
             <div className="rounded-lg border border-border overflow-hidden">
               {SHORTCUTS.map((s, i) => (
@@ -95,7 +97,7 @@ export function HelpDialog({ open, onClose }: HelpDialogProps) {
           <section className="space-y-2">
             <div className="flex items-center gap-2 text-foreground">
               <Github className="h-4 w-4" />
-              <h3 className="text-sm font-semibold">Resources</h3>
+              <h3 className="text-sm font-semibold">{t.help.resources.heading}</h3>
             </div>
             <div className="flex flex-col gap-1.5">
               <a
@@ -104,7 +106,7 @@ export function HelpDialog({ open, onClose }: HelpDialogProps) {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-sm text-primary hover:underline"
               >
-                GitHub Repository
+                {t.help.resources.githubLink}
                 <ExternalLink className="h-3 w-3" />
               </a>
               <a
@@ -113,7 +115,7 @@ export function HelpDialog({ open, onClose }: HelpDialogProps) {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-sm text-primary hover:underline"
               >
-                Report an Issue
+                {t.help.resources.reportIssueLink}
                 <ExternalLink className="h-3 w-3" />
               </a>
               <a
@@ -122,7 +124,7 @@ export function HelpDialog({ open, onClose }: HelpDialogProps) {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-sm text-primary hover:underline"
               >
-                Documentation
+                {t.help.resources.docsLink}
                 <ExternalLink className="h-3 w-3" />
               </a>
               <a
@@ -131,7 +133,7 @@ export function HelpDialog({ open, onClose }: HelpDialogProps) {
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 text-sm text-primary hover:underline"
               >
-                API Reference (Swagger)
+                {t.help.resources.apiRefLink}
                 <ExternalLink className="h-3 w-3" />
               </a>
             </div>

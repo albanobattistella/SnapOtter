@@ -143,7 +143,7 @@ export function StripMetadataControls({
           />
           Strip EXIF (camera info, date, exposure)
           {hasExif && !stripAll && (
-            <span className="ml-auto text-[10px] text-muted-foreground">
+            <span className="ms-auto text-[10px] text-muted-foreground">
               {Object.keys(metadata?.exif ?? {}).filter((k) => !SKIP_KEYS.has(k)).length} fields
             </span>
           )}
@@ -161,7 +161,7 @@ export function StripMetadataControls({
           />
           Strip GPS (location data)
           {hasGps && !stripAll && (
-            <span className="ml-auto text-[10px] text-amber-500">location found</span>
+            <span className="ms-auto text-[10px] text-amber-500">location found</span>
           )}
         </label>
 

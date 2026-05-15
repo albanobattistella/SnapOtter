@@ -1,6 +1,7 @@
 import { FolderOpen, Grid3x3, HelpCircle, LayoutGrid, Settings, Workflow } from "lucide-react";
 import type { ComponentType, SVGProps } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "@/contexts/i18n-context";
 import { cn } from "@/lib/utils";
 import { ImageEditIcon } from "../common/image-edit-icon";
 import { OtterLogo } from "../common/otter-logo";
@@ -11,18 +12,21 @@ interface SidebarItem {
   href?: string;
 }
 
-const topItems: SidebarItem[] = [
-  { icon: LayoutGrid, label: "Tools", href: "/" },
-  { icon: Grid3x3, label: "Grid", href: "/fullscreen" },
-  { icon: Workflow, label: "Automate", href: "/automate" },
-  { icon: ImageEditIcon, label: "Editor", href: "/editor" },
-  { icon: FolderOpen, label: "Files", href: "/files" },
-];
-
-const bottomItems: SidebarItem[] = [
-  { icon: HelpCircle, label: "Help" },
-  { icon: Settings, label: "Settings" },
-];
+function useNavItems() {
+  const { t } = useTranslation();
+  const topItems: SidebarItem[] = [
+    { icon: LayoutGrid, label: t.sidebar.tools, href: "/" },
+    { icon: Grid3x3, label: t.sidebar.grid, href: "/fullscreen" },
+    { icon: Workflow, label: t.sidebar.automate, href: "/automate" },
+    { icon: ImageEditIcon, label: t.sidebar.editor, href: "/editor" },
+    { icon: FolderOpen, label: t.sidebar.files, href: "/files" },
+  ];
+  const bottomItems: SidebarItem[] = [
+    { icon: HelpCircle, label: t.sidebar.help },
+    { icon: Settings, label: t.sidebar.settings },
+  ];
+  return { topItems, bottomItems };
+}
 
 interface SidebarProps {
   onSettingsClick: () => void;
@@ -40,6 +44,7 @@ export function Sidebar({
   expanded = false,
 }: SidebarProps) {
   const location = useLocation();
+  const { topItems, bottomItems } = useNavItems();
 
   const renderItem = (item: SidebarItem, isActive: boolean) => {
     const content = expanded ? (
@@ -68,14 +73,14 @@ export function Sidebar({
       </div>
     );
 
-    if (item.label === "Settings") {
+    if (item === bottomItems[1]) {
       return (
         <button key={item.label} type="button" onClick={onSettingsClick} className="w-full">
           {content}
         </button>
       );
     }
-    if (item.label === "Help") {
+    if (item === bottomItems[0]) {
       return (
         <button
           key={item.label}

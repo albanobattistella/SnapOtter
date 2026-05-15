@@ -22,10 +22,12 @@ import { CropCanvas } from "@/components/tools/crop-canvas";
 import type { EraserCanvasRef } from "@/components/tools/eraser-canvas";
 import { EraserCanvas } from "@/components/tools/eraser-canvas";
 import type { PreviewTransform } from "@/components/tools/rotate-settings";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useAuth } from "@/hooks/use-auth";
 import { useMobile } from "@/hooks/use-mobile";
 import { formatFileSize } from "@/lib/download";
 import { ICON_MAP } from "@/lib/icon-map";
+import { getToolName } from "@/lib/tool-i18n";
 import { getToolRegistryEntry } from "@/lib/tool-registry";
 import { useBase64Store } from "@/stores/base64-store";
 import { useCollageStore } from "@/stores/collage-store";
@@ -78,12 +80,11 @@ function FileSelectionInfo({
   onClear: () => void;
   onAddMore: () => void;
 }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   if (files.length === 0) {
-    return (
-      <p className="text-xs text-muted-foreground italic">Drop or upload an image to get started</p>
-    );
+    return <p className="text-xs text-muted-foreground italic">{t.toolPage.emptyPrompt}</p>;
   }
 
   const showToggle = files.length > COLLAPSED_LIMIT;
@@ -110,7 +111,7 @@ function FileSelectionInfo({
               key={`${file.name}-${i}`}
               type="button"
               onClick={() => onSelect(i)}
-              className={`w-full flex items-center gap-1.5 text-xs rounded px-2 py-1.5 text-left transition-colors ${isSelected ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted"}`}
+              className={`w-full flex items-center gap-1.5 text-xs rounded px-2 py-1.5 text-start transition-colors ${isSelected ? "bg-primary/10 text-foreground" : "text-muted-foreground hover:bg-muted"}`}
             >
               {isSelected && <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />}
               <span className="truncate flex-1 min-w-0">{file.name}</span>
@@ -148,6 +149,7 @@ function FileSelectionInfo({
 }
 
 export function ToolPage() {
+  const { t } = useTranslation();
   const { toolId } = useParams<{ toolId: string }>();
   const tool = useMemo(() => TOOLS.find((t) => t.id === toolId), [toolId]);
   const registryEntry = useMemo(
@@ -344,7 +346,7 @@ export function ToolPage() {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-full text-muted-foreground">
-          Tool not found
+          {t.toolPage.notFound}
         </div>
       </AppLayout>
     );
@@ -354,7 +356,7 @@ export function ToolPage() {
     return (
       <AppLayout>
         <div className="flex items-center justify-center h-full text-muted-foreground">
-          Loading...
+          {t.common.loading}
         </div>
       </AppLayout>
     );
@@ -444,7 +446,7 @@ export function ToolPage() {
       }
       return (
         <div className="text-center text-muted-foreground">
-          <p className="text-sm">Configure settings and generate.</p>
+          <p className="text-sm">{t.toolPage.configureAndGenerate}</p>
         </div>
       );
     }
@@ -455,7 +457,7 @@ export function ToolPage() {
       return (
         <div className="flex flex-col items-center justify-center gap-3 h-full text-center px-4">
           <p className="text-sm text-red-500">
-            {currentEntry.error ?? "Processing failed for this file"}
+            {currentEntry.error ?? t.toolPage.processingFailed}
           </p>
         </div>
       );
@@ -549,7 +551,7 @@ export function ToolPage() {
             <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
           </div>
           <div>
-            <p className="text-sm font-medium">Conversion complete</p>
+            <p className="text-sm font-medium">{t.toolPage.conversionComplete}</p>
             <p className="text-xs text-muted-foreground mt-1">{processedFileName}</p>
             {processedSize != null && (
               <p className="text-xs text-muted-foreground">
@@ -633,7 +635,7 @@ export function ToolPage() {
       return (
         <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
           <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
-          <p className="text-sm text-muted-foreground">Generating preview...</p>
+          <p className="text-sm text-muted-foreground">{t.toolPage.generatingPreview}</p>
           <p className="text-xs text-muted-foreground/60">{selectedFileName}</p>
         </div>
       );
@@ -748,7 +750,7 @@ export function ToolPage() {
         <div className="border-t border-border" />
 
         <div className="space-y-2">
-          <h3 className="text-sm font-medium text-muted-foreground">Settings</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">{t.common.settings}</h3>
           <Suspense fallback={<div className="text-xs text-muted-foreground">Loading...</div>}>
             <ToolSettings {...settingsProps} />
           </Suspense>
@@ -762,7 +764,7 @@ export function ToolPage() {
             className="w-full py-2.5 rounded-lg border border-primary text-primary font-medium flex items-center justify-center gap-2 hover:bg-primary/5"
           >
             <Download className="h-4 w-4" />
-            Download All (ZIP)
+            {t.toolPage.downloadAllZip}
           </button>
         )}
 
@@ -795,13 +797,15 @@ export function ToolPage() {
             <div className="p-2 rounded-lg bg-primary text-primary-foreground">
               <IconComponent className="h-5 w-5" />
             </div>
-            <h2 className="font-semibold text-lg text-foreground flex-1">{tool.name}</h2>
+            <h2 className="font-semibold text-lg text-foreground flex-1">
+              {getToolName(t, tool.id, tool.name)}
+            </h2>
             <button
               type="button"
               onClick={() => setMobileSettingsOpen(!mobileSettingsOpen)}
               className="px-3 py-1.5 rounded-lg border border-border text-xs text-muted-foreground hover:bg-muted"
             >
-              {mobileSettingsOpen ? "Hide Settings" : "Settings"}
+              {mobileSettingsOpen ? t.toolPage.hideSettings : t.common.settings}
             </button>
           </div>
 
@@ -846,7 +850,9 @@ export function ToolPage() {
             <div className="p-2 rounded-lg bg-primary text-primary-foreground">
               <IconComponent className="h-5 w-5" />
             </div>
-            <h2 className="font-semibold text-lg text-foreground">{tool.name}</h2>
+            <h2 className="font-semibold text-lg text-foreground">
+              {getToolName(t, tool.id, tool.name)}
+            </h2>
           </div>
 
           {renderSettingsContent()}

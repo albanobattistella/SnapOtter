@@ -80,12 +80,12 @@ export function FileListItem({ file }: FileListItemProps) {
       </span>
 
       {/* Size */}
-      <span className="hidden sm:block text-xs text-muted-foreground shrink-0 w-16 text-right">
+      <span className="hidden sm:block text-xs text-muted-foreground shrink-0 w-16 text-end">
         {formatSize(file.size)}
       </span>
 
       {/* Date */}
-      <span className="hidden lg:block text-xs text-muted-foreground shrink-0 w-24 text-right">
+      <span className="hidden lg:block text-xs text-muted-foreground shrink-0 w-24 text-end">
         {formatDate(file.createdAt)}
       </span>
     </div>

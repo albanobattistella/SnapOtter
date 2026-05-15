@@ -64,7 +64,7 @@ export function FileList() {
             placeholder="Search files..."
             value={inputValue}
             onChange={handleSearchChange}
-            className="w-full pl-8 pr-3 py-1.5 text-sm bg-muted rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground placeholder:text-muted-foreground"
+            className="w-full ps-8 pe-3 py-1.5 text-sm bg-muted rounded-lg border border-border focus:outline-none focus:ring-2 focus:ring-primary/50 text-foreground placeholder:text-muted-foreground"
           />
         </div>
       </div>

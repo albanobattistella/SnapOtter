@@ -2,12 +2,14 @@
 
 import { FilePlus, ImagePlus } from "lucide-react";
 import { useCallback, useState } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useEditorStore } from "@/stores/editor-store";
 import { NewDocumentDialog } from "./new-document-dialog";
 
 const ACCEPTED_TYPES = ".png,.jpg,.jpeg,.webp,.gif,.bmp,.tiff,.svg,.avif,.svgz";
 
 export function WelcomeScreen() {
+  const { t } = useTranslation();
   const [showNewDoc, setShowNewDoc] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
   const loadImage = useEditorStore((s) => s.loadImage);
@@ -70,8 +72,10 @@ export function WelcomeScreen() {
           }`}
         >
           <div className="text-center">
-            <h2 className="text-xl font-semibold text-foreground mb-1">Image Editor</h2>
-            <p className="text-sm text-muted-foreground">Drop an image here to get started</p>
+            <h2 className="text-xl font-semibold text-foreground mb-1">
+              {t.editor.welcome.heading}
+            </h2>
+            <p className="text-sm text-muted-foreground">{t.editor.welcome.dropDescription}</p>
           </div>
 
           <div className="flex flex-col gap-2 w-full">
@@ -81,7 +85,7 @@ export function WelcomeScreen() {
               className="flex items-center gap-3 w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
               <ImagePlus size={20} />
-              <span className="text-sm font-medium">Open Image</span>
+              <span className="text-sm font-medium">{t.editor.welcome.openImageButton}</span>
             </button>
 
             <button
@@ -90,11 +94,11 @@ export function WelcomeScreen() {
               className="flex items-center gap-3 w-full px-4 py-3 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
             >
               <FilePlus size={20} />
-              <span className="text-sm font-medium">New Document</span>
+              <span className="text-sm font-medium">{t.editor.welcome.newDocumentButton}</span>
             </button>
           </div>
 
-          <p className="text-xs text-muted-foreground">Or paste from clipboard (Ctrl+V)</p>
+          <p className="text-xs text-muted-foreground">{t.editor.welcome.pasteHint}</p>
         </div>
       </section>
 

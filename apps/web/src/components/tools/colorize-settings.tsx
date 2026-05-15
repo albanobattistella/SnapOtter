@@ -1,7 +1,9 @@
 import { Download } from "lucide-react";
 import { useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 type Model = "auto" | "ddcolor" | "opencv";
@@ -13,6 +15,7 @@ const MODEL_OPTIONS: { value: Model; label: string; desc: string }[] = [
 ];
 
 export function ColorizeSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const {
     processFiles,
@@ -83,7 +86,7 @@ export function ColorizeSettings() {
                   ? "Natural"
                   : "Vivid"}
           </span>
-          <span className="text-xs font-mono text-foreground tabular-nums w-10 text-right">
+          <span className="text-xs font-mono text-foreground tabular-nums w-10 text-end">
             {intensity}%
           </span>
         </div>
@@ -126,7 +129,9 @@ export function ColorizeSettings() {
           disabled={!hasFile || processing}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {hasMultiple ? `Colorize (${files.length} files)` : "Colorize"}
+          {hasMultiple
+            ? format(t.toolSettings.colorize.submitBatch, { count: files.length })
+            : t.toolSettings.colorize.submit}
         </button>
       )}
 

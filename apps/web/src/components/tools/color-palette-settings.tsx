@@ -1,9 +1,11 @@
 import { Check, Copy, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
 import { formatHeaders } from "@/lib/api";
 import { copyToClipboard } from "@/lib/utils";
 import { useFileStore } from "@/stores/file-store";
 export function ColorPaletteSettings() {
+  const { t } = useTranslation();
   const { files, processing, error, setProcessing, setError } = useFileStore();
   const [colors, setColors] = useState<string[]>([]);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
@@ -81,7 +83,7 @@ export function ColorPaletteSettings() {
                   className="w-6 h-6 rounded border border-border shrink-0"
                   style={{ backgroundColor: color }}
                 />
-                <span className="text-xs font-mono text-foreground flex-1 text-left">{color}</span>
+                <span className="text-xs font-mono text-foreground flex-1 text-start">{color}</span>
                 {copiedIdx === i ? (
                   <Check className="h-3 w-3 text-green-500 shrink-0" />
                 ) : (

@@ -144,7 +144,7 @@ describe("Dropzone", () => {
   describe("rendering", () => {
     it("renders upload button and helper text", () => {
       render(<Dropzone />);
-      expect(screen.getByText("Upload")).toBeDefined();
+      expect(screen.getByText("Upload from computer")).toBeDefined();
       expect(screen.getByText("Drop your images here")).toBeDefined();
       expect(screen.getByText("click anywhere to browse, or paste from clipboard")).toBeDefined();
     });
@@ -196,7 +196,7 @@ describe("Dropzone", () => {
       const getInput = spyFileInput();
       render(<Dropzone />);
 
-      fireEvent.click(screen.getByText("Upload"));
+      fireEvent.click(screen.getByText("Upload from computer"));
       expect(getInput()).not.toBeNull();
     });
 

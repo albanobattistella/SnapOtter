@@ -9,8 +9,10 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
 import { formatHeaders } from "@/lib/api";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 type SubjectType = "people" | "products" | "general";
@@ -84,6 +86,7 @@ export interface RemoveBgControlsProps {
 }
 
 export function RemoveBgControls({ settings: _settings, onChange }: RemoveBgControlsProps) {
+  const { t } = useTranslation();
   const [subject, setSubject] = useState<SubjectType>("people");
   const [quality, setQuality] = useState<Quality>("balanced");
   const [isPassport, setIsPassport] = useState(true);
@@ -167,7 +170,7 @@ export function RemoveBgControls({ settings: _settings, onChange }: RemoveBgCont
   return (
     <div className="space-y-3">
       {/* Subject type */}
-      <SectionLabel>Subject</SectionLabel>
+      <SectionLabel>{t.toolSettings["remove-background"].subject}</SectionLabel>
       <div className="grid grid-cols-3 gap-1.5">
         {SUBJECT_OPTIONS.map((opt) => {
           const Icon = opt.icon;
@@ -202,12 +205,14 @@ export function RemoveBgControls({ settings: _settings, onChange }: RemoveBgCont
             onChange={(e) => setIsPassport(e.target.checked)}
             className="rounded border-border accent-primary"
           />
-          <span className="text-sm text-muted-foreground">Passport / ID photo</span>
+          <span className="text-sm text-muted-foreground">
+            {t.toolSettings["remove-background"].passportIdPhoto}
+          </span>
         </label>
       )}
 
       {/* Quality */}
-      <SectionLabel>Quality</SectionLabel>
+      <SectionLabel>{t.toolSettings["remove-background"].quality}</SectionLabel>
       <div className={`grid gap-1.5 ${qualityOptions.length > 3 ? "grid-cols-4" : "grid-cols-3"}`}>
         {qualityOptions.map((opt) => (
           <button
@@ -226,7 +231,7 @@ export function RemoveBgControls({ settings: _settings, onChange }: RemoveBgCont
       </div>
 
       {/* Background */}
-      <SectionLabel>Background</SectionLabel>
+      <SectionLabel>{t.toolSettings["remove-background"].background}</SectionLabel>
       <div className="space-y-2">
         {/* Type buttons */}
         <div className="flex gap-1.5 flex-wrap">
@@ -258,7 +263,7 @@ export function RemoveBgControls({ settings: _settings, onChange }: RemoveBgCont
 
         {/* Color options */}
         {bgType === "color" && (
-          <div className="space-y-2 pl-1">
+          <div className="space-y-2 ps-1">
             <div className="flex gap-1.5 flex-wrap">
               {COLOR_PRESETS.map((preset) => (
                 <button
@@ -293,7 +298,7 @@ export function RemoveBgControls({ settings: _settings, onChange }: RemoveBgCont
 
         {/* Gradient options */}
         {bgType === "gradient" && (
-          <div className="space-y-2 pl-1">
+          <div className="space-y-2 ps-1">
             <div className="flex gap-1.5 flex-wrap">
               {GRADIENT_PRESETS.map((preset) => (
                 <button
@@ -351,7 +356,7 @@ export function RemoveBgControls({ settings: _settings, onChange }: RemoveBgCont
 
         {/* Image upload */}
         {bgType === "image" && (
-          <div className="pl-1">
+          <div className="ps-1">
             {bgImageFile ? (
               <div className="flex items-center gap-2 text-xs">
                 <span className="text-foreground truncate flex-1">{bgImageFile.name}</span>
@@ -391,12 +396,12 @@ export function RemoveBgControls({ settings: _settings, onChange }: RemoveBgCont
         {effectsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         Effects
         {(blurEnabled || shadowEnabled) && (
-          <span className="ml-auto text-primary text-[10px] normal-case font-normal">active</span>
+          <span className="ms-auto text-primary text-[10px] normal-case font-normal">active</span>
         )}
       </button>
 
       {effectsOpen && (
-        <div className="space-y-3 pl-1">
+        <div className="space-y-3 ps-1">
           {/* Blur */}
           <div>
             <label className="flex items-center gap-2 cursor-pointer">
@@ -406,13 +411,15 @@ export function RemoveBgControls({ settings: _settings, onChange }: RemoveBgCont
                 onChange={(e) => setBlurEnabled(e.target.checked)}
                 className="rounded border-border accent-primary"
               />
-              <span className="text-xs text-muted-foreground">Blur Background</span>
+              <span className="text-xs text-muted-foreground">
+                {t.toolSettings["remove-background"].blurBackground}
+              </span>
             </label>
             {blurEnabled && (
-              <div className="mt-1.5 pl-5">
+              <div className="mt-1.5 ps-5">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-muted-foreground">Intensity</span>
-                  <span className="text-xs font-mono text-foreground tabular-nums w-8 text-right">
+                  <span className="text-xs font-mono text-foreground tabular-nums w-8 text-end">
                     {blurIntensity}
                   </span>
                 </div>
@@ -437,13 +444,15 @@ export function RemoveBgControls({ settings: _settings, onChange }: RemoveBgCont
                 onChange={(e) => setShadowEnabled(e.target.checked)}
                 className="rounded border-border accent-primary"
               />
-              <span className="text-xs text-muted-foreground">Add Shadow</span>
+              <span className="text-xs text-muted-foreground">
+                {t.toolSettings["remove-background"].addShadow}
+              </span>
             </label>
             {shadowEnabled && (
-              <div className="mt-1.5 pl-5">
+              <div className="mt-1.5 ps-5">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-muted-foreground">Opacity</span>
-                  <span className="text-xs font-mono text-foreground tabular-nums w-8 text-right">
+                  <span className="text-xs font-mono text-foreground tabular-nums w-8 text-end">
                     {shadowOpacity}
                   </span>
                 </div>
@@ -526,6 +535,7 @@ interface RemoveBgSettingsProps {
 }
 
 export function RemoveBgSettings({ onBgPreview }: RemoveBgSettingsProps = {}) {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const {
     processFiles,
@@ -796,7 +806,7 @@ export function RemoveBgSettings({ onBgPreview }: RemoveBgSettingsProps = {}) {
         <ProgressCard
           active={processing}
           phase={progress.phase === "idle" ? "uploading" : progress.phase}
-          label="Removing background"
+          label={t.toolSettings["remove-background"].progressLabel}
           stage={progress.stage}
           percent={progress.percent}
           elapsed={progress.elapsed}
@@ -809,7 +819,9 @@ export function RemoveBgSettings({ onBgPreview }: RemoveBgSettingsProps = {}) {
           disabled={!hasFile || processing}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {files.length > 1 ? `Remove Background (${files.length} files)` : "Remove Background"}
+          {files.length > 1
+            ? format(t.toolSettings["remove-background"].submitBatch, { count: files.length })
+            : t.toolSettings["remove-background"].submit}
         </button>
       ) : null}
 
@@ -825,7 +837,7 @@ export function RemoveBgSettings({ onBgPreview }: RemoveBgSettingsProps = {}) {
               className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <Download className="h-4 w-4" />
-              {applyingEffects ? "Rendering..." : "Download"}
+              {applyingEffects ? t.toolSettings["remove-background"].rendering : "Download"}
             </button>
           ) : (
             <a

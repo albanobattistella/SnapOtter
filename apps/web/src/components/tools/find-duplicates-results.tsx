@@ -1,4 +1,5 @@
 import { ArrowLeft, ChevronLeft, ChevronRight, Crown, Search } from "lucide-react";
+import { useTranslation } from "@/contexts/i18n-context";
 import { formatFileSize } from "@/lib/download";
 import type { DuplicateFileInfo } from "@/stores/duplicate-store";
 import { useDuplicateStore } from "@/stores/duplicate-store";
@@ -63,7 +64,7 @@ function OverviewGrid() {
             key={group.groupId}
             type="button"
             onClick={() => setSelectedGroup(gi)}
-            className="w-full text-left p-3 rounded-lg bg-muted/50 border border-border hover:border-primary/50 transition-colors"
+            className="w-full text-start p-3 rounded-lg bg-muted/50 border border-border hover:border-primary/50 transition-colors"
           >
             <div className="flex justify-between items-center mb-2.5">
               <div className="flex items-center gap-2">
@@ -190,7 +191,7 @@ function DetailComparison() {
               key={file.filename}
               type="button"
               onClick={() => overrideBest(selectedGroupIndex, fi)}
-              className="text-left"
+              className="text-start"
               title={isCurrentBest ? "Selected as best" : "Click to mark as best"}
             >
               <div
@@ -219,18 +220,16 @@ function DetailComparison() {
                 <p className="font-medium text-foreground truncate">{file.filename}</p>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                   <span className="text-muted-foreground">Dimensions</span>
-                  <span className="text-foreground text-right">
+                  <span className="text-foreground text-end">
                     {file.width} x {file.height}
                   </span>
                   <span className="text-muted-foreground">File size</span>
-                  <span className="text-foreground text-right">
-                    {formatFileSize(file.fileSize)}
-                  </span>
+                  <span className="text-foreground text-end">{formatFileSize(file.fileSize)}</span>
                   <span className="text-muted-foreground">Format</span>
-                  <span className="text-foreground text-right">{file.format.toUpperCase()}</span>
+                  <span className="text-foreground text-end">{file.format.toUpperCase()}</span>
                   <span className="text-muted-foreground">Similarity</span>
                   <span
-                    className={`text-right font-medium ${file.similarity === 100 ? "text-green-500" : "text-yellow-500"}`}
+                    className={`text-end font-medium ${file.similarity === 100 ? "text-green-500" : "text-yellow-500"}`}
                   >
                     {file.similarity}%
                   </span>
@@ -252,6 +251,7 @@ function DetailComparison() {
 }
 
 export function FindDuplicatesResults() {
+  const { t } = useTranslation();
   const { results, scanning, viewMode } = useDuplicateStore();
 
   if (scanning) {

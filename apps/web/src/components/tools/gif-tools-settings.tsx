@@ -1,8 +1,10 @@
 import { Download, FlipHorizontal2, FlipVertical2, Link, RotateCw, Unlink } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useGifInfo } from "@/hooks/use-gif-info";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 type GifMode = "resize" | "optimize" | "speed" | "reverse" | "extract" | "rotate";
@@ -25,6 +27,7 @@ export interface GifToolsControlsProps {
 }
 
 export function GifToolsControls({ settings: initialSettings, onChange }: GifToolsControlsProps) {
+  const { t } = useTranslation();
   const { info, loading: infoLoading } = useGifInfo();
   const isAnimated = (info?.pages ?? 0) > 1;
 
@@ -643,6 +646,7 @@ export function GifToolsControls({ settings: initialSettings, onChange }: GifToo
 }
 
 export function GifToolsSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const {
     processFiles,
@@ -678,7 +682,7 @@ export function GifToolsSettings() {
           <p>
             Processed: {(processedSize / 1024).toFixed(1)} KB
             {originalSize > 0 && (
-              <span className="ml-1">
+              <span className="ms-1">
                 ({Math.round(((processedSize - originalSize) / originalSize) * 100)}%)
               </span>
             )}
@@ -690,7 +694,7 @@ export function GifToolsSettings() {
         <ProgressCard
           active={processing}
           phase={progress.phase === "idle" ? "uploading" : progress.phase}
-          label="Processing GIF"
+          label={t.toolSettings["gif-tools"].progressLabel}
           stage={progress.stage}
           percent={progress.percent}
           elapsed={progress.elapsed}
@@ -703,7 +707,9 @@ export function GifToolsSettings() {
           disabled={!hasFile || processing}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {files.length > 1 ? `Process (${files.length} files)` : "Process"}
+          {files.length > 1
+            ? format(t.toolSettings["gif-tools"].submitBatch, { count: files.length })
+            : "Process"}
         </button>
       )}
 

@@ -1,7 +1,9 @@
 import { Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 export interface RestorePhotoControlsProps {
@@ -13,6 +15,7 @@ export function RestorePhotoControls({
   settings: initialSettings,
   onChange,
 }: RestorePhotoControlsProps) {
+  const { t } = useTranslation();
   const [scratchRemoval, setScratchRemoval] = useState(true);
   const [faceEnhancement, setFaceEnhancement] = useState(true);
   const [fidelity, setFidelity] = useState(70);
@@ -103,7 +106,7 @@ export function RestorePhotoControls({
 
         {/* Fidelity slider (only when face enhancement is on) */}
         {faceEnhancement && (
-          <div className="pl-2 border-l-2 border-primary/20">
+          <div className="ps-2 border-s-2 border-primary/20">
             <div className="flex justify-between items-center">
               <p className="text-xs text-muted-foreground">Face Fidelity</p>
               <span className="text-xs font-mono tabular-nums">{fidelity}%</span>
@@ -142,7 +145,7 @@ export function RestorePhotoControls({
 
         {/* Denoise strength slider */}
         {denoise && (
-          <div className="pl-2 border-l-2 border-primary/20">
+          <div className="ps-2 border-s-2 border-primary/20">
             <div className="flex justify-between items-center">
               <p className="text-xs text-muted-foreground">Denoise Strength</p>
               <span className="text-xs font-mono tabular-nums">{denoiseStrength}</span>
@@ -183,7 +186,7 @@ export function RestorePhotoControls({
 
         {/* Colorize strength slider */}
         {colorize && (
-          <div className="pl-2 border-l-2 border-primary/20">
+          <div className="ps-2 border-s-2 border-primary/20">
             <div className="flex justify-between items-center">
               <p className="text-xs text-muted-foreground">Colorize Strength</p>
               <span className="text-xs font-mono tabular-nums">{colorizeStrength}%</span>
@@ -209,6 +212,7 @@ export function RestorePhotoControls({
 }
 
 export function RestorePhotoSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const {
     processFiles,
@@ -265,7 +269,9 @@ export function RestorePhotoSettings() {
           disabled={!hasFile || processing}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {hasMultiple ? `Restore Photos (${files.length})` : "Restore Photo"}
+          {hasMultiple
+            ? format(t.toolSettings["restore-photo"].submitBatch, { count: files.length })
+            : t.toolSettings["restore-photo"].submit}
         </button>
       )}
 

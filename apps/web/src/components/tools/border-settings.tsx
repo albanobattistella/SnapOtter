@@ -2,7 +2,9 @@ import { Download } from "lucide-react";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 // ── Presets ──────────────────────────────────────────────────────────
@@ -225,6 +227,7 @@ export function BorderControls({
   onChange,
   onImageStyle,
 }: BorderControlsProps) {
+  const { t } = useTranslation();
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [borderWidth, setBorderWidth] = useState(10);
   const [borderColor, setBorderColor] = useState("#000000");

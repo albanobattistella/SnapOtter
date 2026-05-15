@@ -386,11 +386,11 @@ function MenuItemRow({ item, onClose }: { item: MenuItem; onClose: () => void })
           data-testid={`menu-item-${toTestId(item.label)}`}
         >
           <span>{item.label}</span>
-          <ChevronRight size={12} className="ml-4 text-muted-foreground" />
+          <ChevronRight size={12} className="ms-4 text-muted-foreground" />
         </div>
         {submenuOpen && (
           <div
-            className="absolute left-full top-0 ml-0.5 min-w-[180px] bg-card border border-border rounded-md shadow-lg py-1 z-[60]"
+            className="absolute left-full top-0 ms-0.5 min-w-[180px] bg-card border border-border rounded-md shadow-lg py-1 z-[60]"
             role="menu"
             onMouseEnter={handleEnter}
             onMouseLeave={handleLeave}
@@ -410,7 +410,7 @@ function MenuItemRow({ item, onClose }: { item: MenuItem; onClose: () => void })
       <button
         type="button"
         className={cn(
-          "flex items-center justify-between w-full px-3 py-1 text-xs cursor-default select-none rounded-sm text-left",
+          "flex items-center justify-between w-full px-3 py-1 text-xs cursor-default select-none rounded-sm text-start",
           item.disabled
             ? "text-muted-foreground/50 pointer-events-none"
             : "text-foreground hover:bg-accent hover:text-accent-foreground",
@@ -429,7 +429,7 @@ function MenuItemRow({ item, onClose }: { item: MenuItem; onClose: () => void })
           {item.label}
         </span>
         {item.shortcut && (
-          <span className="ml-6 text-[10px] text-muted-foreground">{item.shortcut}</span>
+          <span className="ms-6 text-[10px] text-muted-foreground">{item.shortcut}</span>
         )}
       </button>
       {item.dividerAfter && <div className="my-1 border-t border-border" />}

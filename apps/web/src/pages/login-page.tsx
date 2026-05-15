@@ -1,37 +1,13 @@
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useAuth } from "@/hooks/use-auth";
 import { setToken } from "@/lib/api";
-
-const phrases = [
-  "No signups. No accounts.",
-  "No uploads to the cloud. Ever.",
-  "100% local processing.",
-  "Free. Forever.",
-  "No limits. No hidden caps.",
-  "Works fully offline.",
-  "Unlimited batch processing.",
-  "51 image tools.",
-  "15 AI models. Your hardware.",
-  "Lightning fast. Built on Sharp.",
-  "Air-gapped ready.",
-  "One Docker container.",
-  "Open source. Always.",
-  "Every pixel stays on your hardware.",
-  "Your server. Your rules.",
-  "Deploys in a single docker pull.",
-  "The self-hosted alternative.",
-  "Resize, compress, convert. Locally.",
-  "Free image editor. No watermarks.",
-  "Bulk image processing. Unlimited.",
-  "Remove backgrounds offline.",
-  "Self-hosted Canva alternative.",
-  "No API keys needed.",
-  "GDPR compliant by design.",
-  "Works without internet.",
-];
+import { format } from "@/lib/format";
 
 function RotatingPhrase() {
+  const { t } = useTranslation();
+  const phrases = t.auth.rotatingPhrases;
   const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
 
@@ -41,7 +17,7 @@ function RotatingPhrase() {
       setIndex((i) => (i + 1) % phrases.length);
       setVisible(true);
     }, 300);
-  }, []);
+  }, [phrases.length]);
 
   useEffect(() => {
     const timer = setInterval(advance, 3000);
@@ -61,7 +37,96 @@ function RotatingPhrase() {
   );
 }
 
+function LanguageSelector() {
+  const { locale, setLocale, supportedLocales } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  const current = supportedLocales.find((l) => l.code === locale);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 text-sm text-foreground/70 hover:text-foreground transition-colors px-3 py-2 rounded-lg border border-border hover:bg-muted/50"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          role="img"
+          aria-label="Language"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+          <path d="M2 12h20" />
+        </svg>
+        {current?.nativeName ?? "English"}
+      </button>
+      {open && (
+        <div className="absolute bottom-full mb-1 left-0 w-56 max-h-64 overflow-y-auto rounded-lg border border-border bg-background shadow-lg z-50">
+          {supportedLocales.map((l) => (
+            <button
+              key={l.code}
+              type="button"
+              onClick={() => {
+                setLocale(l.code);
+                setOpen(false);
+              }}
+              className="w-full text-start px-3 py-2 text-sm hover:bg-muted/50 flex items-center justify-between transition-colors"
+            >
+              <span
+                className={l.code === locale ? "font-medium text-foreground" : "text-foreground"}
+              >
+                {l.nativeName}
+              </span>
+              {l.code === locale && (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-primary shrink-0"
+                  role="img"
+                  aria-label="Selected"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function LoginPage() {
+  const { t } = useTranslation();
   const { oidcEnabled, oidcProviderName } = useAuth();
   const [searchParams] = useSearchParams();
   const [username, setUsername] = useState("");
@@ -73,16 +138,15 @@ export function LoginPage() {
     const oidcError = searchParams.get("error");
     if (oidcError) {
       const errorMessages: Record<string, string> = {
-        oidc_auth_failed: "Authentication failed. Please try again.",
-        oidc_provider_unreachable: "Could not reach the identity provider. Please try again later.",
-        oidc_session_expired: "Login session expired. Please try again.",
-        oidc_user_not_authorized:
-          "Your account is not authorized to access this application. Contact your administrator.",
-        oidc_user_limit_reached: "User limit reached. Contact your administrator.",
+        oidc_auth_failed: t.auth.oidcAuthFailed,
+        oidc_provider_unreachable: t.auth.oidcProviderUnreachable,
+        oidc_session_expired: t.auth.oidcSessionExpired,
+        oidc_user_not_authorized: t.auth.oidcUserNotAuthorized,
+        oidc_user_limit_reached: t.auth.oidcUserLimitReached,
       };
-      setError(errorMessages[oidcError] || "Authentication error. Please try again.");
+      setError(errorMessages[oidcError] || t.auth.oidcGenericError);
     }
-  }, [searchParams]);
+  }, [searchParams, t]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -96,21 +160,19 @@ export function LoginPage() {
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || "Invalid username or password");
+        setError(t.auth.invalidCredentials);
         return;
       }
       const data = await res.json();
       setToken(data.token);
-      // Store username for settings display
       localStorage.setItem("snapotter-username", data.user?.username || username);
-      // Redirect to password change if required, otherwise go home
       if (data.user?.mustChangePassword) {
         window.location.href = "/change-password";
       } else {
         window.location.href = "/";
       }
     } catch {
-      setError("Connection error");
+      setError(t.auth.connectionError);
     } finally {
       setLoading(false);
     }
@@ -124,12 +186,12 @@ export function LoginPage() {
             <h1 className="text-3xl font-bold text-foreground">
               <span className="text-primary">SnapOtter</span>
             </h1>
-            <h2 className="text-2xl font-bold mt-4 text-foreground">Login</h2>
+            <h2 className="text-2xl font-bold mt-4 text-foreground">{t.auth.login}</h2>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="username" className="block text-sm font-medium mb-1 text-foreground">
-                Username
+                {t.auth.username}
               </label>
               <input
                 id="username"
@@ -138,14 +200,14 @@ export function LoginPage() {
                 autoComplete="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter username"
+                placeholder={t.auth.enterUsername}
                 className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                 required
               />
             </div>
             <div>
               <label htmlFor="password" className="block text-sm font-medium mb-1 text-foreground">
-                Password
+                {t.auth.password}
               </label>
               <input
                 id="password"
@@ -154,7 +216,7 @@ export function LoginPage() {
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder={t.auth.enterPassword}
                 className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
                 required
               />
@@ -165,30 +227,33 @@ export function LoginPage() {
               disabled={loading || !username || !password}
               className="w-full py-3 rounded-lg bg-primary/80 text-primary-foreground font-medium hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? "Logging in..." : "Login"}
+              {loading ? t.auth.loggingIn : t.auth.loginButton}
             </button>
           </form>
           {oidcEnabled && (
             <>
               <div className="flex items-center gap-3 my-4">
                 <div className="flex-1 border-t border-border" />
-                <span className="text-sm text-muted-foreground">or</span>
+                <span className="text-sm text-muted-foreground">{t.auth.or}</span>
                 <div className="flex-1 border-t border-border" />
               </div>
               <a
                 href="/api/auth/oidc/login"
                 className="w-full py-3 rounded-lg bg-secondary text-secondary-foreground font-medium hover:bg-secondary/80 transition-colors flex items-center justify-center gap-2"
               >
-                Sign in with {oidcProviderName || "SSO"}
+                {format(t.auth.signInWith, { provider: oidcProviderName || "SSO" })}
               </a>
             </>
           )}
+          <div className="pt-2">
+            <LanguageSelector />
+          </div>
         </div>
       </div>
-      <div className="hidden lg:flex flex-1 bg-primary/90 items-center justify-center p-12 text-white rounded-l-3xl">
+      <div className="hidden lg:flex flex-1 bg-primary/90 items-center justify-center p-12 text-white rounded-s-3xl">
         <div className="max-w-lg space-y-4 text-center">
-          <h2 className="text-4xl font-extrabold tracking-tight">Your images. Stay yours.</h2>
-          <p className="text-lg text-white/70">Every image tool you need.</p>
+          <h2 className="text-4xl font-extrabold tracking-tight">{t.auth.heroTitle}</h2>
+          <p className="text-lg text-white/70">{t.auth.heroSubtitle}</p>
           <p className="text-xl font-medium h-8">
             <RotatingPhrase />
           </p>

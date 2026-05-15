@@ -1,10 +1,13 @@
 import { Download, Loader2, Upload } from "lucide-react";
 import { useRef, useState } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
 import { formatHeaders } from "@/lib/api";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 type Position = "center" | "top-left" | "top-right" | "bottom-left" | "bottom-right";
 export function WatermarkImageSettings() {
+  const { t } = useTranslation();
   const { files, processing, error, setProcessing, setError, setProcessedUrl, setSizes, setJobId } =
     useFileStore();
   const [position, setPosition] = useState<Position>("bottom-right");
@@ -198,8 +201,8 @@ export function WatermarkImageSettings() {
         {processing
           ? "Processing..."
           : files.length > 1
-            ? `Apply Watermark (${files.length} files)`
-            : "Apply Watermark"}
+            ? format(t.toolSettings["watermark-image"].submitBatch, { count: files.length })
+            : t.toolSettings["watermark-image"].submit}
       </button>
 
       {downloadUrl && (

@@ -23,6 +23,7 @@ import { analyticsRoutes } from "./routes/analytics.js";
 import { apiKeyRoutes } from "./routes/api-keys.js";
 import { auditLogRoutes } from "./routes/audit-log.js";
 import { registerBatchRoutes } from "./routes/batch.js";
+import { configRoutes } from "./routes/config.js";
 import { docsRoutes } from "./routes/docs.js";
 import { registerFeatureRoutes } from "./routes/features.js";
 import { registerFetchUrlsRoute } from "./routes/fetch-urls.js";
@@ -171,6 +172,9 @@ await app.register(cookie, {
   secret: env.COOKIE_SECRET,
   hook: "onRequest",
 });
+
+// Public config routes (no auth required)
+await configRoutes(app);
 
 // Auth middleware (must be registered before routes it protects)
 await authMiddleware(app);

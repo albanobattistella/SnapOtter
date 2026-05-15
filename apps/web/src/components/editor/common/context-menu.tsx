@@ -259,7 +259,7 @@ export function ContextMenu({
             onClick={item.action}
             disabled={item.disabled}
             className={cn(
-              "flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-sm",
+              "flex w-full items-center gap-2.5 px-3 py-1.5 text-start text-sm",
               "text-foreground hover:bg-muted transition-colors",
               "disabled:cursor-not-allowed disabled:opacity-40",
             )}

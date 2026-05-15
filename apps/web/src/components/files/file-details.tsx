@@ -195,7 +195,7 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between items-start gap-2 px-3 py-2">
       <span className="text-xs text-muted-foreground shrink-0">{label}</span>
-      <span className="text-xs text-foreground text-right break-all">{value}</span>
+      <span className="text-xs text-foreground text-end break-all">{value}</span>
     </div>
   );
 }

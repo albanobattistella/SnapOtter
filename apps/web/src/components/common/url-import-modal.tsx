@@ -1,6 +1,8 @@
 import { AlertCircle, Check, Clock, Link, Loader2, RotateCw, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
 import { type UrlImportEntry, useUrlImport } from "@/hooks/use-url-import";
+import { format } from "@/lib/format";
 import { extractUrls } from "@/lib/url-parser";
 
 // ── Types ──────────────────────────────────────────────────────
@@ -42,6 +44,7 @@ function filenameFromUrl(url: string): string {
 // ── Component ──────────────────────────────────────────────────
 
 export function UrlImportModal({ onClose, onImport }: UrlImportModalProps) {
+  const { t } = useTranslation();
   const [text, setText] = useState("");
   const [adding, setAdding] = useState(false);
 
@@ -108,7 +111,7 @@ export function UrlImportModal({ onClose, onImport }: UrlImportModalProps) {
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border shrink-0">
           <Link className="h-5 w-5 text-primary" />
-          <h2 className="text-sm font-semibold text-foreground flex-1">Import from URLs</h2>
+          <h2 className="text-sm font-semibold text-foreground flex-1">{t.urlImport.title}</h2>
           <button
             type="button"
             onClick={handleClose}
@@ -130,9 +133,7 @@ export function UrlImportModal({ onClose, onImport }: UrlImportModalProps) {
             }
             className="w-full min-h-[120px] max-h-[240px] resize-y rounded-lg border border-border bg-muted px-3 py-2 text-sm font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
-          <p className="text-xs text-muted-foreground">
-            Supports plain URLs, bulleted lists, numbered lists, and markdown links
-          </p>
+          <p className="text-xs text-muted-foreground">{t.urlImport.placeholder}</p>
 
           {/* Progress list */}
           {hasResults && (
@@ -167,7 +168,9 @@ export function UrlImportModal({ onClose, onImport }: UrlImportModalProps) {
         {/* Footer */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-border shrink-0">
           <span className="text-xs text-muted-foreground">
-            {hasResults && !importing ? `${readyCount} of ${entries.length} ready` : ""}
+            {hasResults && !importing
+              ? format(t.urlImport.readyCount, { ready: readyCount, total: entries.length })
+              : ""}
           </span>
           <div className="flex items-center gap-2">
             {hasResults && !importing ? (
@@ -188,12 +191,10 @@ export function UrlImportModal({ onClose, onImport }: UrlImportModalProps) {
                   {adding ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Adding...
+                      {t.urlImport.adding}
                     </>
                   ) : (
-                    <>
-                      Add {readyCount} Image{readyCount !== 1 ? "s" : ""}
-                    </>
+                    format(t.urlImport.addButton, { count: readyCount })
                   )}
                 </button>
               </>
@@ -204,7 +205,7 @@ export function UrlImportModal({ onClose, onImport }: UrlImportModalProps) {
                   onClick={handleClose}
                   className="px-4 py-2 text-sm rounded-lg border border-border text-foreground hover:bg-muted"
                 >
-                  Cancel
+                  {t.common.cancel}
                 </button>
                 <button
                   type="button"
@@ -215,10 +216,10 @@ export function UrlImportModal({ onClose, onImport }: UrlImportModalProps) {
                   {importing ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Importing...
+                      {t.urlImport.adding}
                     </>
                   ) : (
-                    "Import"
+                    t.urlImport.importButton
                   )}
                 </button>
               </>

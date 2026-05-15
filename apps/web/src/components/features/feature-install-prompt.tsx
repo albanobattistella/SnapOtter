@@ -1,6 +1,8 @@
 import type { FeatureBundleState } from "@snapotter/shared";
 import { AlertCircle, Clock, Download, Loader2, RotateCcw } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
+import { format } from "@/lib/format";
 import { useFeaturesStore } from "@/stores/features-store";
 
 const PROGRESS_MESSAGES = [
@@ -56,6 +58,7 @@ export function FeatureInstallPrompt({
   toolName,
   toolDescription,
 }: FeatureInstallPromptProps) {
+  const { t } = useTranslation();
   const { installBundle, clearError, installing, errors, startTimes, queued } = useFeaturesStore();
   const progress = installing[bundle.id] ?? null;
   const error = errors[bundle.id] ?? null;
@@ -97,10 +100,8 @@ export function FeatureInstallPrompt({
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-4">
         <Download className="h-16 w-16 text-muted-foreground" />
-        <h2 className="text-xl font-semibold text-foreground">Feature Not Enabled</h2>
-        <p className="text-muted-foreground max-w-md">
-          This feature is not enabled. Ask your administrator to enable it in Settings.
-        </p>
+        <h2 className="text-xl font-semibold text-foreground">{t.features.notEnabledTitle}</h2>
+        <p className="text-muted-foreground max-w-md">{t.features.notEnabledDescription}</p>
       </div>
     );
   }
@@ -112,21 +113,21 @@ export function FeatureInstallPrompt({
         <h2 className="text-xl font-semibold text-foreground">{displayName}</h2>
         <p className="text-muted-foreground max-w-md">{displayDescription}</p>
         <p className="text-sm text-muted-foreground">
-          This feature requires an additional download (~{bundle.estimatedSize})
+          {format(t.features.requiresDownload, { size: bundle.estimatedSize })}
         </p>
       </div>
 
       {error && (
         <div className="flex items-center gap-2 bg-destructive/10 text-destructive rounded-lg px-4 py-3 max-w-md w-full">
           <AlertCircle className="h-4 w-4 shrink-0" />
-          <span className="text-sm flex-1 text-left">{error}</span>
+          <span className="text-sm flex-1 text-start">{error}</span>
           <button
             type="button"
             onClick={handleInstall}
             className="flex items-center gap-1 text-sm font-medium hover:opacity-80"
           >
             <RotateCcw className="h-3.5 w-3.5" />
-            Retry
+            {t.features.retryButton}
           </button>
         </div>
       )}
@@ -144,7 +145,7 @@ export function FeatureInstallPrompt({
               <Loader2 className="h-4 w-4 animate-spin shrink-0" />
               <span className="italic truncate">{PROGRESS_MESSAGES[messageIndex]}</span>
             </div>
-            {eta && <p className="text-xs text-muted-foreground shrink-0 ml-2">{eta}</p>}
+            {eta && <p className="text-xs text-muted-foreground shrink-0 ms-2">{eta}</p>}
           </div>
         </div>
       )}
@@ -152,7 +153,7 @@ export function FeatureInstallPrompt({
       {isQueued && (
         <div className="flex items-center gap-2 text-muted-foreground">
           <Clock className="h-5 w-5" />
-          <span className="text-sm font-medium">Queued for installation...</span>
+          <span className="text-sm font-medium">{t.features.queued}</span>
         </div>
       )}
 
@@ -162,7 +163,7 @@ export function FeatureInstallPrompt({
           onClick={handleInstall}
           className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 font-medium"
         >
-          Enable {displayName}
+          {format(t.features.enableButton, { name: displayName })}
         </button>
       )}
     </div>

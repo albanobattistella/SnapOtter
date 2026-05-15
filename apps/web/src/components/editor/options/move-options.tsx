@@ -77,7 +77,7 @@ export function MoveOptions() {
 
   return (
     <div className="flex items-center gap-1">
-      <span className="mr-2 text-xs text-muted-foreground">Align:</span>
+      <span className="me-2 text-xs text-muted-foreground">Align:</span>
 
       <OptionButton
         icon={AlignStartHorizontal}
@@ -121,7 +121,7 @@ export function MoveOptions() {
 
       <div className="mx-1 h-4 w-px bg-border" />
 
-      <span className="mr-1 text-xs text-muted-foreground">Distribute:</span>
+      <span className="me-1 text-xs text-muted-foreground">Distribute:</span>
 
       <OptionButton
         icon={ArrowLeftRight}

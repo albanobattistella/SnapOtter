@@ -1,7 +1,9 @@
 import { Download } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 type Tier = "fast" | "balanced" | "high";
@@ -22,6 +24,7 @@ const EXTEND_PRESETS = [
 ];
 
 export function AiCanvasExpandSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const { processFiles, processAllFiles, processing, error, downloadUrl, progress } =
     useToolProcessor("ai-canvas-expand");
@@ -211,7 +214,7 @@ export function AiCanvasExpandSettings() {
         <ProgressCard
           active={processing}
           phase={progress.phase === "idle" ? "uploading" : progress.phase}
-          label="Extending canvas"
+          label={t.toolSettings["ai-canvas-expand"].progressLabel}
           stage={progress.stage}
           percent={progress.percent}
           elapsed={progress.elapsed}
@@ -223,7 +226,9 @@ export function AiCanvasExpandSettings() {
           disabled={!hasFile || !hasExtension || processing}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {files.length > 1 ? `Extend (${files.length} files)` : "Extend Canvas"}
+          {files.length > 1
+            ? format(t.toolSettings["ai-canvas-expand"].submitBatch, { count: files.length })
+            : t.toolSettings["ai-canvas-expand"].submit}
         </button>
       )}
 

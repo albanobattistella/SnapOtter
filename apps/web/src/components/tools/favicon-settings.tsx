@@ -2,7 +2,9 @@ import { Download } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { formatHeaders } from "@/lib/api";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 const SIZES = [
@@ -16,6 +18,7 @@ const SIZES = [
 ];
 
 export function FaviconSettings() {
+  const { t } = useTranslation();
   const { files, error, setProcessing, setError } = useFileStore();
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -128,13 +131,14 @@ export function FaviconSettings() {
   return (
     <div className="space-y-4">
       <p className="text-xs text-muted-foreground">
-        Upload square images (recommended 512x512 or larger) to generate all favicon and app icon
-        sizes.{" "}
-        {files.length > 1 && `Each of the ${files.length} images gets its own folder in the ZIP.`}
+        {t.toolSettings.favicon.uploadHint}{" "}
+        {files.length > 1 && format(t.toolSettings.favicon.multipleHint, { count: files.length })}
       </p>
 
       <div>
-        <p className="text-xs font-medium text-muted-foreground">Generated Sizes (per image)</p>
+        <p className="text-xs font-medium text-muted-foreground">
+          {t.toolSettings.favicon.generatedSizes}
+        </p>
         <div className="mt-1 space-y-0.5">
           {SIZES.map((s) => (
             <div key={s.name} className="flex justify-between text-xs text-foreground">
@@ -143,7 +147,9 @@ export function FaviconSettings() {
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-muted-foreground mt-1">+ manifest.json + HTML snippet</p>
+        <p className="text-[10px] text-muted-foreground mt-1">
+          {t.toolSettings.favicon.plusManifest}
+        </p>
       </div>
 
       {error && <p className="text-xs text-red-500">{error}</p>}
@@ -152,7 +158,7 @@ export function FaviconSettings() {
         <ProgressCard
           active={busy}
           phase={progress.phase === "idle" ? "uploading" : progress.phase}
-          label="Generating Favicons"
+          label={t.toolSettings.favicon.progressLabel}
           stage={
             progress.phase === "uploading"
               ? "Uploading images..."
@@ -169,7 +175,9 @@ export function FaviconSettings() {
           disabled={!hasFiles || busy}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          Generate Favicons ({files.length} image{files.length !== 1 ? "s" : ""})
+          {files.length !== 1
+            ? format(t.toolSettings.favicon.submitPlural, { count: files.length })
+            : format(t.toolSettings.favicon.submit, { count: files.length })}
         </button>
       )}
 

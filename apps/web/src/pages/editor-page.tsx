@@ -19,6 +19,7 @@ import { EditorOptionsBar } from "@/components/editor/editor-options-bar";
 import { EditorRightPanel } from "@/components/editor/editor-right-panel";
 import { EditorStatusBar } from "@/components/editor/editor-status-bar";
 import { EditorToolbar } from "@/components/editor/editor-toolbar";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useEditorShortcuts } from "@/hooks/use-editor-shortcuts";
 import { useMobile } from "@/hooks/use-mobile";
 import { useEditorStore } from "@/stores/editor-store";
@@ -26,6 +27,7 @@ import { useEditorStore } from "@/stores/editor-store";
 const SERVER_DECODED_EXTS = new Set(["psd", "tga", "exr", "hdr"]);
 
 export function EditorPage() {
+  const { t } = useTranslation();
   const isMobile = useMobile();
   const sourceImageUrl = useEditorStore((s) => s.sourceImageUrl);
   const isDirty = useEditorStore((s) => s.isDirty);
@@ -141,11 +143,8 @@ export function EditorPage() {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-center">
         <Monitor size={48} className="text-muted-foreground mb-4" />
-        <h2 className="text-lg font-semibold text-foreground mb-2">Desktop Recommended</h2>
-        <p className="text-sm text-muted-foreground max-w-sm">
-          The image editor works best on desktop screens. Please switch to a device with a larger
-          display for the full editing experience.
-        </p>
+        <h2 className="text-lg font-semibold text-foreground mb-2">{t.editor.mobile.heading}</h2>
+        <p className="text-sm text-muted-foreground max-w-sm">{t.editor.mobile.description}</p>
       </div>
     );
   }

@@ -307,7 +307,7 @@ export function ImageViewer({
 
       {/* Info bar */}
       <div className="flex items-center justify-between px-3 py-1.5 border-t border-border text-xs text-muted-foreground shrink-0">
-        <span className="truncate mr-2">{filename}</span>
+        <span className="truncate me-2">{filename}</span>
         <div className="flex items-center gap-3 shrink-0">
           {(originalWidth || naturalWidth) != null && (originalHeight || naturalHeight) != null && (
             <span>

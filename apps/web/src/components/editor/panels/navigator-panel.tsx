@@ -266,7 +266,7 @@ export function NavigatorPanel() {
         >
           <Plus size={12} />
         </button>
-        <span className="text-[10px] text-muted-foreground w-9 text-right tabular-nums">
+        <span className="text-[10px] text-muted-foreground w-9 text-end tabular-nums">
           {zoomPercent}%
         </span>
       </div>

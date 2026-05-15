@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
 import { formatHeaders } from "@/lib/api";
 import { useFileStore } from "@/stores/file-store";
 
@@ -31,6 +32,7 @@ interface ImageInfoData {
 }
 
 export function InfoSettings() {
+  const { t } = useTranslation();
   const { files, processing, error, setProcessing, setError } = useFileStore();
   const selectedIndex = useFileStore((s) => s.selectedIndex);
   const [info, setInfo] = useState<ImageInfoData | null>(null);

@@ -5,7 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { ImageViewer } from "@/components/common/image-viewer";
 import { MultiImageViewer } from "@/components/common/multi-image-viewer";
 import { AppLayout } from "@/components/layout/app-layout";
+import { useTranslation } from "@/contexts/i18n-context";
 import { ICON_MAP } from "@/lib/icon-map";
+import { getCategoryName, getToolName } from "@/lib/tool-i18n";
 import { useFeaturesStore } from "@/stores/features-store";
 import { useFileStore } from "@/stores/file-store";
 import { useSettingsStore } from "@/stores/settings-store";
@@ -16,6 +18,7 @@ const QUICK_ACTION_IDS = ["resize", "compress", "convert", "remove-background"];
 let hasAppliedDefaultRedirect = false;
 
 export function HomePage() {
+  const { t } = useTranslation();
   const {
     setFiles,
     files,
@@ -108,14 +111,14 @@ export function HomePage() {
               onClick={reset}
               className="text-xs text-muted-foreground hover:text-foreground mt-2"
             >
-              Change file
+              {t.homePage.changeFile}
             </button>
           </div>
 
           {/* Quick actions */}
           <div className="p-4 border-b border-border">
             <h3 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider mb-3">
-              Quick Actions
+              {t.homePage.quickActions}
             </h3>
             <div className="grid grid-cols-2 gap-2">
               {QUICK_ACTION_IDS.map((id) => {
@@ -130,20 +133,22 @@ export function HomePage() {
                     key={id}
                     type="button"
                     onClick={() => navigate(tool.route)}
-                    className="flex items-center gap-2 p-3 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-colors text-left"
+                    className="flex items-center gap-2 p-3 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-colors text-start"
                   >
                     <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
                       <Icon className="h-4 w-4" />
                     </div>
-                    <span className="text-xs font-medium text-foreground">{tool.name}</span>
+                    <span className="text-xs font-medium text-foreground">
+                      {getToolName(t, tool.id, tool.name)}
+                    </span>
                     {status === "not_installed" && (
-                      <Download className="h-3.5 w-3.5 text-muted-foreground ml-auto" />
+                      <Download className="h-3.5 w-3.5 text-muted-foreground ms-auto" />
                     )}
                     {status === "queued" && (
-                      <Clock className="h-3.5 w-3.5 text-muted-foreground ml-auto" />
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground ms-auto" />
                     )}
                     {status === "installing" && (
-                      <Loader2 className="h-3.5 w-3.5 text-muted-foreground ml-auto animate-spin" />
+                      <Loader2 className="h-3.5 w-3.5 text-muted-foreground ms-auto animate-spin" />
                     )}
                   </button>
                 );
@@ -154,7 +159,7 @@ export function HomePage() {
           {/* All tools by category */}
           <div className="p-4">
             <h3 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider mb-3">
-              All Tools
+              {t.homePage.allTools}
             </h3>
             {CATEGORIES.map((category) => {
               const categoryTools = TOOLS.filter((t) => t.category === category.id);
@@ -165,7 +170,7 @@ export function HomePage() {
                     className="text-xs font-medium text-muted-foreground mb-1.5"
                     style={{ color: category.color }}
                   >
-                    {category.name}
+                    {getCategoryName(t, category.id, category.name)}
                   </p>
                   <div className="space-y-0.5">
                     {categoryTools.map((tool) => {
@@ -178,18 +183,18 @@ export function HomePage() {
                           key={tool.id}
                           type="button"
                           onClick={() => navigate(tool.route)}
-                          className="flex items-center gap-2.5 w-full py-1.5 px-2 rounded-lg text-left transition-colors hover:bg-muted text-foreground"
+                          className="flex items-center gap-2.5 w-full py-1.5 px-2 rounded-lg text-start transition-colors hover:bg-muted text-foreground"
                         >
                           <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <span className="text-sm">{tool.name}</span>
+                          <span className="text-sm">{getToolName(t, tool.id, tool.name)}</span>
                           {status === "not_installed" && (
-                            <Download className="h-3.5 w-3.5 text-muted-foreground ml-auto" />
+                            <Download className="h-3.5 w-3.5 text-muted-foreground ms-auto" />
                           )}
                           {status === "queued" && (
-                            <Clock className="h-3.5 w-3.5 text-muted-foreground ml-auto" />
+                            <Clock className="h-3.5 w-3.5 text-muted-foreground ms-auto" />
                           )}
                           {status === "installing" && (
-                            <Loader2 className="h-3.5 w-3.5 text-muted-foreground ml-auto animate-spin" />
+                            <Loader2 className="h-3.5 w-3.5 text-muted-foreground ms-auto animate-spin" />
                           )}
                         </button>
                       );
@@ -208,7 +213,7 @@ export function HomePage() {
           ) : currentEntry?.previewLoading ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
               <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
-              <p className="text-sm text-muted-foreground">Generating preview...</p>
+              <p className="text-sm text-muted-foreground">{t.homePage.generatingPreview}</p>
               <p className="text-xs text-muted-foreground/60">{selectedFileName}</p>
             </div>
           ) : originalBlobUrl ? (
@@ -219,7 +224,7 @@ export function HomePage() {
             />
           ) : (
             <div className="text-center text-muted-foreground">
-              <p>Loading preview...</p>
+              <p>{t.homePage.loadingPreview}</p>
             </div>
           )}
         </div>

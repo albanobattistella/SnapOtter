@@ -1,7 +1,9 @@
 import { Download, Info } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 function HintIcon({ text }: { text: string }) {
@@ -162,6 +164,7 @@ export function ContentAwareResizeControls({
 }
 
 export function ContentAwareResizeSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const { processFiles, processAllFiles, processing, error, downloadUrl, progress } =
     useToolProcessor("content-aware-resize");
@@ -200,7 +203,7 @@ export function ContentAwareResizeSettings() {
         <ProgressCard
           active={processing}
           phase={progress.phase === "idle" ? "uploading" : progress.phase}
-          label="Content-aware resizing"
+          label={t.toolSettings["content-aware-resize"].progressLabel}
           stage={progress.stage}
           percent={progress.percent}
           elapsed={progress.elapsed}
@@ -212,7 +215,9 @@ export function ContentAwareResizeSettings() {
           disabled={!canProcess}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {files.length > 1 ? `Resize (${files.length} files)` : "Resize"}
+          {files.length > 1
+            ? format(t.toolSettings["content-aware-resize"].submitBatch, { count: files.length })
+            : t.toolSettings["content-aware-resize"].submit}
         </button>
       )}
 

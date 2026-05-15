@@ -3,7 +3,9 @@ import { PYTHON_SIDECAR_TOOLS, TOOL_BUNDLE_MAP } from "@snapotter/shared";
 import { Clock, Download, FileImage, Loader2, Star } from "lucide-react";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "@/contexts/i18n-context";
 import { ICON_MAP } from "@/lib/icon-map";
+import { getToolName } from "@/lib/tool-i18n";
 import { cn } from "@/lib/utils";
 import { useFeaturesStore } from "@/stores/features-store";
 
@@ -12,6 +14,7 @@ interface ToolCardProps {
 }
 
 export function ToolCard({ tool }: ToolCardProps) {
+  const { t } = useTranslation();
   const IconComponent =
     (ICON_MAP[tool.icon] as React.ComponentType<{ className?: string }>) ?? FileImage;
 
@@ -34,7 +37,7 @@ export function ToolCard({ tool }: ToolCardProps) {
       <button
         type="button"
         className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5"
-        title="Add to favourites"
+        title={t.toolCard.addToFavourites}
       >
         <Star className="h-3 w-3 text-muted-foreground hover:text-yellow-500" />
       </button>
@@ -47,10 +50,12 @@ export function ToolCard({ tool }: ToolCardProps) {
         )}
       >
         <IconComponent className="h-5 w-5 text-muted-foreground" />
-        <span className="text-sm font-medium text-foreground">{tool.name}</span>
+        <span className="text-sm font-medium text-foreground">
+          {getToolName(t, tool.id, tool.name)}
+        </span>
         {tool.experimental && (
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-100 text-orange-600 font-medium">
-            Experimental
+            {t.common.experimental}
           </span>
         )}
         {aiStatus === "not_installed" && <Download className="h-3.5 w-3.5 text-muted-foreground" />}

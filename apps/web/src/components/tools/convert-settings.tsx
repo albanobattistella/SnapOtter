@@ -1,7 +1,9 @@
 import { Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 const OUTPUT_FORMATS = [
@@ -43,6 +45,7 @@ export interface ConvertControlsProps {
 }
 
 export function ConvertControls({ settings: initialSettings, onChange }: ConvertControlsProps) {
+  const { t } = useTranslation();
   const [format, setFormat] = useState<string>("png");
   const [quality, setQuality] = useState(85);
 
@@ -74,7 +77,7 @@ export function ConvertControls({ settings: initialSettings, onChange }: Convert
       {/* Target format */}
       <div>
         <label htmlFor="convert-target-format" className="text-xs text-muted-foreground">
-          Target Format
+          {t.toolSettings.convert.targetFormat}
         </label>
         <select
           id="convert-target-format"
@@ -115,6 +118,7 @@ export function ConvertControls({ settings: initialSettings, onChange }: Convert
 }
 
 export function ConvertSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const {
     processFiles,
@@ -154,7 +158,7 @@ export function ConvertSettings() {
       {/* Source format */}
       {hasFile && (
         <div>
-          <p className="text-xs text-muted-foreground">Source Format</p>
+          <p className="text-xs text-muted-foreground">{t.toolSettings.convert.sourceFormat}</p>
           <div className="mt-0.5 px-2 py-1.5 rounded bg-muted text-sm text-foreground uppercase font-mono">
             {sourceExt}
           </div>
@@ -179,7 +183,7 @@ export function ConvertSettings() {
         <ProgressCard
           active={processing}
           phase={progress.phase === "idle" ? "uploading" : progress.phase}
-          label="Converting"
+          label={t.toolSettings.convert.progressLabel}
           stage={progress.stage}
           percent={progress.percent}
           elapsed={progress.elapsed}
@@ -191,7 +195,9 @@ export function ConvertSettings() {
           disabled={!hasFile || processing}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {files.length > 1 ? `Convert (${files.length} files)` : "Convert"}
+          {files.length > 1
+            ? format(t.toolSettings.convert.submitBatch, { count: files.length })
+            : t.toolSettings.convert.submit}
         </button>
       )}
 
@@ -204,7 +210,7 @@ export function ConvertSettings() {
           className="w-full py-2.5 rounded-lg border border-primary text-primary font-medium flex items-center justify-center gap-2 hover:bg-primary/5"
         >
           <Download className="h-4 w-4" />
-          Download
+          {t.common.download}
         </a>
       )}
     </form>

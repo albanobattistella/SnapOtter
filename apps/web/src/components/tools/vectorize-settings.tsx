@@ -1,7 +1,9 @@
 import { Download } from "lucide-react";
 import { useState } from "react";
 import { ProgressCard } from "@/components/common/progress-card";
+import { useTranslation } from "@/contexts/i18n-context";
 import { useToolProcessor } from "@/hooks/use-tool-processor";
+import { format } from "@/lib/format";
 import { useFileStore } from "@/stores/file-store";
 
 type ColorMode = "bw" | "color";
@@ -72,6 +74,7 @@ function speckleToDetail(speckle: number): Detail {
 }
 
 export function VectorizeSettings() {
+  const { t } = useTranslation();
   const { files } = useFileStore();
   const {
     processFiles,
@@ -353,7 +356,7 @@ export function VectorizeSettings() {
         <ProgressCard
           active={processing}
           phase={progress.phase === "idle" ? "uploading" : progress.phase}
-          label="Vectorizing"
+          label={t.toolSettings.vectorize.progressLabel}
           stage={progress.stage}
           percent={progress.percent}
           elapsed={progress.elapsed}
@@ -366,7 +369,9 @@ export function VectorizeSettings() {
           disabled={!hasFile || processing}
           className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          {files.length > 1 ? `Vectorize (${files.length} files)` : "Vectorize"}
+          {files.length > 1
+            ? format(t.toolSettings.vectorize.submitBatch, { count: files.length })
+            : t.toolSettings.vectorize.submit}
         </button>
       )}
 

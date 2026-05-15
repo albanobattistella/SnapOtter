@@ -1,4 +1,6 @@
 import { type PointerEvent, useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
+import { format } from "@/lib/format";
 
 interface BeforeAfterSliderProps {
   /** URL or data URL of original image. */
@@ -33,6 +35,7 @@ export function BeforeAfterSlider({
   afterSize,
   initialPosition = 50,
 }: BeforeAfterSliderProps) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState(initialPosition); // percentage 0-100
   const [isDragging, setIsDragging] = useState(false);
@@ -160,10 +163,10 @@ export function BeforeAfterSlider({
 
         {/* Labels */}
         <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/50 text-white text-xs font-medium pointer-events-none">
-          Original
+          {t.comparison.original}
         </div>
         <div className="absolute top-2 right-2 px-2 py-0.5 rounded bg-black/50 text-white text-xs font-medium pointer-events-none">
-          Processed
+          {t.comparison.processed}
         </div>
       </div>
 
@@ -176,10 +179,10 @@ export function BeforeAfterSlider({
           <span className="px-2 py-1 rounded bg-primary/10 text-primary font-medium">
             Processed: {formatSize(afterSize)}
             {savingsPercent !== null && Number(savingsPercent) > 0 && (
-              <span className="ml-1">({savingsPercent}% smaller)</span>
+              <span className="ms-1">({savingsPercent}% smaller)</span>
             )}
             {savingsPercent !== null && Number(savingsPercent) < 0 && (
-              <span className="ml-1">({Math.abs(Number(savingsPercent))}% larger)</span>
+              <span className="ms-1">({Math.abs(Number(savingsPercent))}% larger)</span>
             )}
           </span>
         </div>

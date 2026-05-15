@@ -1,9 +1,10 @@
-import { APP_VERSION, shouldShowConsent } from "@snapotter/shared";
+import { APP_VERSION, en, shouldShowConsent } from "@snapotter/shared";
 import { Component, type ErrorInfo, lazy, type ReactNode, Suspense, useEffect } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster } from "sonner";
 import { ConnectionMonitor } from "./components/common/connection-monitor";
 import { KeyboardShortcutProvider } from "./components/common/keyboard-shortcut-provider";
+import { I18nProvider } from "./contexts/i18n-context";
 import { useAuth } from "./hooks/use-auth";
 import { identify, initAnalytics, setAnalyticsConsent } from "./lib/analytics";
 import { useAnalyticsStore } from "./stores/analytics-store";
@@ -55,9 +56,9 @@ class ErrorBoundary extends Component<
       return (
         <div className="flex h-screen items-center justify-center bg-background text-foreground">
           <div className="text-center space-y-4 max-w-md px-6">
-            <h1 className="text-xl font-semibold">Something went wrong</h1>
+            <h1 className="text-xl font-semibold">{en.common.somethingWentWrong}</h1>
             <p className="text-sm text-muted-foreground">
-              {this.state.error?.message || "An unexpected error occurred."}
+              {this.state.error?.message || en.common.unexpectedError}
             </p>
             <button
               type="button"
@@ -67,7 +68,7 @@ class ErrorBoundary extends Component<
               }}
               className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
             >
-              Go Home
+              {en.common.goHome}
             </button>
           </div>
         </div>
@@ -132,7 +133,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       <div className="flex h-screen items-center justify-center bg-background text-foreground">
         <div className="text-center space-y-3">
           <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">{en.common.loading}</p>
         </div>
       </div>
     );
@@ -205,36 +206,41 @@ export function App() {
 
   return (
     <ErrorBoundary>
-      <ConnectionMonitor />
-      <Toaster position="bottom-right" />
-      <BrowserRouter>
-        <KeyboardShortcutProvider>
-          <AuthGuard>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/change-password" element={<ChangePasswordPage />} />
-                <Route path="/automate" element={<AutomatePage />} />
-                <Route path="/files" element={<FilesPage />} />
-                <Route path="/fullscreen" element={<FullscreenGridPage />} />
-                <Route path="/privacy" element={<PrivacyPolicyPage />} />
-                {/* Redirects: old color tools consolidated into adjust-colors */}
-                <Route
-                  path="/brightness-contrast"
-                  element={<Navigate to="/adjust-colors" replace />}
-                />
-                <Route path="/saturation" element={<Navigate to="/adjust-colors" replace />} />
-                <Route path="/color-channels" element={<Navigate to="/adjust-colors" replace />} />
-                <Route path="/color-effects" element={<Navigate to="/adjust-colors" replace />} />
-                <Route path="/analytics-consent" element={<AnalyticsConsentPage />} />
-                <Route path="/editor" element={<EditorPage />} />
-                <Route path="/:toolId" element={<ToolPage />} />
-                <Route path="/" element={<HomePage />} />
-              </Routes>
-            </Suspense>
-          </AuthGuard>
-        </KeyboardShortcutProvider>
-      </BrowserRouter>
+      <I18nProvider>
+        <ConnectionMonitor />
+        <Toaster position="bottom-right" />
+        <BrowserRouter>
+          <KeyboardShortcutProvider>
+            <AuthGuard>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/change-password" element={<ChangePasswordPage />} />
+                  <Route path="/automate" element={<AutomatePage />} />
+                  <Route path="/files" element={<FilesPage />} />
+                  <Route path="/fullscreen" element={<FullscreenGridPage />} />
+                  <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                  {/* Redirects: old color tools consolidated into adjust-colors */}
+                  <Route
+                    path="/brightness-contrast"
+                    element={<Navigate to="/adjust-colors" replace />}
+                  />
+                  <Route path="/saturation" element={<Navigate to="/adjust-colors" replace />} />
+                  <Route
+                    path="/color-channels"
+                    element={<Navigate to="/adjust-colors" replace />}
+                  />
+                  <Route path="/color-effects" element={<Navigate to="/adjust-colors" replace />} />
+                  <Route path="/analytics-consent" element={<AnalyticsConsentPage />} />
+                  <Route path="/editor" element={<EditorPage />} />
+                  <Route path="/:toolId" element={<ToolPage />} />
+                  <Route path="/" element={<HomePage />} />
+                </Routes>
+              </Suspense>
+            </AuthGuard>
+          </KeyboardShortcutProvider>
+        </BrowserRouter>
+      </I18nProvider>
     </ErrorBoundary>
   );
 }
