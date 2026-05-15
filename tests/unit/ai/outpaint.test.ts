@@ -93,6 +93,45 @@ describe("outpaint", () => {
       );
     });
 
+    it("passes custom tier value instead of default 'balanced'", async () => {
+      const options: OutpaintOptions = {
+        extendTop: 10,
+        extendRight: 20,
+        extendBottom: 30,
+        extendLeft: 40,
+        tier: "high",
+      };
+      await outpaint(FAKE_INPUT, options, FAKE_OUTPUT_DIR);
+
+      expect(runPythonWithProgress).toHaveBeenCalledWith(
+        "outpaint.py",
+        [
+          `${FAKE_OUTPUT_DIR}/input_outpaint.png`,
+          `${FAKE_OUTPUT_DIR}/output_outpaint.png`,
+          "10",
+          "20",
+          "30",
+          "40",
+          "high",
+        ],
+        expect.any(Object),
+      );
+    });
+
+    it("passes 'fast' tier value", async () => {
+      const options: OutpaintOptions = {
+        extendTop: 5,
+        extendRight: 5,
+        extendBottom: 5,
+        extendLeft: 5,
+        tier: "fast",
+      };
+      await outpaint(FAKE_INPUT, options, FAKE_OUTPUT_DIR);
+
+      const args = vi.mocked(runPythonWithProgress).mock.calls[0][1];
+      expect(args[6]).toBe("fast");
+    });
+
     it("converts input to PNG via sharp", async () => {
       const options: OutpaintOptions = {
         extendTop: 0,

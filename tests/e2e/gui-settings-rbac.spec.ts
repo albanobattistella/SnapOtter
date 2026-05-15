@@ -560,4 +560,201 @@ base.describe("RBAC Settings Visibility - User", () => {
     await expect(page.locator("h3").filter({ hasText: "API Keys" })).toBeVisible();
     await expect(page.getByRole("button", { name: /generate api key/i })).toBeVisible();
   });
+
+  base.test("user gets 403 on roles endpoint", async ({ page }) => {
+    await login(page, USER_USER, USER_PASS);
+
+    const token = await page.evaluate(() => localStorage.getItem("snapotter-token"));
+    expect(token).toBeTruthy();
+    const bearerToken = token as string;
+
+    // GET /api/v1/roles requires users:manage
+    const rolesRes = await fetch(`${API}/api/v1/roles`, {
+      headers: { Authorization: `Bearer ${bearerToken}` },
+    });
+    expect(rolesRes.status).toBe(403);
+  });
+
+  base.test("user cannot register new users via API", async ({ page }) => {
+    await login(page, USER_USER, USER_PASS);
+
+    const token = await page.evaluate(() => localStorage.getItem("snapotter-token"));
+    expect(token).toBeTruthy();
+    const bearerToken = token as string;
+
+    // POST /api/auth/register requires users:manage
+    const registerRes = await fetch(`${API}/api/auth/register`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${bearerToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: "hacked-user",
+        password: "HackedPass1",
+        role: "admin",
+      }),
+    });
+    expect(registerRes.status).toBe(403);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// RBAC -- additional cross-role endpoint verification
+// ---------------------------------------------------------------------------
+
+base.describe("RBAC API Endpoints - Editor (extended)", () => {
+  let adminToken: string;
+  const EDITOR_EXT = `guieditorext-${UID}`;
+  const EDITOR_EXT_PASS = "EditorExtPass1";
+
+  base.beforeAll(async () => {
+    adminToken = await getAdminToken();
+    await createReadyUser(adminToken, EDITOR_EXT, EDITOR_EXT_PASS, "editor");
+  });
+
+  base.afterAll(async () => {
+    await deleteUser(adminToken, EDITOR_EXT);
+  });
+
+  base.test("editor gets 403 on teams endpoint", async ({ page }) => {
+    await login(page, EDITOR_EXT, EDITOR_EXT_PASS);
+
+    const token = await page.evaluate(() => localStorage.getItem("snapotter-token"));
+    expect(token).toBeTruthy();
+    const bearerToken = token as string;
+
+    // GET /api/v1/teams requires teams:manage
+    const teamsRes = await fetch(`${API}/api/v1/teams`, {
+      headers: { Authorization: `Bearer ${bearerToken}` },
+    });
+    expect(teamsRes.status).toBe(403);
+  });
+
+  base.test("editor gets 403 on roles endpoint", async ({ page }) => {
+    await login(page, EDITOR_EXT, EDITOR_EXT_PASS);
+
+    const token = await page.evaluate(() => localStorage.getItem("snapotter-token"));
+    expect(token).toBeTruthy();
+    const bearerToken = token as string;
+
+    // GET /api/v1/roles requires users:manage
+    const rolesRes = await fetch(`${API}/api/v1/roles`, {
+      headers: { Authorization: `Bearer ${bearerToken}` },
+    });
+    expect(rolesRes.status).toBe(403);
+  });
+
+  base.test("editor cannot register new users via API", async ({ page }) => {
+    await login(page, EDITOR_EXT, EDITOR_EXT_PASS);
+
+    const token = await page.evaluate(() => localStorage.getItem("snapotter-token"));
+    expect(token).toBeTruthy();
+    const bearerToken = token as string;
+
+    const registerRes = await fetch(`${API}/api/auth/register`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${bearerToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: "hacked-editor-user",
+        password: "HackedPass1",
+        role: "user",
+      }),
+    });
+    expect(registerRes.status).toBe(403);
+  });
+
+  base.test("editor can read own settings via API", async ({ page }) => {
+    await login(page, EDITOR_EXT, EDITOR_EXT_PASS);
+
+    const token = await page.evaluate(() => localStorage.getItem("snapotter-token"));
+    expect(token).toBeTruthy();
+    const bearerToken = token as string;
+
+    // GET /api/v1/config/auth is public, but session should work
+    const sessionRes = await fetch(`${API}/api/auth/session`, {
+      headers: { Authorization: `Bearer ${bearerToken}` },
+    });
+    expect(sessionRes.status).toBe(200);
+
+    const session = await sessionRes.json();
+    expect(session.user.role).toBe("editor");
+  });
+
+  base.test("editor About tab shows correct role", async ({ page }) => {
+    await login(page, EDITOR_EXT, EDITOR_EXT_PASS);
+    await openSettings(page);
+    await page.getByRole("button", { name: /about/i }).click();
+
+    await expect(page.locator("h3").filter({ hasText: "About" })).toBeVisible();
+    await expect(page.getByText("Version:")).toBeVisible();
+  });
+});
+
+base.describe("RBAC -- Editor and User see identical tabs (intentional)", () => {
+  let adminToken: string;
+  const RBAC_EDITOR = `rbaceditor-${UID}`;
+  const RBAC_EDITOR_PASS = "RbacEditorPass1";
+  const RBAC_USER = `rbacuser-${UID}`;
+  const RBAC_USER_PASS = "RbacUserPass1";
+
+  base.beforeAll(async () => {
+    adminToken = await getAdminToken();
+    await createReadyUser(adminToken, RBAC_EDITOR, RBAC_EDITOR_PASS, "editor");
+    await createReadyUser(adminToken, RBAC_USER, RBAC_USER_PASS, "user");
+  });
+
+  base.afterAll(async () => {
+    await deleteUser(adminToken, RBAC_EDITOR);
+    await deleteUser(adminToken, RBAC_USER);
+  });
+
+  base.test(
+    "editor and user see the same 6 tabs (correct behavior, not a bug)",
+    async ({ page }) => {
+      // Verify editor tab count
+      await login(page, RBAC_EDITOR, RBAC_EDITOR_PASS);
+      await openSettings(page);
+      await expect(page.getByRole("button", { name: /general/i })).toBeVisible();
+      const editorNavButtons = page.locator(".w-48 button");
+      const editorCount = await editorNavButtons.count();
+
+      // Close and switch to user
+      await page.keyboard.press("Escape");
+      await page.goto("/login");
+      await login(page, RBAC_USER, RBAC_USER_PASS);
+      await openSettings(page);
+      await expect(page.getByRole("button", { name: /general/i })).toBeVisible();
+      const userNavButtons = page.locator(".w-48 button");
+      const userCount = await userNavButtons.count();
+
+      // Both should see exactly 6 tabs
+      expect(editorCount).toBe(6);
+      expect(userCount).toBe(6);
+      expect(editorCount).toBe(userCount);
+    },
+  );
+
+  base.test("editor and user both see the same set of tab labels", async ({ page }) => {
+    const expectedTabs = ["General", "Security", "API Keys", "Tools", "Product Analytics", "About"];
+
+    // Check editor
+    await login(page, RBAC_EDITOR, RBAC_EDITOR_PASS);
+    await openSettings(page);
+    for (const label of expectedTabs) {
+      await expect(page.getByRole("button", { name: new RegExp(label, "i") })).toBeVisible();
+    }
+
+    // Close and check user
+    await page.keyboard.press("Escape");
+    await page.goto("/login");
+    await login(page, RBAC_USER, RBAC_USER_PASS);
+    await openSettings(page);
+    for (const label of expectedTabs) {
+      await expect(page.getByRole("button", { name: new RegExp(label, "i") })).toBeVisible();
+    }
+  });
 });

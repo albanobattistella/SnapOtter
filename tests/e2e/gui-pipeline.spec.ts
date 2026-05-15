@@ -87,6 +87,34 @@ test.describe("Pipeline Builder - Empty state", () => {
     await expect(page.getByPlaceholder("Search tools...")).toBeVisible();
   });
 
+  test("tool palette search filters results", async ({ loggedInPage: page }) => {
+    await gotoAutomate(page);
+
+    const searchInput = page.getByPlaceholder("Search tools...");
+    await expect(searchInput).toBeVisible();
+
+    // Type "resize" to filter the palette
+    await searchInput.fill("resize");
+    await page.waitForTimeout(300);
+
+    // A Resize button should be visible in the filtered results
+    await expect(page.getByRole("button", { name: /resize/i }).first()).toBeVisible();
+
+    // Tools unrelated to "resize" should not be visible (e.g. "Compress")
+    await expect(page.getByRole("button", { name: /^compress$/i }).first()).not.toBeVisible({
+      timeout: 1_000,
+    });
+
+    // Clear search and verify palette restores full list
+    await searchInput.clear();
+    await page.waitForTimeout(300);
+
+    // Compress should now be visible again in the full palette
+    await expect(page.getByRole("button", { name: /compress/i }).first()).toBeVisible({
+      timeout: 3_000,
+    });
+  });
+
   test("process button is disabled when no steps or file", async ({ loggedInPage: page }) => {
     await gotoAutomate(page);
 
@@ -147,6 +175,27 @@ test.describe("Pipeline Builder - Adding steps", () => {
 
     // Settings form should appear (border-primary indicates expanded state)
     await expect(page.locator(".border-primary").first()).toBeVisible({ timeout: 3_000 });
+  });
+
+  test("collapse expanded step hides settings form", async ({ loggedInPage: page }) => {
+    await gotoAutomate(page);
+
+    await addToolStep(page, "Resize", 1);
+
+    // Click on the step row to expand it
+    const stepRow = page.locator("[role='button']").filter({ hasText: "Resize" }).first();
+    await stepRow.click();
+
+    // Settings form should appear
+    const expandedStep = page.locator(".border-primary").first();
+    await expect(expandedStep).toBeVisible({ timeout: 3_000 });
+
+    // Click the step header again to collapse
+    await stepRow.click();
+    await page.waitForTimeout(300);
+
+    // Expanded state (border-primary on the step card) should be gone
+    await expect(expandedStep).not.toBeVisible({ timeout: 3_000 });
   });
 
   test("add 3 steps: resize, compress, convert - all visible in order", async ({

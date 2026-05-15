@@ -147,6 +147,31 @@ test.describe("Responsive - Desktop (1280x720)", () => {
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
   });
 
+  test("dropzone is visible and clickable on desktop", async ({ loggedInPage: page }) => {
+    const dropzone = page.locator("section[aria-label='File drop zone']");
+    await expect(dropzone).toBeVisible();
+    await expect(page.getByText("Upload from computer")).toBeVisible();
+  });
+
+  test("all text on desktop home page is readable (font-size >= 12px)", async ({
+    loggedInPage: page,
+  }) => {
+    const smallText = await page.evaluate(() => {
+      const elements = document.querySelectorAll("p, span, a, button, label, h1, h2, h3, h4, h5");
+      let count = 0;
+      for (const el of elements) {
+        const style = window.getComputedStyle(el);
+        const fontSize = Number.parseFloat(style.fontSize);
+        if (fontSize < 12 && el.textContent && el.textContent.trim().length > 0) {
+          count++;
+        }
+      }
+      return count;
+    });
+    // Allow a small number of decorative/badge elements with smaller text
+    expect(smallText).toBeLessThanOrEqual(5);
+  });
+
   test("fullscreen grid interactive elements are reachable", async ({ loggedInPage: page }) => {
     await page.goto("/fullscreen");
 
@@ -283,6 +308,35 @@ test.describe("Responsive - Tablet (768x1024)", () => {
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
 
     await context.close();
+  });
+
+  test("dropzone is visible on tablet home page", async ({ loggedInPage: page }) => {
+    const dropzone = page.locator("section[aria-label='File drop zone']");
+    await expect(dropzone).toBeVisible();
+    await expect(page.getByText("Upload from computer")).toBeVisible();
+  });
+
+  test("tool page dropzone is visible on tablet", async ({ loggedInPage: page }) => {
+    await page.goto("/resize");
+
+    const dropzone = page.locator("[class*='border-dashed']").first();
+    await expect(dropzone).toBeVisible();
+    await expect(page.getByText("Upload from computer")).toBeVisible();
+  });
+
+  test("settings dialog bounding box stays within tablet viewport", async ({
+    loggedInPage: page,
+  }) => {
+    await openSettings(page);
+
+    const dialogBox = page.locator("[class*='max-w']").filter({ hasText: "General" }).first();
+    const box = await dialogBox.boundingBox();
+    if (box) {
+      expect(box.x).toBeGreaterThanOrEqual(0);
+      expect(box.y).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width).toBeLessThanOrEqual(TABLET.width + 1);
+      expect(box.y + box.height).toBeLessThanOrEqual(TABLET.height + 1);
+    }
   });
 
   test("fullscreen grid interactive elements are reachable at tablet", async ({

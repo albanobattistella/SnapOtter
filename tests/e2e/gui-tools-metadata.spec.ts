@@ -248,4 +248,73 @@ test.describe("GUI Metadata Tools", () => {
       await expect(submitBtn).toBeEnabled();
     });
   });
+
+  // ========================================================================
+  // UNDO / STATE RESET (Metadata tools)
+  // ========================================================================
+  test.describe("Undo and State Reset", () => {
+    test("strip-metadata: undo after processing returns to settings", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/strip-metadata");
+      await uploadTestImage(page);
+
+      await page.getByTestId("strip-metadata-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByTestId("strip-metadata-download")).toBeVisible({ timeout: 15_000 });
+
+      await page.getByRole("button", { name: /undo/i }).click();
+
+      await expect(page.getByTestId("strip-metadata-submit")).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByTestId("strip-metadata-download")).not.toBeVisible();
+      // Settings should still be visible
+      await expect(page.getByText("Remove All Metadata")).toBeVisible();
+    });
+
+    test("edit-metadata: undo after processing returns to form", async ({ loggedInPage: page }) => {
+      await page.goto("/edit-metadata");
+      await uploadTestImage(page);
+      await page.waitForSelector('[id="em-artist"]', { timeout: 10_000 });
+
+      await page.fill('[id="em-artist"]', "Undo Test Artist");
+      await page.getByTestId("edit-metadata-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByTestId("edit-metadata-download")).toBeVisible({ timeout: 15_000 });
+
+      await page.getByRole("button", { name: /undo/i }).click();
+
+      await expect(page.getByTestId("edit-metadata-submit")).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByTestId("edit-metadata-download")).not.toBeVisible();
+    });
+
+    test("strip-metadata: clear all returns to dropzone", async ({ loggedInPage: page }) => {
+      await page.goto("/strip-metadata");
+      await uploadTestImage(page);
+
+      await expect(page.getByText("Remove All Metadata")).toBeVisible();
+
+      await page.getByText("Clear all").click();
+
+      await expect(page.getByText("Upload from computer")).toBeVisible({ timeout: 5_000 });
+    });
+
+    test("navigate away from info tool resets state", async ({ loggedInPage: page }) => {
+      await page.goto("/info");
+      await uploadTestImage(page);
+
+      await page.getByTestId("info-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByText("Dimensions").first()).toBeVisible({ timeout: 15_000 });
+
+      // Navigate away and back
+      await page.goto("/resize");
+      await page.goto("/info");
+
+      // Should be back at dropzone
+      await expect(page.getByText("Upload from computer")).toBeVisible();
+    });
+  });
 });

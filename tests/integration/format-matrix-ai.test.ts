@@ -306,6 +306,14 @@ const AI_TOOLS: AiToolDef[] = [
     requiresMask: false,
     invalidSettings: { blurRadius: 999 },
   },
+  {
+    id: "ai-canvas-expand",
+    label: "AI Canvas Expand",
+    settings: { extendTop: 50, extendRight: 0, extendBottom: 50, extendLeft: 0 },
+    has501Guard: true,
+    requiresMask: false,
+    invalidSettings: { extendTop: -1 },
+  },
 ];
 
 // ---------------------------------------------------------------------------

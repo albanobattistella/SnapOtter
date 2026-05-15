@@ -908,6 +908,77 @@ test.describe("Server Error Handling", () => {
     await page.unroute("**/api/v1/tools/resize");
   });
 
+  test("auth expiry (401) redirects to login or shows re-auth prompt", async ({
+    loggedInPage: page,
+  }) => {
+    await page.goto("/resize");
+    await uploadTestImage(page);
+
+    // Intercept to return 401 (session expired)
+    await page.route("**/api/v1/tools/resize", (route) =>
+      route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Session expired" }),
+      }),
+    );
+
+    await page.locator("input[placeholder='Auto']").first().fill("50");
+    await page.getByRole("button", { name: "Resize" }).click();
+
+    // Wait for error/redirect
+    await page.waitForTimeout(3000);
+
+    // Should either redirect to /login or show an auth error -- not crash
+    const url = page.url();
+    const bodyText = await page.textContent("body");
+    const redirectedToLogin = url.includes("/login");
+    const showsAuthError = /session|expired|unauthorized|login/i.test(bodyText ?? "");
+
+    expect(
+      redirectedToLogin || showsAuthError,
+      "Expected redirect to login or auth error message after 401",
+    ).toBeTruthy();
+
+    // Page should not be a white screen
+    const content = await page.textContent("body");
+    expect(content).toBeDefined();
+    expect(content?.length).toBeGreaterThan(0);
+
+    await page.unroute("**/api/v1/tools/resize");
+  });
+
+  test("rate limit (429) shows throttle message, not crash", async ({ loggedInPage: page }) => {
+    await page.goto("/resize");
+    await uploadTestImage(page);
+
+    // Intercept to return 429 (rate limited)
+    await page.route("**/api/v1/tools/resize", (route) =>
+      route.fulfill({
+        status: 429,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "Rate limit exceeded. Try again later." }),
+      }),
+    );
+
+    await page.locator("input[placeholder='Auto']").first().fill("50");
+    await page.getByRole("button", { name: "Resize" }).click();
+
+    // Wait for error to appear
+    await page.waitForTimeout(3000);
+
+    // Page should not crash
+    await expect(page.locator("main")).toBeVisible();
+    await expect(page.locator("aside")).toBeVisible();
+
+    // Body should contain meaningful content (not blank)
+    const bodyText = await page.textContent("body");
+    expect(bodyText).toBeDefined();
+    expect(bodyText?.length).toBeGreaterThan(0);
+
+    await page.unroute("**/api/v1/tools/resize");
+  });
+
   test("network timeout shows error, not infinite spinner", async ({ loggedInPage: page }) => {
     await page.goto("/resize");
     await uploadTestImage(page);

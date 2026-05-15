@@ -493,6 +493,143 @@ test.describe("GUI Settings - Teams Tab", () => {
       await cleanupTeamsByPrefix(adminToken, "guidelteam-");
     }
   });
+
+  test("renaming a team via three-dot menu updates the name", async ({ loggedInPage: page }) => {
+    const teamName = `guirename-${UID}`;
+    const renamedName = `guirenamed-${UID}`;
+    const adminToken = await getAdminToken();
+
+    try {
+      // Create a team via API
+      await fetch(`${API}/api/v1/teams`, {
+        method: "POST",
+        headers: authJson(adminToken),
+        body: JSON.stringify({ name: teamName }),
+      });
+
+      await openSettings(page);
+      await page.getByRole("button", { name: /teams/i }).click();
+      await page.waitForTimeout(500);
+
+      await expect(page.getByText(teamName)).toBeVisible({ timeout: 5_000 });
+
+      // Open the three-dot menu for the test team row
+      const moreButtons = page.locator("button:has(svg.lucide-ellipsis-vertical)");
+      await moreButtons.last().click();
+
+      // Click Rename in the dropdown
+      await page.locator("[role='menu']").getByText("Rename").click();
+
+      // Inline edit input should appear
+      const renameInput = page.locator(
+        "input.px-2.py-1.rounded.border.border-border.bg-background",
+      );
+      await expect(renameInput).toBeVisible({ timeout: 3_000 });
+
+      // Clear and type new name
+      await renameInput.fill(renamedName);
+
+      // Click Save link to confirm
+      await page.getByText("Save", { exact: true }).click();
+
+      // Success message and updated name should appear
+      await expect(page.getByText(renamedName)).toBeVisible({ timeout: 5_000 });
+    } finally {
+      await cleanupTeamsByPrefix(adminToken, "guirename-");
+      await cleanupTeamsByPrefix(adminToken, "guirenamed-");
+    }
+  });
+
+  test("cannot delete the Default team", async ({ loggedInPage: page }) => {
+    await openSettings(page);
+    await page.getByRole("button", { name: /teams/i }).click();
+    await page.waitForTimeout(500);
+
+    // Default team should be present
+    await expect(page.getByText("Default").first()).toBeVisible();
+
+    // Open the three-dot menu for the Default team (first row)
+    const moreButtons = page.locator("button:has(svg.lucide-ellipsis-vertical)");
+    await moreButtons.first().click();
+
+    // Accept the confirm dialog and click Delete
+    page.on("dialog", (d) => d.accept());
+    await page.locator("[role='menu']").getByText("Delete").click();
+
+    // Should show an error about not being able to delete the default team
+    await expect(page.getByText(/cannot delete|default/i).first()).toBeVisible({ timeout: 5_000 });
+
+    // Default team should still be in the list
+    await expect(page.getByText("Default").first()).toBeVisible();
+  });
+
+  test("creating a team with duplicate name shows error", async ({ loggedInPage: page }) => {
+    const teamName = `guidupteam-${UID}`;
+    const adminToken = await getAdminToken();
+
+    try {
+      // Create a team via API first
+      await fetch(`${API}/api/v1/teams`, {
+        method: "POST",
+        headers: authJson(adminToken),
+        body: JSON.stringify({ name: teamName }),
+      });
+
+      await openSettings(page);
+      await page.getByRole("button", { name: /teams/i }).click();
+      await page.waitForTimeout(500);
+
+      await expect(page.getByText(teamName)).toBeVisible({ timeout: 5_000 });
+
+      // Try to create same team name via GUI
+      await page.getByRole("button", { name: /create new team/i }).click();
+      await page.getByPlaceholder("Team name").fill(teamName);
+      await page.getByRole("button", { name: /^create$/i }).click();
+
+      // Should show a duplicate/conflict error
+      await expect(page.getByText(/already exists|duplicate/i).first()).toBeVisible({
+        timeout: 5_000,
+      });
+    } finally {
+      await cleanupTeamsByPrefix(adminToken, "guidupteam-");
+    }
+  });
+
+  test("team table shows member count column", async ({ loggedInPage: page }) => {
+    await openSettings(page);
+    await page.getByRole("button", { name: /teams/i }).click();
+    await page.waitForTimeout(500);
+
+    // The Members column header should be visible
+    await expect(page.getByText("Members").first()).toBeVisible();
+
+    // The Default team should show a numeric member count
+    const defaultRow = page.locator("div").filter({ hasText: "Default" }).last();
+    const memberCountText = await defaultRow
+      .locator("span.text-sm.text-muted-foreground")
+      .textContent();
+    expect(memberCountText).toMatch(/^\d+$/);
+  });
+
+  test("canceling create team form hides it", async ({ loggedInPage: page }) => {
+    await openSettings(page);
+    await page.getByRole("button", { name: /teams/i }).click();
+
+    await page.getByRole("button", { name: /create new team/i }).click();
+    await expect(page.getByPlaceholder("Team name")).toBeVisible();
+
+    // Cancel should hide the form
+    await page.getByRole("button", { name: /cancel/i }).click();
+    await expect(page.getByPlaceholder("Team name")).not.toBeVisible();
+  });
+
+  test("teams tab shows description text", async ({ loggedInPage: page }) => {
+    await openSettings(page);
+    await page.getByRole("button", { name: /teams/i }).click();
+
+    await expect(page.locator("h3").filter({ hasText: "Teams" })).toBeVisible();
+    await expect(page.getByText(/manage.*team/i).first()).toBeVisible();
+  });
 });
 
 test.describe("GUI Settings - Roles Tab", () => {
@@ -717,5 +854,138 @@ test.describe("GUI Settings - Roles Tab", () => {
 
     // Built-in roles should show permission badges (font-mono spans inside role cards)
     await expect(page.locator(".font-mono").filter({ hasText: "tools:use" }).first()).toBeVisible();
+  });
+
+  test("permission groups are organized by category in the create form", async ({
+    loggedInPage: page,
+  }) => {
+    await openSettings(page);
+    await page.getByRole("button", { name: /^roles$/i }).click();
+
+    await page.getByRole("button", { name: /create custom role/i }).click();
+    await expect(page.getByText("Permissions")).toBeVisible();
+
+    // Permission group headings should be visible
+    for (const group of [
+      "Tools",
+      "Files",
+      "API Keys",
+      "Pipelines",
+      "Settings",
+      "Users",
+      "Teams",
+      "System",
+    ]) {
+      await expect(page.getByText(group, { exact: true }).first()).toBeVisible();
+    }
+
+    // Cancel
+    await page.getByRole("button", { name: /cancel/i }).click();
+  });
+
+  test("custom role shows user count of zero when newly created", async ({
+    loggedInPage: page,
+  }) => {
+    const roleName = `guicount${UID}`;
+    const adminToken = await getAdminToken();
+
+    try {
+      await openSettings(page);
+      await page.getByRole("button", { name: /^roles$/i }).click();
+
+      await page.getByRole("button", { name: /create custom role/i }).click();
+      await page.getByPlaceholder("Role name").fill(roleName);
+
+      // Select a permission
+      const toolsCheckbox = page
+        .locator("label")
+        .filter({ hasText: "tools:use" })
+        .locator("input[type='checkbox']");
+      await toolsCheckbox.check();
+
+      await page.getByRole("button", { name: /^create$/i }).click();
+      await expect(page.getByText(roleName)).toBeVisible({ timeout: 5_000 });
+
+      // The custom role card should show "0 users"
+      await expect(page.getByText(/0 users?/).first()).toBeVisible();
+    } finally {
+      await fetch(`${API}/api/v1/roles`, { headers: authOnly(adminToken) })
+        .then((r) => r.json())
+        .then(async ({ roles }: { roles: Array<{ id: string; name: string }> }) => {
+          for (const r of roles) {
+            if (r.name === roleName) {
+              await fetch(`${API}/api/v1/roles/${r.id}`, {
+                method: "DELETE",
+                headers: authOnly(adminToken),
+              });
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  });
+
+  test("editing a custom role can toggle permissions", async ({ loggedInPage: page }) => {
+    const roleName = `guiperm${UID}`;
+    const adminToken = await getAdminToken();
+
+    try {
+      // Create role via API with only tools:use
+      await fetch(`${API}/api/v1/roles`, {
+        method: "POST",
+        headers: authJson(adminToken),
+        body: JSON.stringify({
+          name: roleName,
+          description: "Permission toggle test",
+          permissions: ["tools:use"],
+        }),
+      });
+
+      await openSettings(page);
+      await page.getByRole("button", { name: /^roles$/i }).click();
+      await expect(page.getByText(roleName)).toBeVisible({ timeout: 5_000 });
+
+      // Click the edit button for the custom role
+      await page.locator("button[title='Edit role']").first().click();
+      await expect(page.getByText(/edit role/i)).toBeVisible();
+
+      // The tools:use checkbox should be checked
+      const toolsCheckbox = page
+        .locator("label")
+        .filter({ hasText: "tools:use" })
+        .locator("input[type='checkbox']");
+      await expect(toolsCheckbox).toBeChecked();
+
+      // Check an additional permission (files:own)
+      const filesCheckbox = page
+        .locator("label")
+        .filter({ hasText: "files:own" })
+        .locator("input[type='checkbox']");
+      await filesCheckbox.check();
+      await expect(filesCheckbox).toBeChecked();
+
+      // Save
+      await page.getByRole("button", { name: /^save$/i }).click();
+      await expect(page.getByText("Role updated")).toBeVisible({ timeout: 5_000 });
+
+      // Verify both permissions are now displayed on the role card
+      await expect(
+        page.locator(".font-mono").filter({ hasText: "files:own" }).first(),
+      ).toBeVisible();
+    } finally {
+      await fetch(`${API}/api/v1/roles`, { headers: authOnly(adminToken) })
+        .then((r) => r.json())
+        .then(async ({ roles }: { roles: Array<{ id: string; name: string }> }) => {
+          for (const r of roles) {
+            if (r.name === roleName) {
+              await fetch(`${API}/api/v1/roles/${r.id}`, {
+                method: "DELETE",
+                headers: authOnly(adminToken),
+              });
+            }
+          }
+        })
+        .catch(() => {});
+    }
   });
 });

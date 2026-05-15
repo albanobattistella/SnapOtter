@@ -1766,6 +1766,112 @@ describe("Stitch direction modes", () => {
 });
 
 // ---------------------------------------------------------------------------
+// 15b. Find-duplicates (multi-file) x core formats
+//
+// Requires 2+ images. Tests each core format paired with a PNG fixture.
+// find-duplicates computes perceptual hashes and returns duplicate groups.
+// ---------------------------------------------------------------------------
+describe("Find-duplicates cross-format", () => {
+  const PNG_PATH = join(FORMATS_DIR, "sample.png");
+
+  for (const fmt of CORE_FORMATS) {
+    it(`detects ${fmt.name} + PNG pair`, async () => {
+      const fixturePath = join(FORMATS_DIR, fmt.file);
+      if (!existsSync(fixturePath) || !existsSync(PNG_PATH)) return;
+
+      const fmtBuffer = readFileSync(fixturePath);
+      const pngBuffer = readFileSync(PNG_PATH);
+
+      const { body: payload, contentType } = createMultipartPayload([
+        {
+          name: "file",
+          filename: fmt.file,
+          contentType: fmt.mime,
+          content: fmtBuffer,
+        },
+        {
+          name: "file",
+          filename: "sample.png",
+          contentType: "image/png",
+          content: pngBuffer,
+        },
+        {
+          name: "settings",
+          content: JSON.stringify({ threshold: 8 }),
+        },
+      ]);
+
+      const res = await app.inject({
+        method: "POST",
+        url: "/api/v1/tools/find-duplicates",
+        headers: {
+          authorization: `Bearer ${adminToken}`,
+          "content-type": contentType,
+        },
+        body: payload,
+      });
+
+      expect(res.statusCode).toBe(200);
+
+      const body = JSON.parse(res.body);
+      // find-duplicates returns { totalImages, duplicateGroups, uniqueCount }
+      expect(typeof body).toBe("object");
+      expect(body.totalImages).toBe(2);
+      expect(Array.isArray(body.duplicateGroups)).toBe(true);
+    });
+  }
+
+  // Exotic format resilience
+  for (const fmt of EXOTIC_FORMATS) {
+    const perTestTimeout = fmt.needsHeifDecoder || fmt.needsCliDecoder ? 180_000 : undefined;
+
+    it(
+      `${fmt.name} + PNG find-duplicates: no crash`,
+      async () => {
+        const fixturePath = join(FORMATS_DIR, fmt.file);
+        if (!existsSync(fixturePath) || !existsSync(PNG_PATH)) return;
+
+        const fmtBuffer = readFileSync(fixturePath);
+        const pngBuffer = readFileSync(PNG_PATH);
+
+        const { body: payload, contentType } = createMultipartPayload([
+          {
+            name: "file",
+            filename: fmt.file,
+            contentType: fmt.mime,
+            content: fmtBuffer,
+          },
+          {
+            name: "file",
+            filename: "sample.png",
+            contentType: "image/png",
+            content: pngBuffer,
+          },
+          {
+            name: "settings",
+            content: JSON.stringify({ threshold: 8 }),
+          },
+        ]);
+
+        const res = await app.inject({
+          method: "POST",
+          url: "/api/v1/tools/find-duplicates",
+          headers: {
+            authorization: `Bearer ${adminToken}`,
+            "content-type": contentType,
+          },
+          body: payload,
+        });
+
+        expect(res.statusCode).not.toBe(500);
+        expect([200, 400, 422]).toContain(res.statusCode);
+      },
+      perTestTimeout,
+    );
+  }
+});
+
+// ---------------------------------------------------------------------------
 // 19. Error resilience: missing file for expanded tools
 //
 // Verifies that each expanded tool returns a clean 400 when no file is sent.
@@ -1791,6 +1897,7 @@ describe("Missing file returns 400 for expanded tools", () => {
     { url: "/api/v1/tools/compare", settings: {} },
     { url: "/api/v1/tools/collage", settings: { templateId: "2-h-equal" } },
     { url: "/api/v1/tools/stitch", settings: { direction: "horizontal" } },
+    { url: "/api/v1/tools/find-duplicates", settings: { threshold: 8 } },
   ];
 
   for (const { url, settings } of TOOL_ENDPOINTS) {
@@ -1841,6 +1948,7 @@ describe("Unauthenticated requests return 401 for expanded tools", () => {
     "/api/v1/tools/compare",
     "/api/v1/tools/collage",
     "/api/v1/tools/stitch",
+    "/api/v1/tools/find-duplicates",
     "/api/v1/tools/transparency-fixer",
   ];
 

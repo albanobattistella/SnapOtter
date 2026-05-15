@@ -472,6 +472,38 @@ describe("removeBackground", () => {
       expect(runPythonWithProgress).toHaveBeenCalledTimes(2);
     });
 
+    it("throws when OOM fallback succeeds at bridge level but Python returns success: false", async () => {
+      vi.mocked(runPythonWithProgress)
+        .mockRejectedValueOnce(new Error("Process killed (out of memory)"))
+        .mockResolvedValueOnce({
+          stdout: '{"success": false, "error": "u2net model corrupt"}',
+          stderr: "",
+        });
+      // Only one parseStdoutJson call happens: the first attempt rejects before parsing
+      vi.mocked(parseStdoutJson).mockReturnValueOnce({
+        success: false,
+        error: "u2net model corrupt",
+      });
+
+      await expect(
+        removeBackground(FAKE_INPUT, FAKE_OUTPUT_DIR, { model: "birefnet-general" }),
+      ).rejects.toThrow("u2net model corrupt");
+
+      expect(runPythonWithProgress).toHaveBeenCalledTimes(2);
+    });
+
+    it("uses fallback error message when OOM fallback returns success: false without error", async () => {
+      vi.mocked(runPythonWithProgress)
+        .mockRejectedValueOnce(new Error("Process killed (out of memory)"))
+        .mockResolvedValueOnce({ stdout: '{"success": false}', stderr: "" });
+      // Only one parseStdoutJson call happens: the first attempt rejects before parsing
+      vi.mocked(parseStdoutJson).mockReturnValueOnce({ success: false });
+
+      await expect(
+        removeBackground(FAKE_INPUT, FAKE_OUTPUT_DIR, { model: "birefnet-general" }),
+      ).rejects.toThrow("Background removal failed");
+    });
+
     it("retries with fallback when no model is specified (default)", async () => {
       vi.mocked(runPythonWithProgress)
         .mockRejectedValueOnce(new Error("Process killed (out of memory)"))

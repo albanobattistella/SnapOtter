@@ -1374,6 +1374,405 @@ test.describe("Buttons Accessible - Additional Pages", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Skip-to-Content Link (WCAG 2.4.1)
+// ---------------------------------------------------------------------------
+test.describe("Skip-to-Content Link", () => {
+  test("skip-to-content link exists and is the first focusable element", async ({
+    loggedInPage: page,
+  }) => {
+    // The skip link should be the very first focusable element on the page.
+    // It is typically visually hidden until focused.
+    await page.keyboard.press("Tab");
+
+    const activeElement = await page.evaluate(() => {
+      const el = document.activeElement;
+      if (!el) return null;
+      return {
+        tag: el.tagName,
+        text: el.textContent?.trim() ?? "",
+        href: (el as HTMLAnchorElement).href ?? "",
+        className: el.className,
+      };
+    });
+
+    // The first focusable element should be a skip link targeting #main or main content
+    expect(activeElement).toBeTruthy();
+    if (activeElement) {
+      const isSkipLink =
+        /skip/i.test(activeElement.text) ||
+        /skip/i.test(activeElement.className) ||
+        activeElement.href.includes("#main");
+      expect(
+        isSkipLink,
+        `Expected first focusable element to be a skip-to-content link, got: tag=${activeElement.tag}, text="${activeElement.text}", href="${activeElement.href}"`,
+      ).toBeTruthy();
+    }
+  });
+
+  test("skip-to-content link becomes visible on focus", async ({ loggedInPage: page }) => {
+    // Press Tab to focus the skip link
+    await page.keyboard.press("Tab");
+
+    // The skip link should become visible when focused (not display:none or invisible)
+    const skipLink = page.locator("a:focus, button:focus").first();
+    const box = await skipLink.boundingBox();
+
+    // The element should have a non-zero bounding box when focused
+    // (it is visually hidden off-screen or with sr-only until focused)
+    if (box) {
+      expect(box.width).toBeGreaterThan(0);
+      expect(box.height).toBeGreaterThan(0);
+    }
+  });
+
+  test("skip-to-content link navigates focus to main content", async ({ loggedInPage: page }) => {
+    // Press Tab to reach the skip link, then activate it
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Enter");
+
+    // After activation, focus should move to the main content area
+    const focusLocation = await page.evaluate(() => {
+      const active = document.activeElement;
+      if (!active) return "none";
+      const main = document.querySelector("main");
+      if (main === active || main?.contains(active)) return "main";
+      // Check if focused element has id="main" (skip link target)
+      if (active.id === "main" || active.id === "main-content") return "main";
+      return `other:${active.tagName}#${active.id}`;
+    });
+
+    expect(
+      focusLocation,
+      `Expected focus to move to main content after skip link activation, got: ${focusLocation}`,
+    ).toBe("main");
+  });
+
+  test("skip-to-content link is present on tool pages", async ({ loggedInPage: page }) => {
+    await page.goto("/resize");
+    await page.waitForLoadState("domcontentloaded");
+
+    // Tab to first focusable element
+    await page.keyboard.press("Tab");
+
+    const activeText = await page.evaluate(() => document.activeElement?.textContent?.trim() ?? "");
+
+    expect(
+      /skip/i.test(activeText),
+      `Expected skip link on tool page, first focused element text: "${activeText}"`,
+    ).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Comprehensive Color Contrast Checks (WCAG AA)
+// ---------------------------------------------------------------------------
+test.describe("Comprehensive Color Contrast", () => {
+  // Helper function used inside page.evaluate for contrast calculation
+  const contrastCheckScript = (selector: string, minRatio: number) => {
+    const elements = Array.from(document.querySelectorAll(selector));
+    const failures: Array<{
+      text: string;
+      ratio: number;
+      fg: string;
+      bg: string;
+      selector: string;
+    }> = [];
+
+    const luminance = (rgb: number[]) => {
+      const [r, g, b] = rgb.map((v) => {
+        const s = v / 255;
+        return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+
+    const parseRgb = (c: string) => {
+      const m = c.match(/\d+/g);
+      return m ? m.map(Number) : null;
+    };
+
+    const getEffectiveBg = (el: Element): number[] | null => {
+      let current: Element | null = el;
+      while (current) {
+        const style = window.getComputedStyle(current);
+        const bg = style.backgroundColor;
+        const rgb = parseRgb(bg);
+        if (rgb && (rgb.length < 4 || rgb[3] > 0) && bg !== "rgba(0, 0, 0, 0)") {
+          return rgb;
+        }
+        current = current.parentElement;
+      }
+      return [255, 255, 255]; // default white background
+    };
+
+    for (const el of elements) {
+      if (!(el as HTMLElement).offsetParent && el.tagName !== "BODY") continue;
+      const text = el.textContent?.trim();
+      if (!text || text.length === 0) continue;
+
+      const style = window.getComputedStyle(el);
+      const fg = parseRgb(style.color);
+      const bg = getEffectiveBg(el);
+      if (!fg || !bg) continue;
+
+      const l1 = luminance(fg);
+      const l2 = luminance(bg);
+      const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+
+      if (ratio < minRatio && ratio > 0) {
+        failures.push({
+          text: text.slice(0, 40),
+          ratio,
+          fg: style.color,
+          bg: style.backgroundColor,
+          selector: `${el.tagName}.${el.className.split(" ")[0]}`,
+        });
+      }
+    }
+    return failures;
+  };
+
+  test("all headings meet WCAG AA contrast (3:1 for large text) in light theme", async ({
+    loggedInPage: page,
+  }) => {
+    await page.waitForLoadState("networkidle");
+
+    // Ensure light theme
+    const isDark = await page.evaluate(() => document.documentElement.classList.contains("dark"));
+    if (isDark) {
+      const themeBtn = page.locator("button[title='Toggle Theme']");
+      if (await themeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await themeBtn.click();
+        await page.waitForTimeout(300);
+      }
+    }
+
+    const failures = await page.evaluate(contrastCheckScript, "h1, h2, h3, h4, h5, h6", 3);
+
+    expect(
+      failures,
+      `Headings with insufficient contrast (< 3:1):\n${failures.map((f) => `  "${f.text}" ratio=${f.ratio.toFixed(2)} fg=${f.fg} bg=${f.bg}`).join("\n")}`,
+    ).toHaveLength(0);
+  });
+
+  test("all body text meets WCAG AA contrast (4.5:1 for normal text) in light theme", async ({
+    loggedInPage: page,
+  }) => {
+    await page.waitForLoadState("networkidle");
+
+    // Ensure light theme
+    const isDark = await page.evaluate(() => document.documentElement.classList.contains("dark"));
+    if (isDark) {
+      const themeBtn = page.locator("button[title='Toggle Theme']");
+      if (await themeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await themeBtn.click();
+        await page.waitForTimeout(300);
+      }
+    }
+
+    const failures = await page.evaluate(contrastCheckScript, "p, span, label, li, td", 4.5);
+
+    expect(
+      failures,
+      `Text elements with insufficient contrast (< 4.5:1):\n${failures.map((f) => `  "${f.text}" ratio=${f.ratio.toFixed(2)} fg=${f.fg} bg=${f.bg}`).join("\n")}`,
+    ).toHaveLength(0);
+  });
+
+  test("all buttons meet WCAG AA contrast (4.5:1) in light theme", async ({
+    loggedInPage: page,
+  }) => {
+    await page.waitForLoadState("networkidle");
+
+    const failures = await page.evaluate(contrastCheckScript, "button, a[role='button']", 4.5);
+
+    expect(
+      failures,
+      `Buttons with insufficient contrast (< 4.5:1):\n${failures.map((f) => `  "${f.text}" ratio=${f.ratio.toFixed(2)} fg=${f.fg} bg=${f.bg}`).join("\n")}`,
+    ).toHaveLength(0);
+  });
+
+  test("all headings meet WCAG AA contrast (3:1) in dark theme", async ({ loggedInPage: page }) => {
+    await page.waitForLoadState("networkidle");
+
+    // Switch to dark theme
+    const isDark = await page.evaluate(() => document.documentElement.classList.contains("dark"));
+    if (!isDark) {
+      const themeBtn = page.locator("button[title='Toggle Theme']");
+      if (await themeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await themeBtn.click();
+        await page.waitForTimeout(300);
+      }
+    }
+
+    const failures = await page.evaluate(contrastCheckScript, "h1, h2, h3, h4, h5, h6", 3);
+
+    expect(
+      failures,
+      `Dark theme headings with insufficient contrast (< 3:1):\n${failures.map((f) => `  "${f.text}" ratio=${f.ratio.toFixed(2)} fg=${f.fg} bg=${f.bg}`).join("\n")}`,
+    ).toHaveLength(0);
+
+    // Restore light theme
+    if (!isDark) {
+      const themeBtn = page.locator("button[title='Toggle Theme']");
+      if (await themeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await themeBtn.click();
+      }
+    }
+  });
+
+  test("all body text meets WCAG AA contrast (4.5:1) in dark theme", async ({
+    loggedInPage: page,
+  }) => {
+    await page.waitForLoadState("networkidle");
+
+    // Switch to dark theme
+    const isDark = await page.evaluate(() => document.documentElement.classList.contains("dark"));
+    if (!isDark) {
+      const themeBtn = page.locator("button[title='Toggle Theme']");
+      if (await themeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await themeBtn.click();
+        await page.waitForTimeout(300);
+      }
+    }
+
+    const failures = await page.evaluate(contrastCheckScript, "p, span, label, li, td", 4.5);
+
+    expect(
+      failures,
+      `Dark theme text with insufficient contrast (< 4.5:1):\n${failures.map((f) => `  "${f.text}" ratio=${f.ratio.toFixed(2)} fg=${f.fg} bg=${f.bg}`).join("\n")}`,
+    ).toHaveLength(0);
+
+    // Restore light theme
+    if (!isDark) {
+      const themeBtn = page.locator("button[title='Toggle Theme']");
+      if (await themeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await themeBtn.click();
+      }
+    }
+  });
+
+  test("all buttons meet WCAG AA contrast (4.5:1) in dark theme", async ({
+    loggedInPage: page,
+  }) => {
+    await page.waitForLoadState("networkidle");
+
+    // Switch to dark theme
+    const isDark = await page.evaluate(() => document.documentElement.classList.contains("dark"));
+    if (!isDark) {
+      const themeBtn = page.locator("button[title='Toggle Theme']");
+      if (await themeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await themeBtn.click();
+        await page.waitForTimeout(300);
+      }
+    }
+
+    const failures = await page.evaluate(contrastCheckScript, "button, a[role='button']", 4.5);
+
+    expect(
+      failures,
+      `Dark theme buttons with insufficient contrast (< 4.5:1):\n${failures.map((f) => `  "${f.text}" ratio=${f.ratio.toFixed(2)} fg=${f.fg} bg=${f.bg}`).join("\n")}`,
+    ).toHaveLength(0);
+
+    // Restore light theme
+    if (!isDark) {
+      const themeBtn = page.locator("button[title='Toggle Theme']");
+      if (await themeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await themeBtn.click();
+      }
+    }
+  });
+
+  test("tool page text elements meet WCAG AA contrast", async ({ loggedInPage: page }) => {
+    await page.goto("/resize");
+    await page.waitForLoadState("networkidle");
+
+    const failures = await page.evaluate(
+      contrastCheckScript,
+      "h1, h2, h3, h4, p, span, label, button",
+      3,
+    );
+
+    expect(
+      failures,
+      `Tool page elements with insufficient contrast:\n${failures.map((f) => `  "${f.text}" ratio=${f.ratio.toFixed(2)} fg=${f.fg} bg=${f.bg}`).join("\n")}`,
+    ).toHaveLength(0);
+  });
+
+  test("sidebar navigation text meets WCAG AA contrast", async ({ loggedInPage: page }) => {
+    await page.waitForLoadState("networkidle");
+
+    const failures = await page.evaluate(
+      (args) => {
+        const [, minRatio] = args as [string, number];
+        const sidebar = document.querySelector("aside");
+        if (!sidebar) return [];
+
+        const elements = Array.from(sidebar.querySelectorAll("a, button, span"));
+        const failures: Array<{ text: string; ratio: number; fg: string; bg: string }> = [];
+
+        const luminance = (rgb: number[]) => {
+          const [r, g, b] = rgb.map((v) => {
+            const s = v / 255;
+            return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+          });
+          return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+        };
+
+        const parseRgb = (c: string) => {
+          const m = c.match(/\d+/g);
+          return m ? m.map(Number) : null;
+        };
+
+        const getEffectiveBg = (el: Element): number[] | null => {
+          let current: Element | null = el;
+          while (current) {
+            const style = window.getComputedStyle(current);
+            const bg = style.backgroundColor;
+            const rgb = parseRgb(bg);
+            if (rgb && (rgb.length < 4 || rgb[3] > 0) && bg !== "rgba(0, 0, 0, 0)") {
+              return rgb;
+            }
+            current = current.parentElement;
+          }
+          return [255, 255, 255];
+        };
+
+        for (const el of elements) {
+          if (!(el as HTMLElement).offsetParent) continue;
+          const text = el.textContent?.trim();
+          if (!text || text.length === 0) continue;
+
+          const style = window.getComputedStyle(el);
+          const fg = parseRgb(style.color);
+          const bg = getEffectiveBg(el);
+          if (!fg || !bg) continue;
+
+          const l1 = luminance(fg);
+          const l2 = luminance(bg);
+          const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+
+          if (ratio < minRatio && ratio > 0) {
+            failures.push({
+              text: text.slice(0, 40),
+              ratio,
+              fg: style.color,
+              bg: style.backgroundColor,
+            });
+          }
+        }
+        return failures;
+      },
+      ["aside a, button, span", 4.5],
+    );
+
+    expect(
+      failures,
+      `Sidebar items with insufficient contrast:\n${failures.map((f) => `  "${f.text}" ratio=${f.ratio.toFixed(2)}`).join("\n")}`,
+    ).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // 14.6 Tab Order Logical
 // ---------------------------------------------------------------------------
 test.describe("Tab Order", () => {

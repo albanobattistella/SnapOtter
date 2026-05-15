@@ -158,6 +158,53 @@ test.describe("Keyboard Shortcuts - Tool Navigation", () => {
 });
 
 // ---------------------------------------------------------------------------
+// Shortcuts work from any page
+// ---------------------------------------------------------------------------
+test.describe("Keyboard Shortcuts - Work From Any Page", () => {
+  test("Cmd/Ctrl+Shift+D toggles theme from /automate", async ({ loggedInPage: page }) => {
+    await page.goto("/automate");
+
+    const hadDark = await page.evaluate(() => document.documentElement.classList.contains("dark"));
+
+    await page.keyboard.press(`${MOD}+Shift+d`);
+    await page.waitForTimeout(300);
+
+    const hasDark = await page.evaluate(() => document.documentElement.classList.contains("dark"));
+    expect(hasDark).not.toBe(hadDark);
+  });
+
+  test("Cmd/Ctrl+/ navigates to tools from /files", async ({ loggedInPage: page }) => {
+    await page.goto("/files");
+    await expect(page).toHaveURL("/files");
+
+    await page.keyboard.press(`${MOD}+/`);
+
+    await expect(page).toHaveURL("/");
+  });
+
+  test("Cmd/Ctrl+Alt+1 navigates to Resize from a tool page", async ({ loggedInPage: page }) => {
+    await page.goto("/compress");
+    await expect(page).toHaveURL("/compress");
+
+    await page.keyboard.press(`${MOD}+Alt+1`);
+
+    await expect(page).toHaveURL("/resize");
+  });
+
+  test("Cmd/Ctrl+Shift+D toggles theme from /fullscreen", async ({ loggedInPage: page }) => {
+    await page.goto("/fullscreen");
+
+    const hadDark = await page.evaluate(() => document.documentElement.classList.contains("dark"));
+
+    await page.keyboard.press(`${MOD}+Shift+d`);
+    await page.waitForTimeout(300);
+
+    const hasDark = await page.evaluate(() => document.documentElement.classList.contains("dark"));
+    expect(hasDark).not.toBe(hadDark);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Keyboard shortcut suppression in different input types
 // ---------------------------------------------------------------------------
 test.describe("Keyboard Shortcuts - Input Suppression", () => {

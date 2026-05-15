@@ -904,3 +904,204 @@ test.describe("Memory and Stability - Extended", () => {
     await expect(page.getByText("Upload from computer")).toBeVisible({ timeout: 5_000 });
   });
 });
+
+// ---------------------------------------------------------------------------
+// 14.9 Memory Stability with JS Heap Measurement
+// ---------------------------------------------------------------------------
+test.describe("Memory Stability - Heap Measurement", () => {
+  test("10 tool navigations do not cause unbounded heap growth", async ({ loggedInPage: page }) => {
+    const tools = [
+      "/resize",
+      "/compress",
+      "/convert",
+      "/rotate",
+      "/flip",
+      "/crop",
+      "/watermark",
+      "/border",
+      "/sharpening",
+      "/adjust-colors",
+    ];
+
+    // Warm up and take baseline
+    await page.goto("/resize");
+    await page.waitForLoadState("networkidle");
+
+    const baselineHeap = await page.evaluate(() => {
+      const perf = performance as Performance & {
+        memory?: { usedJSHeapSize: number };
+      };
+      return perf.memory?.usedJSHeapSize ?? null;
+    });
+
+    // Navigate through all tools sequentially
+    for (const tool of tools) {
+      await page.goto(tool);
+      await page.waitForLoadState("domcontentloaded");
+      await expect(page.locator("aside")).toBeVisible();
+    }
+
+    const finalHeap = await page.evaluate(() => {
+      const perf = performance as Performance & {
+        memory?: { usedJSHeapSize: number };
+      };
+      return perf.memory?.usedJSHeapSize ?? null;
+    });
+
+    // If heap measurement is available (Chromium only), verify no unbounded growth
+    // Allow up to 3x growth from baseline (accounts for lazy-loaded chunks)
+    if (baselineHeap !== null && finalHeap !== null) {
+      expect(
+        finalHeap,
+        `Heap grew from ${(baselineHeap / 1024 / 1024).toFixed(1)}MB to ${(finalHeap / 1024 / 1024).toFixed(1)}MB (${((finalHeap / baselineHeap) * 100).toFixed(0)}%)`,
+      ).toBeLessThan(baselineHeap * 3);
+    }
+  });
+
+  test("20 dialog open/close cycles do not leak memory", async ({ loggedInPage: page }) => {
+    await page.waitForLoadState("networkidle");
+
+    const baselineHeap = await page.evaluate(() => {
+      const perf = performance as Performance & {
+        memory?: { usedJSHeapSize: number };
+      };
+      return perf.memory?.usedJSHeapSize ?? null;
+    });
+
+    for (let i = 0; i < 20; i++) {
+      await openSettings(page);
+      await page.keyboard.press("Escape");
+      await expect(page.locator("h2").filter({ hasText: "Settings" })).not.toBeVisible({
+        timeout: 5_000,
+      });
+    }
+
+    const finalHeap = await page.evaluate(() => {
+      const perf = performance as Performance & {
+        memory?: { usedJSHeapSize: number };
+      };
+      return perf.memory?.usedJSHeapSize ?? null;
+    });
+
+    // Dialogs should not cause unbounded growth; allow 2x for GC timing
+    if (baselineHeap !== null && finalHeap !== null) {
+      expect(
+        finalHeap,
+        `Dialog cycles: heap grew from ${(baselineHeap / 1024 / 1024).toFixed(1)}MB to ${(finalHeap / 1024 / 1024).toFixed(1)}MB`,
+      ).toBeLessThan(baselineHeap * 2);
+    }
+
+    // Page should remain responsive
+    await expect(page.locator("main")).toBeVisible();
+  });
+
+  test("10 upload/clear cycles do not leak memory", async ({ loggedInPage: page }) => {
+    await page.goto("/resize");
+    await page.waitForLoadState("networkidle");
+
+    const baselineHeap = await page.evaluate(() => {
+      const perf = performance as Performance & {
+        memory?: { usedJSHeapSize: number };
+      };
+      return perf.memory?.usedJSHeapSize ?? null;
+    });
+
+    for (let i = 0; i < 10; i++) {
+      await uploadTestImage(page);
+      await expect(page.getByText(/test-image/i).first()).toBeVisible({ timeout: 5_000 });
+
+      const clearBtn = page.getByText("Clear all");
+      if (await clearBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await clearBtn.click();
+        await page.waitForTimeout(300);
+      }
+      await expect(page.getByText("Upload from computer")).toBeVisible({ timeout: 5_000 });
+    }
+
+    const finalHeap = await page.evaluate(() => {
+      const perf = performance as Performance & {
+        memory?: { usedJSHeapSize: number };
+      };
+      return perf.memory?.usedJSHeapSize ?? null;
+    });
+
+    // Upload/clear cycles with blob URL cleanup should not leak significantly
+    if (baselineHeap !== null && finalHeap !== null) {
+      expect(
+        finalHeap,
+        `Upload/clear cycles: heap grew from ${(baselineHeap / 1024 / 1024).toFixed(1)}MB to ${(finalHeap / 1024 / 1024).toFixed(1)}MB`,
+      ).toBeLessThan(baselineHeap * 2.5);
+    }
+
+    // No blob URLs should remain after clearing
+    const blobImages = page.locator("img[src^='blob:']");
+    await expect(blobImages).toHaveCount(0);
+  });
+
+  test("rapid 15-page navigation does not exceed memory budget", async ({ loggedInPage: page }) => {
+    const routes = [
+      "/resize",
+      "/crop",
+      "/rotate",
+      "/convert",
+      "/compress",
+      "/sharpening",
+      "/adjust-colors",
+      "/strip-metadata",
+      "/bulk-rename",
+      "/favicon",
+      "/watermark",
+      "/border",
+      "/flip",
+      "/qr-generate",
+      "/image-to-pdf",
+    ];
+
+    // Warm up
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+
+    const baselineHeap = await page.evaluate(() => {
+      const perf = performance as Performance & {
+        memory?: { usedJSHeapSize: number };
+      };
+      return perf.memory?.usedJSHeapSize ?? null;
+    });
+
+    const errors: string[] = [];
+    page.on("pageerror", (err) => errors.push(err.message));
+
+    // Rapid navigation through all 15 pages
+    for (const route of routes) {
+      await page.goto(route);
+      await page.waitForLoadState("domcontentloaded");
+
+      // Each page should render content
+      const content = await page.textContent("body");
+      expect(content).toBeDefined();
+      expect(content?.length).toBeGreaterThan(0);
+    }
+
+    const finalHeap = await page.evaluate(() => {
+      const perf = performance as Performance & {
+        memory?: { usedJSHeapSize: number };
+      };
+      return perf.memory?.usedJSHeapSize ?? null;
+    });
+
+    // No JS errors during rapid navigation
+    expect(errors).toHaveLength(0);
+
+    // Memory should stay bounded (3x for all lazy chunks loading)
+    if (baselineHeap !== null && finalHeap !== null) {
+      expect(
+        finalHeap,
+        `Rapid 15-page nav: heap grew from ${(baselineHeap / 1024 / 1024).toFixed(1)}MB to ${(finalHeap / 1024 / 1024).toFixed(1)}MB`,
+      ).toBeLessThan(baselineHeap * 3);
+    }
+
+    // Page should still be responsive at the end
+    await expect(page.locator("main")).toBeVisible();
+    await expect(page.locator("aside")).toBeVisible();
+  });
+});

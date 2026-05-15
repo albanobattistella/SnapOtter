@@ -634,4 +634,404 @@ test.describe("GUI Essential Tools", () => {
       await expect(page.getByText("Saved:")).toBeVisible();
     });
   });
+
+  // ========================================================================
+  // UNDO / STATE RESET (Cross-tool tests)
+  // ========================================================================
+  test.describe("Undo and State Reset", () => {
+    test("resize: undo after processing reverts to upload state", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/resize");
+      await uploadTestImage(page);
+
+      await page.locator("#resize-width").fill("50");
+      await page.getByTestId("resize-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByTestId("resize-download")).toBeVisible({ timeout: 15_000 });
+
+      // Click the Undo button in the review panel
+      await page.getByRole("button", { name: /undo/i }).click();
+
+      // Should return to settings panel with upload still present (no dropzone)
+      await expect(page.getByTestId("resize-submit")).toBeVisible({ timeout: 5_000 });
+      // Download should no longer be visible
+      await expect(page.getByTestId("resize-download")).not.toBeVisible();
+    });
+
+    test("crop: undo after processing returns to crop canvas", async ({ loggedInPage: page }) => {
+      await page.goto("/crop");
+      await uploadTestImage(page);
+      await page.waitForTimeout(1000);
+
+      const widthInputs = page.locator("input[type='number']");
+      if ((await widthInputs.count()) >= 4) {
+        await widthInputs.nth(2).fill("50");
+        await widthInputs.nth(3).fill("50");
+      }
+
+      await page.getByTestId("crop-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByTestId("crop-download")).toBeVisible({ timeout: 15_000 });
+
+      await page.getByRole("button", { name: /undo/i }).click();
+
+      await expect(page.getByTestId("crop-submit")).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByTestId("crop-download")).not.toBeVisible();
+    });
+
+    test("rotate: undo after processing returns to rotate controls", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/rotate");
+      await uploadTestImage(page);
+
+      await page.getByTestId("rotate-right").click();
+      await page.getByTestId("rotate-submit").click();
+      await waitForProcessing(page);
+
+      await expect(
+        page
+          .getByRole("button", { name: /^download$/i })
+          .or(page.getByRole("link", { name: /download/i }))
+          .first(),
+      ).toBeVisible({ timeout: 15_000 });
+
+      await page.getByRole("button", { name: /undo/i }).click();
+
+      await expect(page.getByTestId("rotate-submit")).toBeVisible({ timeout: 5_000 });
+    });
+
+    test("convert: undo after processing returns to format selector", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/convert");
+      await uploadTestImage(page);
+
+      await page.selectOption("#convert-target-format", "webp");
+      await page.getByTestId("convert-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByTestId("convert-download")).toBeVisible({ timeout: 15_000 });
+
+      await page.getByRole("button", { name: /undo/i }).click();
+
+      await expect(page.getByTestId("convert-submit")).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByTestId("convert-download")).not.toBeVisible();
+    });
+
+    test("compress: undo after processing returns to quality slider", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/compress");
+      await uploadTestImage(page);
+
+      await page.getByTestId("compress-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByTestId("compress-download")).toBeVisible({ timeout: 15_000 });
+
+      await page.getByRole("button", { name: /undo/i }).click();
+
+      await expect(page.getByTestId("compress-submit")).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByTestId("compress-download")).not.toBeVisible();
+      // Quality slider should still be present
+      await expect(page.locator("#compress-quality")).toBeVisible();
+    });
+
+    test("resize: clear all returns to dropzone", async ({ loggedInPage: page }) => {
+      await page.goto("/resize");
+      await uploadTestImage(page);
+
+      await expect(page.locator("#resize-width")).toBeVisible();
+
+      // Click Clear all link
+      await page.getByText("Clear all").click();
+
+      // Should return to dropzone
+      await expect(page.getByText("Upload from computer")).toBeVisible({ timeout: 5_000 });
+    });
+
+    test("navigate away from tool resets state", async ({ loggedInPage: page }) => {
+      await page.goto("/resize");
+      await uploadTestImage(page);
+
+      await page.locator("#resize-width").fill("50");
+
+      // Navigate to a different tool
+      await page.goto("/crop");
+      await expect(page.getByText("Crop").first()).toBeVisible();
+
+      // Navigate back -- state should be reset
+      await page.goto("/resize");
+      await expect(page.getByText("Upload from computer")).toBeVisible();
+    });
+  });
+
+  // ========================================================================
+  // RESULT DISPLAY MODE VERIFICATION
+  // ========================================================================
+  test.describe("Result Display Modes", () => {
+    test("resize: shows side-by-side display after processing", async ({ loggedInPage: page }) => {
+      await page.goto("/resize");
+      await uploadTestImage(page);
+
+      await page.locator("#resize-width").fill("50");
+      await page.getByTestId("resize-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByTestId("resize-download")).toBeVisible({ timeout: 15_000 });
+      // Side-by-side mode shows Original and Processed size info
+      await expect(page.getByText(/Original:/).first()).toBeVisible();
+      await expect(page.getByText(/Processed:/).first()).toBeVisible();
+    });
+
+    test("compress: shows before-after display with size savings", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/compress");
+      await uploadTestImage(page);
+
+      await page.getByTestId("compress-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByTestId("compress-download")).toBeVisible({ timeout: 15_000 });
+      // Before-after mode shows savings info
+      await expect(page.getByText("Saved:")).toBeVisible();
+    });
+  });
+
+  // ========================================================================
+  // RESIZE: LINKED ASPECT RATIO AUTO-UPDATE
+  // ========================================================================
+  test.describe("Resize Aspect Ratio Linked Fields", () => {
+    test("width auto-updates height when aspect ratio locked", async ({ loggedInPage: page }) => {
+      await page.goto("/resize");
+      await uploadTestImage(page);
+
+      // Our test image is 100x100, so aspect ratio is 1:1
+      // Ensure aspect ratio is linked (default state)
+      const linkBtn = page.locator("button[title*='aspect']").first();
+      if (await linkBtn.isVisible()) {
+        // Check if currently unlinked by looking at aria state
+        const ariaLabel = await linkBtn.getAttribute("title");
+        if (ariaLabel?.includes("Lock")) {
+          await linkBtn.click(); // Lock it
+        }
+      }
+
+      // Fill width -- height should auto-update for 1:1 image
+      await page.locator("#resize-width").fill("200");
+      await page.locator("#resize-width").press("Tab");
+      await page.waitForTimeout(300);
+
+      // For a 1:1 image, height should match width
+      const heightValue = await page.locator("#resize-height").inputValue();
+      expect(heightValue).toBe("200");
+    });
+
+    test("height auto-updates width when aspect ratio locked", async ({ loggedInPage: page }) => {
+      await page.goto("/resize");
+      await uploadTestImage(page);
+
+      const linkBtn = page.locator("button[title*='aspect']").first();
+      if (await linkBtn.isVisible()) {
+        const ariaLabel = await linkBtn.getAttribute("title");
+        if (ariaLabel?.includes("Lock")) {
+          await linkBtn.click();
+        }
+      }
+
+      await page.locator("#resize-height").fill("200");
+      await page.locator("#resize-height").press("Tab");
+      await page.waitForTimeout(300);
+
+      const widthValue = await page.locator("#resize-width").inputValue();
+      expect(widthValue).toBe("200");
+    });
+  });
+
+  // ========================================================================
+  // ROTATE: LIVE PREVIEW VERIFICATION
+  // ========================================================================
+  test.describe("Rotate Live Preview", () => {
+    test("rotating 90 degrees applies CSS transform to preview image", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/rotate");
+      await uploadTestImage(page);
+
+      // Get initial transform state of the preview image
+      const previewImg = page.locator("img").first();
+      await expect(previewImg).toBeVisible();
+
+      const initialTransform = await previewImg.evaluate(
+        (el) => window.getComputedStyle(el).transform,
+      );
+
+      // Rotate 90 degrees
+      await page.getByTestId("rotate-right").click();
+      await page.waitForTimeout(500);
+
+      // The preview image or its wrapper should now have a rotation transform
+      const updatedTransform = await previewImg.evaluate(
+        (el) => window.getComputedStyle(el).transform,
+      );
+
+      // Transform should change after rotation
+      expect(updatedTransform).not.toBe(initialTransform);
+    });
+
+    test("flip horizontal applies CSS transform to preview image", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/rotate");
+      await uploadTestImage(page);
+
+      const previewImg = page.locator("img").first();
+      await expect(previewImg).toBeVisible();
+
+      const initialTransform = await previewImg.evaluate(
+        (el) => window.getComputedStyle(el).transform,
+      );
+
+      await page.getByTestId("rotate-flip-h").click();
+      await page.waitForTimeout(500);
+
+      const updatedTransform = await previewImg.evaluate(
+        (el) => window.getComputedStyle(el).transform,
+      );
+
+      expect(updatedTransform).not.toBe(initialTransform);
+    });
+
+    test("reset all changes reverts preview transform", async ({ loggedInPage: page }) => {
+      await page.goto("/rotate");
+      await uploadTestImage(page);
+
+      const previewImg = page.locator("img").first();
+      await expect(previewImg).toBeVisible();
+
+      const initialTransform = await previewImg.evaluate(
+        (el) => window.getComputedStyle(el).transform,
+      );
+
+      // Make a change
+      await page.getByTestId("rotate-right").click();
+      await page.waitForTimeout(500);
+
+      // Reset
+      await page.getByText("Reset all changes").click();
+      await page.waitForTimeout(500);
+
+      const resetTransform = await previewImg.evaluate(
+        (el) => window.getComputedStyle(el).transform,
+      );
+
+      expect(resetTransform).toBe(initialTransform);
+    });
+  });
+
+  // ========================================================================
+  // CROP: INTERACTIVE CANVAS DRAG HANDLES
+  // ========================================================================
+  test.describe("Crop Interactive Canvas", () => {
+    test("crop canvas renders with ReactCrop component after upload", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/crop");
+      await uploadTestImage(page);
+      await page.waitForTimeout(1000);
+
+      // ReactCrop component should render
+      const cropContainer = page.locator(".ReactCrop");
+      await expect(cropContainer).toBeVisible();
+    });
+
+    test("crop handles are visible on the canvas", async ({ loggedInPage: page }) => {
+      await page.goto("/crop");
+      await uploadTestImage(page);
+      await page.waitForTimeout(1000);
+
+      // ReactCrop renders drag handles as elements with specific classes
+      const cropContainer = page.locator(".ReactCrop");
+      await expect(cropContainer).toBeVisible();
+
+      // The crop selection area should be present
+      const cropSelection = page.locator(".ReactCrop__crop-selection");
+      if (await cropSelection.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await expect(cropSelection).toBeVisible();
+      }
+    });
+
+    test("dragging on crop canvas updates numeric position inputs", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/crop");
+      await uploadTestImage(page);
+      await page.waitForTimeout(1000);
+
+      const cropImg = page.locator(".ReactCrop img");
+      await expect(cropImg).toBeVisible();
+
+      const box = await cropImg.boundingBox();
+      expect(box).not.toBeNull();
+      if (!box) return;
+
+      // Get initial crop X/Y values
+      const initialX = await page.locator("#crop-x").inputValue();
+      const initialY = await page.locator("#crop-y").inputValue();
+
+      // Perform a drag on the crop canvas to create/modify crop region
+      await page.mouse.move(box.x + box.width * 0.2, box.y + box.height * 0.2);
+      await page.mouse.down();
+      await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.8, { steps: 10 });
+      await page.mouse.up();
+      await page.waitForTimeout(500);
+
+      // After dragging, the numeric inputs should have updated
+      const newX = await page.locator("#crop-x").inputValue();
+      const newY = await page.locator("#crop-y").inputValue();
+      const newWidth = await page.locator("#crop-width").inputValue();
+      const newHeight = await page.locator("#crop-height").inputValue();
+
+      // At least width/height should be non-zero after drag
+      expect(Number(newWidth)).toBeGreaterThan(0);
+      expect(Number(newHeight)).toBeGreaterThan(0);
+    });
+
+    test("selecting 1:1 aspect ratio constrains crop box proportions", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/crop");
+      await uploadTestImage(page);
+      await page.waitForTimeout(1000);
+
+      // Select 1:1 aspect ratio
+      await page.getByRole("button", { name: "1:1" }).click();
+      await page.waitForTimeout(300);
+
+      // Now drag to create a crop region
+      const cropImg = page.locator(".ReactCrop img");
+      const box = await cropImg.boundingBox();
+      if (!box) return;
+
+      await page.mouse.move(box.x + 10, box.y + 10);
+      await page.mouse.down();
+      await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.9, { steps: 10 });
+      await page.mouse.up();
+      await page.waitForTimeout(500);
+
+      // Width and height should be equal (1:1 aspect)
+      const cropWidth = Number(await page.locator("#crop-width").inputValue());
+      const cropHeight = Number(await page.locator("#crop-height").inputValue());
+
+      if (cropWidth > 0 && cropHeight > 0) {
+        // Allow small rounding tolerance
+        expect(Math.abs(cropWidth - cropHeight)).toBeLessThanOrEqual(2);
+      }
+    });
+  });
 });

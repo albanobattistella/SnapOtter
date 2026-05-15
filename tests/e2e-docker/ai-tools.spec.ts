@@ -65,6 +65,7 @@ async function isFeatureInstalled(
     "smart-crop": "face-detection",
     "erase-object": "object-eraser-colorize",
     colorize: "object-eraser-colorize",
+    "ai-canvas-expand": "object-eraser-colorize",
     upscale: "upscale-enhance",
     "enhance-faces": "upscale-enhance",
     "noise-removal": "upscale-enhance",
@@ -704,6 +705,78 @@ test.describe("Erase Object", () => {
   });
 });
 
+// ─── AI Canvas Expand ──────────────────────────────────────────────
+
+test.describe("AI Canvas Expand", () => {
+  test("expand canvas or returns 501", async ({ request }) => {
+    const result = await callAiTool(request, "ai-canvas-expand", JPG_100x100, {
+      extendTop: 50,
+      extendRight: 50,
+      extendBottom: 50,
+      extendLeft: 50,
+      tier: "fast",
+    });
+    if (!result.installed) {
+      expect(result.body.feature).toBe("object-eraser-colorize");
+      expect(result.body.code).toBe("FEATURE_NOT_INSTALLED");
+      test.skip();
+      return;
+    }
+    // AI canvas expand is async (returns 202 with jobId)
+    if (result.status === 202) {
+      expect(result.body.jobId).toBeTruthy();
+      expect(result.body.async).toBe(true);
+    } else {
+      expect(result.ok).toBe(true);
+      expect(result.body.downloadUrl).toBeTruthy();
+      expect(result.body.processedSize).toBeGreaterThan(0);
+    }
+  });
+
+  test("expand canvas with zero extend returns same-size image or error", async ({ request }) => {
+    const result = await callAiTool(request, "ai-canvas-expand", TINY_PNG, {
+      extendTop: 0,
+      extendRight: 0,
+      extendBottom: 0,
+      extendLeft: 0,
+      tier: "fast",
+    });
+    if (!result.installed) {
+      test.skip();
+      return;
+    }
+    // Zero expansion may succeed with unchanged image or may return validation error
+    if (result.ok || result.status === 202) {
+      expect(result.body.downloadUrl || result.body.jobId).toBeTruthy();
+    } else {
+      expect(result.body.error).toBeDefined();
+    }
+  });
+
+  test("expand canvas with HEIC input", async ({ request }) => {
+    const result = await callAiTool(
+      request,
+      "ai-canvas-expand",
+      HEIC_PORTRAIT,
+      { extendRight: 100, tier: "fast" },
+      "portrait.heic",
+      "image/heic",
+    );
+    if (!result.installed) {
+      test.skip();
+      return;
+    }
+    if (result.status === 202) {
+      expect(result.body.jobId).toBeTruthy();
+    } else if (result.ok) {
+      expect(result.body.downloadUrl).toBeTruthy();
+    } else {
+      // May fail on edge cases -- acceptable
+      expect(result.body.error).toBeDefined();
+    }
+  });
+});
+
 // ─── Feature Bundle Status ──────────────────────────────────────────
 
 test.describe("AI Feature Bundle Status", () => {
@@ -716,6 +789,11 @@ test.describe("AI Feature Bundle Status", () => {
       { tool: "erase-object", featureKey: "erase-object", bundle: "object-eraser-colorize" },
       { tool: "ocr", featureKey: "ocr", bundle: "ocr" },
       { tool: "colorize", featureKey: "colorize", bundle: "object-eraser-colorize" },
+      {
+        tool: "ai-canvas-expand",
+        featureKey: "ai-canvas-expand",
+        bundle: "object-eraser-colorize",
+      },
       { tool: "enhance-faces", featureKey: "enhance-faces", bundle: "upscale-enhance" },
       { tool: "noise-removal", featureKey: "noise-removal", bundle: "upscale-enhance" },
       { tool: "red-eye-removal", featureKey: "red-eye-removal", bundle: "face-detection" },

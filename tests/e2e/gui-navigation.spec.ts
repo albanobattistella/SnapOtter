@@ -121,6 +121,31 @@ test.describe("Login Page", () => {
 
     await expect(page.getByText("SnapOtter").first()).toBeVisible();
   });
+
+  test("after too many failed attempts, rate limiting kicks in", async ({ page }) => {
+    await page.goto("/login");
+
+    // Submit several failed login attempts in rapid succession
+    for (let i = 0; i < 10; i++) {
+      await page.getByLabel("Username").fill(`wrong-user-${i}`);
+      await page.getByLabel("Password").fill(`wrong-pass-${i}`);
+      await page.getByRole("button", { name: /login/i }).click();
+
+      // Wait briefly for the response
+      await page.waitForTimeout(300);
+    }
+
+    // After many rapid failures, the UI should show a rate-limit or lockout message,
+    // or the login button should become temporarily disabled
+    const rateLimited = page.getByText(/too many|rate limit|try again|locked|slow down/i).first();
+    const disabledBtn = page.getByRole("button", { name: /login/i });
+
+    // Either an error message about rate limiting appears, or the button is disabled
+    const hasRateLimitMsg = await rateLimited.isVisible({ timeout: 5000 }).catch(() => false);
+    const isDisabled = await disabledBtn.isDisabled();
+
+    expect(hasRateLimitMsg || isDisabled).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -416,6 +441,7 @@ const DROPZONE_TOOLS = [
   { id: "restore-photo", name: "Photo Restoration" },
   { id: "passport-photo", name: "Passport Photo" },
   { id: "content-aware-resize", name: "Content-Aware Resize" },
+  { id: "ai-canvas-expand", name: "AI Canvas Expand" },
   { id: "transparency-fixer", name: "PNG Transparency Fixer" },
   // Watermark & Overlay
   { id: "watermark-text", name: "Text Watermark" },

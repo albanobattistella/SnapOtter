@@ -517,4 +517,148 @@ test.describe("GUI Color & Adjustment Tools", () => {
       await expect(page.getByTestId("color-blindness-download")).toBeVisible({ timeout: 15_000 });
     });
   });
+
+  // ========================================================================
+  // UNDO / STATE RESET (Color tools)
+  // ========================================================================
+  test.describe("Undo and State Reset", () => {
+    test("adjust-colors: undo after processing returns to sliders", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/adjust-colors");
+      await uploadTestImage(page);
+
+      await page.locator("#color-slider-brightness").fill("20");
+      await page.getByTestId("adjust-colors-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByTestId("adjust-colors-download")).toBeVisible({ timeout: 15_000 });
+
+      await page.getByRole("button", { name: /undo/i }).click();
+
+      await expect(page.getByTestId("adjust-colors-submit")).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByTestId("adjust-colors-download")).not.toBeVisible();
+      // Sliders should be back
+      await expect(page.locator("#color-slider-brightness")).toBeVisible();
+    });
+
+    test("sharpening: undo after processing returns to method selector", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/sharpening");
+      await uploadTestImage(page);
+
+      await page.getByTestId("sharpening-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByTestId("sharpening-download")).toBeVisible({ timeout: 15_000 });
+
+      await page.getByRole("button", { name: /undo/i }).click();
+
+      await expect(page.getByTestId("sharpening-submit")).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByTestId("sharpening-download")).not.toBeVisible();
+    });
+
+    test("replace-color: undo after processing returns to color pickers", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/replace-color");
+      await uploadTestImage(page);
+
+      await page.getByTestId("replace-color-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByTestId("replace-color-download")).toBeVisible({ timeout: 15_000 });
+
+      await page.getByRole("button", { name: /undo/i }).click();
+
+      await expect(page.getByTestId("replace-color-submit")).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByTestId("replace-color-download")).not.toBeVisible();
+      await expect(page.locator("#replace-source-color")).toBeVisible();
+    });
+
+    test("color-blindness: undo after processing returns to type selector", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/color-blindness");
+      await uploadTestImage(page);
+
+      await page.getByTestId("color-blindness-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByTestId("color-blindness-download")).toBeVisible({ timeout: 15_000 });
+
+      await page.getByRole("button", { name: /undo/i }).click();
+
+      await expect(page.getByTestId("color-blindness-submit")).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByTestId("color-blindness-download")).not.toBeVisible();
+      await expect(page.locator("#cb-simulation-type")).toBeVisible();
+    });
+
+    test("adjust-colors: clear all returns to dropzone", async ({ loggedInPage: page }) => {
+      await page.goto("/adjust-colors");
+      await uploadTestImage(page);
+
+      await expect(page.locator("#color-slider-brightness")).toBeVisible();
+
+      await page.getByText("Clear all").click();
+
+      await expect(page.getByText("Upload from computer")).toBeVisible({ timeout: 5_000 });
+    });
+
+    test("adjust-colors: navigate away resets state", async ({ loggedInPage: page }) => {
+      await page.goto("/adjust-colors");
+      await uploadTestImage(page);
+
+      await page.locator("#color-slider-brightness").fill("30");
+
+      await page.goto("/sharpening");
+      await page.goto("/adjust-colors");
+
+      await expect(page.getByText("Upload from computer")).toBeVisible();
+    });
+  });
+
+  // ========================================================================
+  // ADJUST COLORS: LIVE PREVIEW VERIFICATION
+  // ========================================================================
+  test.describe("Adjust Colors Live Preview", () => {
+    test("changing brightness applies CSS filter to preview image", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/adjust-colors");
+      await uploadTestImage(page);
+
+      const previewImg = page.locator("img").first();
+      await expect(previewImg).toBeVisible();
+
+      const initialFilter = await previewImg.evaluate((el) => window.getComputedStyle(el).filter);
+
+      // Adjust brightness
+      await page.locator("#color-slider-brightness").fill("40");
+      await page.waitForTimeout(500);
+
+      const updatedFilter = await previewImg.evaluate((el) => window.getComputedStyle(el).filter);
+
+      // Filter should change after brightness adjustment
+      expect(updatedFilter).not.toBe(initialFilter);
+    });
+
+    test("selecting grayscale effect applies CSS filter", async ({ loggedInPage: page }) => {
+      await page.goto("/adjust-colors");
+      await uploadTestImage(page);
+
+      const previewImg = page.locator("img").first();
+      await expect(previewImg).toBeVisible();
+
+      const initialFilter = await previewImg.evaluate((el) => window.getComputedStyle(el).filter);
+
+      await page.getByRole("button", { name: "grayscale" }).click();
+      await page.waitForTimeout(500);
+
+      const updatedFilter = await previewImg.evaluate((el) => window.getComputedStyle(el).filter);
+
+      expect(updatedFilter).not.toBe(initialFilter);
+    });
+  });
 });

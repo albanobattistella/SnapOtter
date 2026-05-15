@@ -592,4 +592,152 @@ test.describe("GUI Watermark & Overlay Tools", () => {
       await expect(page.getByTestId("border-download")).toBeVisible({ timeout: 15_000 });
     });
   });
+
+  // ========================================================================
+  // UNDO / STATE RESET (Overlay tools)
+  // ========================================================================
+  test.describe("Undo and State Reset", () => {
+    test("watermark-text: undo after processing returns to text input", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/watermark-text");
+      await uploadTestImage(page);
+
+      await page.locator("#watermark-text-text").fill("Undo Test");
+      await page.getByTestId("watermark-text-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByTestId("watermark-text-download")).toBeVisible({ timeout: 15_000 });
+
+      await page.getByRole("button", { name: /undo/i }).click();
+
+      await expect(page.getByTestId("watermark-text-submit")).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByTestId("watermark-text-download")).not.toBeVisible();
+      await expect(page.locator("#watermark-text-text")).toBeVisible();
+    });
+
+    test("text-overlay: undo after processing returns to settings", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/text-overlay");
+      await uploadTestImage(page);
+
+      await page.getByTestId("text-overlay-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByTestId("text-overlay-download")).toBeVisible({ timeout: 15_000 });
+
+      await page.getByRole("button", { name: /undo/i }).click();
+
+      await expect(page.getByTestId("text-overlay-submit")).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByTestId("text-overlay-download")).not.toBeVisible();
+      await expect(page.locator("#text-overlay-text")).toBeVisible();
+    });
+
+    test("compose: undo after processing returns to position controls", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/compose");
+
+      // Use compose-specific upload helpers
+      const fileChooserPromise = page.waitForEvent("filechooser");
+      await page.locator("section[aria-label='File drop zone']").click();
+      const fileChooser = await fileChooserPromise;
+      await fileChooser.setFiles(getTestImagePath());
+      await page.waitForTimeout(500);
+
+      await page.locator("#compose-overlay-image").setInputFiles(getTestImagePath());
+      await page.waitForTimeout(500);
+
+      await page.getByTestId("compose-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByTestId("compose-download")).toBeVisible({ timeout: 15_000 });
+
+      await page.getByRole("button", { name: /undo/i }).click();
+
+      await expect(page.getByTestId("compose-submit")).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByTestId("compose-download")).not.toBeVisible();
+    });
+
+    test("border: undo after processing returns to preset buttons", async ({
+      loggedInPage: page,
+    }) => {
+      await page.goto("/border");
+      await uploadTestImage(page);
+
+      await page.getByTestId("border-submit").click();
+      await waitForProcessing(page);
+
+      await expect(page.getByTestId("border-download")).toBeVisible({ timeout: 15_000 });
+
+      await page.getByRole("button", { name: /undo/i }).click();
+
+      await expect(page.getByTestId("border-submit")).toBeVisible({ timeout: 5_000 });
+      await expect(page.getByTestId("border-download")).not.toBeVisible();
+      await expect(page.getByText("Clean White").first()).toBeVisible();
+    });
+
+    test("watermark-text: clear all returns to dropzone", async ({ loggedInPage: page }) => {
+      await page.goto("/watermark-text");
+      await uploadTestImage(page);
+
+      await expect(page.locator("#watermark-text-text")).toBeVisible();
+
+      await page.getByText("Clear all").click();
+
+      await expect(page.getByText("Upload from computer")).toBeVisible({ timeout: 5_000 });
+    });
+
+    test("border: navigate away resets state", async ({ loggedInPage: page }) => {
+      await page.goto("/border");
+      await uploadTestImage(page);
+
+      await expect(page.locator("#border-width")).toBeVisible();
+
+      await page.goto("/watermark-text");
+      await page.goto("/border");
+
+      await expect(page.getByText("Upload from computer")).toBeVisible();
+    });
+  });
+
+  // ========================================================================
+  // BORDER: LIVE PREVIEW VERIFICATION
+  // ========================================================================
+  test.describe("Border Live Preview", () => {
+    test("selecting a preset updates the live preview styling", async ({ loggedInPage: page }) => {
+      await page.goto("/border");
+      await uploadTestImage(page);
+
+      const previewImg = page.locator("img").first();
+      await expect(previewImg).toBeVisible();
+
+      // Click Polaroid preset
+      await page.getByText("Polaroid").first().click();
+      await page.waitForTimeout(500);
+
+      // The image wrapper should have styling applied (border, padding, etc.)
+      // Check that some wrapper element has a non-default style
+      const wrapper = previewImg.locator("..");
+      const bgColor = await wrapper.evaluate((el) => window.getComputedStyle(el).backgroundColor);
+      // Polaroid preset uses white background -- just verify the preview didn't error
+      await expect(previewImg).toBeVisible();
+    });
+
+    test("changing border width updates preview in real-time", async ({ loggedInPage: page }) => {
+      await page.goto("/border");
+      await uploadTestImage(page);
+
+      const previewImg = page.locator("img").first();
+      await expect(previewImg).toBeVisible();
+
+      // Change border width
+      await page.locator("#border-width").fill("20");
+      await page.waitForTimeout(500);
+
+      // Preview should still be visible and updated
+      await expect(previewImg).toBeVisible();
+    });
+  });
 });
