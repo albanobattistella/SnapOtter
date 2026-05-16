@@ -136,6 +136,22 @@ export function createSessionToken(): string {
 
 // ── Default admin creation ─────────────────────────────────────────
 
+export function ensureAnonymousUser(): void {
+  const existing = db.select().from(schema.users).where(eq(schema.users.id, "anonymous")).get();
+  if (existing) return;
+
+  db.insert(schema.users)
+    .values({
+      id: "anonymous",
+      username: "anonymous",
+      role: "admin",
+      mustChangePassword: false,
+      authProvider: "local",
+    })
+    .onConflictDoNothing()
+    .run();
+}
+
 export async function ensureDefaultAdmin(): Promise<void> {
   const existingUsers = db.select().from(schema.users).all();
   if (existingUsers.length > 0) return;
