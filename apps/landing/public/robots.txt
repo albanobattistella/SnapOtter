@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://snapotter.com/sitemap.xml
+Sitemap: https://docs.snapotter.com/sitemap.xml
