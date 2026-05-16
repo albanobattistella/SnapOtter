@@ -19,8 +19,8 @@ We accept pull requests for:
 | New translations | Open a PR directly (see [Translation Guide](https://docs.snapotter.com/guide/translations)) |
 | Documentation improvements | Open a PR directly |
 | Test coverage improvements | Open a PR directly |
-| New tools or features | Open an issue first, wait for approval before writing code |
-| Refactors or architecture changes | Open an issue first, wait for approval before writing code |
+| New tools or features | Open an issue first, wait for a maintainer to add the `approved` label before writing code |
+| Refactors or architecture changes | Open an issue first, wait for a maintainer to add the `approved` label before writing code |
 
 ### What We Will Not Accept
 
@@ -38,7 +38,7 @@ Before we can merge your first PR, you must sign our [Individual CLA](CLA.md). T
 
 **How:** When you open your first PR, the CLA Assistant bot will comment with a link. Click it, review the agreement, and sign with your GitHub account. Takes 30 seconds.
 
-If you are contributing on behalf of your employer, your employer must sign the Corporate CLA. Contact contact@snapotter.com for details.
+If you are contributing on behalf of your employer and your employer retains IP rights over your work, contact contact@snapotter.com to arrange a Corporate CLA before submitting.
 
 ## Development Setup
 

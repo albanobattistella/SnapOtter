@@ -41,7 +41,7 @@ body:
     id: docker-setup
     attributes:
       label: Docker setup
-      description: Paste your `docker run` command or `docker-compose.yml` (remove any sensitive values).
+      description: Paste your `docker run` command or `docker-compose.yml` (remove any sensitive values). If running from source, write "running from source via pnpm dev".
       render: shell
     validations:
       required: true

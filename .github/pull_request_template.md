@@ -15,8 +15,8 @@ Fixes #
 
 ## Checklist
 
-- [ ] I have read [CONTRIBUTING.md](../CONTRIBUTING.md)
-- [ ] I have signed the [CLA](../CLA.md) (the bot will prompt you if not)
+- [ ] I have read [CONTRIBUTING.md](https://github.com/snapotter-hq/snapotter/blob/main/CONTRIBUTING.md)
+- [ ] I have signed the [CLA](https://github.com/snapotter-hq/snapotter/blob/main/CLA.md) (the bot will prompt you if not)
 - [ ] My changes follow the project's code style (Biome passes)
 - [ ] I have added or updated tests for my changes
 - [ ] All existing tests pass locally (`pnpm test`)

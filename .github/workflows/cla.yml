@@ -27,8 +27,8 @@ jobs:
         with:
           path-to-signatures: "signatures/cla.json"
           path-to-document: "https://github.com/snapotter-hq/snapotter/blob/main/CLA.md"
-          branch: "main"
-          allowlist: "dependabot[bot],renovate[bot],github-actions[bot],snapotter-bot"
+          branch: "cla-signatures"
+          allowlist: "snapotter-hq,dependabot[bot],renovate[bot],github-actions[bot],snapotter-bot"
           custom-notsigned-prcomment: |
             Thank you for your contribution! Before we can merge this PR, you need to sign our [Contributor License Agreement](https://github.com/snapotter-hq/snapotter/blob/main/CLA.md).
 

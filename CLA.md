@@ -23,7 +23,7 @@ By signing this Contributor License Agreement ("Agreement"), you accept and agre
 
 **"Contribution"** means any original work of authorship, including any modifications or additions to existing work, that you intentionally submit to SnapOtter for inclusion in the project. "Submit" means any form of electronic or written communication sent to SnapOtter or its representatives, including pull requests, patches, issues, comments, and messages on project communication channels.
 
-**"SnapOtter"** means the SnapOtter project and its maintainers, operating under snapotter-hq on GitHub.
+**"SnapOtter"** means the SnapOtter project, owned and maintained by the snapotter-hq GitHub account holder, including any successor entity or assignee.
 
 ### 2. Grant of Copyright License
 
