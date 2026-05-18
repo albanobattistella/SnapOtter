@@ -1,0 +1,5 @@
+if git diff --cached --name-only HEAD@{1}..HEAD 2>/dev/null | grep -q "^\.local-wiki/" || \
+   git log --name-only --pretty=format: @{u}..HEAD 2>/dev/null | grep -q "^\.local-wiki/"; then
+  echo "ERROR: .local-wiki/ files detected in push. This directory is private and must never be pushed."
+  exit 1
+fi
