@@ -751,20 +751,26 @@ function SecuritySection() {
 
 /* ────────────────────── People ────────────────────── */
 
+function secureRandom(max: number): number {
+  const array = new Uint32Array(1);
+  crypto.getRandomValues(array);
+  return array[0] % max;
+}
+
 function generatePassword(): string {
   const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   const lower = "abcdefghijklmnopqrstuvwxyz";
   const digits = "0123456789";
   const all = upper + lower + digits;
   const required = [
-    upper[Math.floor(Math.random() * upper.length)],
-    lower[Math.floor(Math.random() * lower.length)],
-    digits[Math.floor(Math.random() * digits.length)],
+    upper[secureRandom(upper.length)],
+    lower[secureRandom(lower.length)],
+    digits[secureRandom(digits.length)],
   ];
-  const rest = Array.from({ length: 13 }, () => all[Math.floor(Math.random() * all.length)]);
+  const rest = Array.from({ length: 13 }, () => all[secureRandom(all.length)]);
   const chars = [...required, ...rest];
   for (let i = chars.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = secureRandom(i + 1);
     [chars[i], chars[j]] = [chars[j], chars[i]];
   }
   return chars.join("");
