@@ -1,0 +1,57 @@
+title: "[Feature] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Community votes (thumbs-up on this post) help us prioritize the roadmap.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: What are you trying to do? What's frustrating or missing today?
+      placeholder: "When I try to ..., I can't ... because ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How do you imagine this working? Screenshots, mockups, or rough descriptions are all welcome.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Have you tried any workarounds? Are there other tools that do this well?
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - New tool
+        - Existing tool improvement
+        - UI/UX
+        - API
+        - Pipeline / batch processing
+        - AI features
+        - Docker / self-hosting
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I'm willing to submit a PR for this feature

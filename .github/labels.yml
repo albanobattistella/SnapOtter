@@ -83,6 +83,23 @@
   color: "c2e0c6"
   description: Nice to have, no rush
 
+# Roadmap
+- name: "roadmap: now"
+  color: "0e8a16"
+  description: Actively being worked on
+
+- name: "roadmap: next"
+  color: "fbca04"
+  description: Planned for near term
+
+- name: "roadmap: later"
+  color: "c5def5"
+  description: On the radar, not yet scheduled
+
+- name: community-request
+  color: "d876e3"
+  description: Requested by the community
+
 # Meta
 - name: duplicate
   color: "cfd3d7"
