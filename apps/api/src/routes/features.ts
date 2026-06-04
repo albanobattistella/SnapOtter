@@ -9,7 +9,15 @@
 
 import { spawn } from "node:child_process";
 import crypto from "node:crypto";
-import { type Dirent, existsSync, readdirSync, readFileSync, statSync, unlinkSync } from "node:fs";
+import {
+  type Dirent,
+  existsSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  unlinkSync,
+} from "node:fs";
 import { join } from "node:path";
 import { shutdownDispatcher } from "@snapotter/ai";
 import { ANALYTICS_EVENTS, FEATURE_BUNDLES } from "@snapotter/shared";
@@ -42,6 +50,8 @@ interface BundleIdParams {
 interface ManifestModel {
   id: string;
   path?: string;
+  downloadFn?: string;
+  args?: string[];
 }
 
 interface ManifestBundle {
@@ -277,30 +287,43 @@ export async function registerFeatureRoutes(app: FastifyInstance): Promise<void>
         return reply.status(409).send({ error: `Bundle "${bundleId}" is not installed` });
       }
 
-      // Read manifest to find model files to delete, but skip models
-      // that are still needed by another installed bundle.
       const manifest = readManifest();
       if (manifest) {
         const manifestBundle = manifest.bundles[bundleId];
         if (manifestBundle) {
-          // Collect model paths that OTHER installed bundles still need
-          const sharedPaths = new Set<string>();
+          const protectedFiles = new Set<string>();
+          const protectedDirs = new Set<string>();
           for (const [otherId, otherBundle] of Object.entries(manifest.bundles)) {
-            if (otherId === bundleId) continue;
-            if (!isFeatureInstalled(otherId)) continue;
+            if (otherId === bundleId || !isFeatureInstalled(otherId)) continue;
             for (const m of otherBundle.models ?? []) {
-              if (m.path) sharedPaths.add(m.path);
+              if (m.path) protectedFiles.add(m.path);
+              if (m.downloadFn === "rembg_session" && m.args?.[0]) {
+                protectedFiles.add(`rembg/${m.args[0]}.onnx`);
+              }
+              if (m.downloadFn === "hf_snapshot" && m.args?.[1]) {
+                protectedDirs.add(m.args[1]);
+              }
             }
           }
 
           const modelsDir = getModelsDir();
           for (const model of manifestBundle.models) {
-            if (!model.path) continue;
-            if (sharedPaths.has(model.path)) continue; // still needed
-            const modelPath = join(modelsDir, model.path);
             try {
-              if (existsSync(modelPath)) {
-                unlinkSync(modelPath);
+              if (model.path && !protectedFiles.has(model.path)) {
+                const modelPath = join(modelsDir, model.path);
+                if (existsSync(modelPath)) unlinkSync(modelPath);
+              } else if (model.downloadFn === "rembg_session" && model.args?.[0]) {
+                const relPath = `rembg/${model.args[0]}.onnx`;
+                if (!protectedFiles.has(relPath)) {
+                  const filePath = join(modelsDir, relPath);
+                  if (existsSync(filePath)) unlinkSync(filePath);
+                }
+              } else if (!model.path && model.downloadFn === "hf_snapshot" && model.args?.[1]) {
+                const subdir = model.args[1];
+                if (!protectedDirs.has(subdir)) {
+                  const dirPath = join(modelsDir, subdir);
+                  if (existsSync(dirPath)) rmSync(dirPath, { recursive: true, force: true });
+                }
               }
             } catch {
               // Best-effort deletion

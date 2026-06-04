@@ -123,6 +123,28 @@ def check_disk_space(path: str, min_bytes: int = 100 * 1024 * 1024) -> None:
 # ── pip install ──────────────────────────────────────────────────────────
 
 
+def _pip_error_hint(package: str, stderr: str) -> str:
+    """Return a user-friendly hint for known pip install failure patterns."""
+    if "KeyError" in stderr and "__version__" in stderr:
+        return (
+            "The 'basicsr' dependency failed to build due to a known "
+            "compatibility issue with newer setuptools versions. "
+            "Try running: pip install basicsr==1.4.2 --no-build-isolation "
+            "inside the container, then retry this installation."
+        )
+    if "MemoryError" in stderr or "Cannot allocate memory" in stderr:
+        return (
+            "Installation ran out of memory. "
+            "Increase the container's memory limit to at least 6 GB and retry."
+        )
+    if "No space left on device" in stderr:
+        return (
+            "Disk space exhausted during package installation. "
+            "Free up disk space or increase the container's disk size and retry."
+        )
+    return ""
+
+
 def pip_install(package: str, extra_flags: list[str] | None = None) -> None:
     """Run pip install for a single package spec. Raises on failure."""
     cmd = [sys.executable, "-m", "pip", "install", "--no-cache-dir"]
@@ -140,9 +162,12 @@ def pip_install(package: str, extra_flags: list[str] | None = None) -> None:
         text=True,
     )
     if result.returncode != 0:
-        raise RuntimeError(
-            f"pip install failed for '{package}': {result.stderr.strip()}"
-        )
+        stderr = result.stderr.strip()
+        hint = _pip_error_hint(package, stderr)
+        if hint:
+            raise RuntimeError(f"pip install failed for '{package}': {hint}")
+        tail = stderr[-500:] if len(stderr) > 500 else stderr
+        raise RuntimeError(f"pip install failed for '{package}': {tail}")
 
 
 def install_packages(bundle: dict, arch: str) -> None:
@@ -386,10 +411,23 @@ def download_rembg_session(model: dict, models_dir: str) -> None:
     os.makedirs(u2net_dir, exist_ok=True)
     os.environ["U2NET_HOME"] = u2net_dir
 
-    from rembg import new_session
+    try:
+        from rembg import new_session
+    except ImportError:
+        raise RuntimeError(
+            f"rembg package not available for model '{model_name}' "
+            f"-- pip install may have failed in an earlier step"
+        )
     _register_birefnet_matting()
     _register_birefnet_hr_matting()
-    new_session(model_name)
+    try:
+        new_session(model_name)
+    except Exception as e:
+        raise RuntimeError(
+            f"Failed to download rembg model '{model_name}': {e}. "
+            f"This is usually caused by network issues (timeouts or rate limiting). "
+            f"Check your internet connection and retry."
+        )
 
 
 def download_hf_snapshot(model: dict, models_dir: str) -> None:
@@ -594,7 +632,9 @@ def main() -> None:
 
     if failed:
         fail(
-            f"Failed to download {len(failed)} model(s): {', '.join(failed)}"
+            f"Failed to download {len(failed)} model(s): {', '.join(failed)}. "
+            f"This is usually caused by network issues (timeouts, DNS, or rate limiting). "
+            f"Check your internet connection and retry the installation."
         )
 
     # ── Write installed.json ─────────────────────────────────────────────

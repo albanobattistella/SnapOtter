@@ -219,6 +219,8 @@ export function setInstallProgress(
 interface ManifestModel {
   id: string;
   path?: string;
+  downloadFn?: string;
+  args?: string[];
   minSize?: number;
 }
 
@@ -309,25 +311,42 @@ export function recoverInterruptedInstalls(): void {
       if (!manifestBundle) continue;
 
       for (const model of manifestBundle.models) {
-        if (!model.path) continue;
-        const modelPath = join(MODELS_DIR, model.path);
-        if (!existsSync(modelPath)) {
-          console.warn(`[feature-status] Bundle "${bundleId}" missing model file: ${model.path}`);
-          // Don't remove from installed.json — getFeatureStates will surface the error
-          break;
-        }
-        if (model.minSize != null && model.minSize > 0) {
-          try {
-            const st = statSync(modelPath);
-            if (st.size < model.minSize) {
+        if (model.path) {
+          const modelPath = join(MODELS_DIR, model.path);
+          if (!existsSync(modelPath)) {
+            console.warn(`[feature-status] Bundle "${bundleId}" missing model file: ${model.path}`);
+            break;
+          }
+          if (model.minSize != null && model.minSize > 0) {
+            try {
+              const st = statSync(modelPath);
+              if (st.size < model.minSize) {
+                console.warn(
+                  `[feature-status] Bundle "${bundleId}" model "${model.path}" is undersized (${st.size} < ${model.minSize})`,
+                );
+                break;
+              }
+            } catch {
               console.warn(
-                `[feature-status] Bundle "${bundleId}" model "${model.path}" is undersized (${st.size} < ${model.minSize})`,
+                `[feature-status] Bundle "${bundleId}" cannot stat model: ${model.path}`,
               );
               break;
             }
-          } catch {
-            // stat failed, treat as missing
-            console.warn(`[feature-status] Bundle "${bundleId}" cannot stat model: ${model.path}`);
+          }
+        } else if (model.downloadFn === "rembg_session" && model.args?.[0]) {
+          const filePath = join(MODELS_DIR, "rembg", `${model.args[0]}.onnx`);
+          if (!existsSync(filePath)) {
+            console.warn(
+              `[feature-status] Bundle "${bundleId}" missing rembg model: ${model.args[0]}`,
+            );
+            break;
+          }
+        } else if (model.downloadFn === "hf_snapshot" && model.args?.[1]) {
+          const dirPath = join(MODELS_DIR, model.args[1]);
+          if (!existsSync(dirPath)) {
+            console.warn(
+              `[feature-status] Bundle "${bundleId}" missing model directory: ${model.args[1]}`,
+            );
             break;
           }
         }
@@ -348,19 +367,30 @@ function verifyBundleModels(bundleId: string): string | null {
   if (!manifestBundle) return null;
 
   for (const model of manifestBundle.models) {
-    if (!model.path) continue;
-    const modelPath = join(MODELS_DIR, model.path);
-    if (!existsSync(modelPath)) {
-      return `Missing model file: ${model.path}`;
-    }
-    if (model.minSize != null && model.minSize > 0) {
-      try {
-        const st = statSync(modelPath);
-        if (st.size < model.minSize) {
-          return `Model "${model.path}" is undersized (${st.size} < ${model.minSize})`;
+    if (model.path) {
+      const modelPath = join(MODELS_DIR, model.path);
+      if (!existsSync(modelPath)) {
+        return `Missing model file: ${model.path}`;
+      }
+      if (model.minSize != null && model.minSize > 0) {
+        try {
+          const st = statSync(modelPath);
+          if (st.size < model.minSize) {
+            return `Model "${model.path}" is undersized (${st.size} < ${model.minSize})`;
+          }
+        } catch {
+          return `Cannot read model file: ${model.path}`;
         }
-      } catch {
-        return `Cannot read model file: ${model.path}`;
+      }
+    } else if (model.downloadFn === "rembg_session" && model.args?.[0]) {
+      const filePath = join(MODELS_DIR, "rembg", `${model.args[0]}.onnx`);
+      if (!existsSync(filePath)) {
+        return `Missing rembg model: ${model.args[0]}`;
+      }
+    } else if (model.downloadFn === "hf_snapshot" && model.args?.[1]) {
+      const dirPath = join(MODELS_DIR, model.args[1]);
+      if (!existsSync(dirPath)) {
+        return `Missing model directory: ${model.args[1]}`;
       }
     }
   }
