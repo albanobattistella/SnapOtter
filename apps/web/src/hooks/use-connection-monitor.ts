@@ -14,8 +14,15 @@ export function useConnectionMonitor() {
       }
     };
 
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        store.getState().checkHealth();
+      }
+    };
+
     window.addEventListener("offline", handleOffline);
     window.addEventListener("online", handleOnline);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     store.getState().checkHealth();
 
@@ -48,6 +55,7 @@ export function useConnectionMonitor() {
     return () => {
       window.removeEventListener("offline", handleOffline);
       window.removeEventListener("online", handleOnline);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       store.getState().stopPolling();
       unsubscribe();
     };
