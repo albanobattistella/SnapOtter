@@ -194,7 +194,7 @@ export function updateSingleFileProgress(progress: Omit<SingleFileProgress, "typ
       if (oldest) singleFileCompletions.delete(oldest);
     }
     singleFileCompletions.set(progress.jobId, event);
-    setTimeout(() => singleFileCompletions.delete(progress.jobId), 120_000);
+    setTimeout(() => singleFileCompletions.delete(progress.jobId), 600_000);
   }
 
   const subs = listeners.get(progress.jobId);
