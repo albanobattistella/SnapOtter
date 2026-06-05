@@ -147,6 +147,26 @@ export const useFeaturesStore = create<FeaturesState>((set, get) => {
     }
   };
 
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState !== "visible") return;
+      const activeIds = Object.keys(get().installing);
+      if (activeIds.length === 0) return;
+
+      for (const bundleId of activeIds) {
+        const es = esRefs[bundleId];
+        if (es && es.readyState === EventSource.OPEN) continue;
+        if (es) {
+          es.close();
+          delete esRefs[bundleId];
+        }
+        if (!pollRefs[bundleId]) {
+          startPolling(bundleId);
+        }
+      }
+    });
+  }
+
   return {
     bundles: [],
     loaded: false,
