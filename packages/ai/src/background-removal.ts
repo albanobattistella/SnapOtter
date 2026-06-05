@@ -8,6 +8,8 @@ import { type ProgressCallback, parseStdoutJson, runPythonWithProgress } from ".
 export interface RemoveBackgroundOptions {
   model?: string;
   backgroundColor?: string;
+  edgeRefine?: number;
+  decontaminate?: boolean;
 }
 
 const MAX_REMBG_PX = Number(process.env.MAX_REMBG_PX) || 2048;

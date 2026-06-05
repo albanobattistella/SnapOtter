@@ -6,7 +6,11 @@ import { getBundleForTool, TOOL_BUNDLE_MAP } from "@snapotter/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { autoOrient } from "../../lib/auto-orient.js";
-import { applyEffects } from "../../lib/bg-effects.js";
+import {
+  applyEffects,
+  BG_FORMAT_CONTENT_TYPES,
+  type BgOutputFormat,
+} from "../../lib/bg-effects.js";
 import { formatZodErrors } from "../../lib/errors.js";
 import { isToolInstalled } from "../../lib/feature-status.js";
 import { validateImageBuffer } from "../../lib/file-validation.js";
@@ -28,6 +32,9 @@ const settingsSchema = z.object({
   blurIntensity: z.number().min(0).max(100).optional(),
   shadowEnabled: z.boolean().optional(),
   shadowOpacity: z.number().min(0).max(100).optional(),
+  outputFormat: z.enum(["png", "webp", "avif"]).optional(),
+  edgeRefine: z.number().int().min(0).max(3).optional(),
+  decontaminate: z.boolean().optional(),
 });
 
 /**
@@ -176,7 +183,11 @@ export function registerRemoveBackground(app: FastifyInstance) {
         const transparentResult = await removeBackground(
           fileBuffer,
           join(workspacePath, "output"),
-          { model: settings.model },
+          {
+            model: settings.model,
+            edgeRefine: settings.edgeRefine,
+            decontaminate: settings.decontaminate,
+          },
           onProgress,
         );
 
@@ -265,6 +276,7 @@ export function registerRemoveBackground(app: FastifyInstance) {
         blurIntensity: z.number().min(0).max(100).optional(),
         shadowEnabled: z.boolean().optional(),
         shadowOpacity: z.number().min(0).max(100).optional(),
+        outputFormat: z.enum(["png", "webp", "avif"]).optional(),
       });
 
       try {
@@ -308,6 +320,7 @@ export function registerRemoveBackground(app: FastifyInstance) {
         }
 
         // Apply effects using cached mask + original
+        const fmt = (settings.outputFormat ?? "png") as BgOutputFormat;
         const resultBuffer = await applyEffects(maskBuffer, originalBuffer, {
           backgroundType: settings.backgroundType,
           backgroundColor: settings.backgroundColor,
@@ -319,10 +332,11 @@ export function registerRemoveBackground(app: FastifyInstance) {
           blurIntensity: settings.blurIntensity,
           shadowEnabled: settings.shadowEnabled,
           shadowOpacity: settings.shadowOpacity,
+          outputFormat: fmt,
         });
 
         // Save the final output
-        const outputFilename = `${baseName}_nobg.png`;
+        const outputFilename = `${baseName}_nobg.${fmt}`;
         const outputPath = join(workspacePath, "output", outputFilename);
         await writeFile(outputPath, resultBuffer);
 
@@ -354,9 +368,10 @@ export function registerRemoveBackground(app: FastifyInstance) {
       const transparentResult = await removeBackground(
         orientedBuffer,
         join(workspacePath, "output"),
-        { model: s.model },
+        { model: s.model, edgeRefine: s.edgeRefine, decontaminate: s.decontaminate },
       );
 
+      const fmt = (s.outputFormat ?? "png") as BgOutputFormat;
       const resultBuffer = await applyEffects(transparentResult, orientedBuffer, {
         backgroundType: s.backgroundType,
         backgroundColor: s.backgroundColor,
@@ -367,10 +382,15 @@ export function registerRemoveBackground(app: FastifyInstance) {
         blurIntensity: s.blurIntensity,
         shadowEnabled: s.shadowEnabled,
         shadowOpacity: s.shadowOpacity,
+        outputFormat: fmt,
       });
 
-      const outputFilename = `${filename.replace(/\.[^.]+$/, "")}_nobg.png`;
-      return { buffer: resultBuffer, filename: outputFilename, contentType: "image/png" };
+      const outputFilename = `${filename.replace(/\.[^.]+$/, "")}_nobg.${fmt}`;
+      return {
+        buffer: resultBuffer,
+        filename: outputFilename,
+        contentType: BG_FORMAT_CONTENT_TYPES[fmt],
+      };
     },
   });
 }

@@ -387,6 +387,102 @@ describe("Remove Background", () => {
     }
   });
 
+  it("accepts edge refinement and decontamination settings", async () => {
+    const { body, contentType } = createMultipartPayload([
+      { name: "file", filename: "test.png", contentType: "image/png", content: PNG },
+      {
+        name: "settings",
+        content: JSON.stringify({ edgeRefine: 2, decontaminate: true }),
+      },
+    ]);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/tools/remove-background",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+        "content-type": contentType,
+      },
+      body,
+    });
+
+    expect([202, 501]).toContain(res.statusCode);
+  }, 60_000);
+
+  it("accepts output format settings", async () => {
+    const { body, contentType } = createMultipartPayload([
+      { name: "file", filename: "test.png", contentType: "image/png", content: PNG },
+      {
+        name: "settings",
+        content: JSON.stringify({ outputFormat: "webp" }),
+      },
+    ]);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/tools/remove-background",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+        "content-type": contentType,
+      },
+      body,
+    });
+
+    expect([202, 501]).toContain(res.statusCode);
+  }, 60_000);
+
+  it("rejects edgeRefine out of range", async () => {
+    const { body, contentType } = createMultipartPayload([
+      { name: "file", filename: "test.png", contentType: "image/png", content: PNG },
+      {
+        name: "settings",
+        content: JSON.stringify({ edgeRefine: 5 }),
+      },
+    ]);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/tools/remove-background",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+        "content-type": contentType,
+      },
+      body,
+    });
+
+    expect([400, 501]).toContain(res.statusCode);
+    if (res.statusCode === 400) {
+      const result = JSON.parse(res.body);
+      expect(result.error).toMatch(/invalid settings/i);
+    }
+  });
+
+  it("rejects invalid output format", async () => {
+    const { body, contentType } = createMultipartPayload([
+      { name: "file", filename: "test.png", contentType: "image/png", content: PNG },
+      {
+        name: "settings",
+        content: JSON.stringify({ outputFormat: "gif" }),
+      },
+    ]);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/v1/tools/remove-background",
+      headers: {
+        authorization: `Bearer ${adminToken}`,
+        "content-type": contentType,
+      },
+      body,
+    });
+
+    expect([400, 501]).toContain(res.statusCode);
+    if (res.statusCode === 400) {
+      const result = JSON.parse(res.body);
+      expect(result.error).toMatch(/invalid settings/i);
+    }
+  });
+
   it("rejects unauthenticated requests", async () => {
     const { body, contentType } = createMultipartPayload([
       { name: "file", filename: "test.png", contentType: "image/png", content: PNG },
