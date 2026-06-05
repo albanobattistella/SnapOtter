@@ -1,5 +1,26 @@
 import sharp from "sharp";
 
+export type BgOutputFormat = "png" | "webp" | "avif";
+
+export const BG_OUTPUT_FORMATS: BgOutputFormat[] = ["png", "webp", "avif"];
+
+export const BG_FORMAT_CONTENT_TYPES: Record<BgOutputFormat, string> = {
+  png: "image/png",
+  webp: "image/webp",
+  avif: "image/avif",
+};
+
+function toOutputFormat(pipeline: sharp.Sharp, format: BgOutputFormat): Promise<Buffer> {
+  switch (format) {
+    case "webp":
+      return pipeline.webp({ lossless: true }).toBuffer();
+    case "avif":
+      return pipeline.avif({ lossless: true }).toBuffer();
+    default:
+      return pipeline.png().toBuffer();
+  }
+}
+
 /**
  * Background removal post-processing effects.
  * All effects use Sharp (libvips) for fast server-side image manipulation.
@@ -182,6 +203,7 @@ export async function applyEffects(
     blurIntensity?: number;
     shadowEnabled?: boolean;
     shadowOpacity?: number;
+    outputFormat?: BgOutputFormat;
   },
 ): Promise<Buffer> {
   const meta = await sharp(subjectBuffer).metadata();
@@ -238,13 +260,12 @@ export async function applyEffects(
   }
   // else: transparent - no background layer
 
+  const fmt = settings.outputFormat ?? "png";
+
   // Step 3: Composite subject onto background
   if (background) {
-    return sharp(background)
-      .composite([{ input: subject, blend: "over" }])
-      .png()
-      .toBuffer();
+    return toOutputFormat(sharp(background).composite([{ input: subject, blend: "over" }]), fmt);
   }
 
-  return subject;
+  return toOutputFormat(sharp(subject), fmt);
 }

@@ -22,6 +22,7 @@ type BackgroundType = "transparent" | "color" | "gradient" | "image";
 type BgModel =
   | "birefnet-general"
   | "birefnet-general-lite"
+  | "birefnet-hr-matting"
   | "birefnet-matting"
   | "birefnet-portrait"
   | "bria-rmbg"
@@ -31,8 +32,8 @@ const MODEL_MAP: Record<SubjectType, Partial<Record<Quality, BgModel>>> = {
   people: {
     fast: "u2net",
     balanced: "birefnet-portrait",
-    best: "birefnet-portrait",
-    ultra: "birefnet-matting",
+    best: "birefnet-matting",
+    ultra: "birefnet-hr-matting",
   },
   products: { fast: "u2net", balanced: "bria-rmbg", best: "birefnet-general" },
   general: { fast: "u2net", balanced: "birefnet-general-lite", best: "birefnet-general" },
@@ -105,6 +106,13 @@ export function RemoveBgControls({ settings: _settings, onChange }: RemoveBgCont
   const [shadowEnabled, setShadowEnabled] = useState(false);
   const [shadowOpacity, setShadowOpacity] = useState(35);
 
+  // Post-processing
+  const [edgeRefine, setEdgeRefine] = useState(0);
+  const [decontaminate, setDecontaminate] = useState(false);
+
+  // Output
+  const [outputFormat, setOutputFormat] = useState<"png" | "webp" | "avif">("png");
+
   // Expandable sections
   const [effectsOpen, setEffectsOpen] = useState(false);
 
@@ -152,6 +160,10 @@ export function RemoveBgControls({ settings: _settings, onChange }: RemoveBgCont
       next._bgImageFile = bgImageFile;
     }
 
+    if (edgeRefine > 0) next.edgeRefine = edgeRefine;
+    if (decontaminate) next.decontaminate = true;
+    if (outputFormat !== "png") next.outputFormat = outputFormat;
+
     onChangeRef.current(next);
   }, [
     model,
@@ -165,6 +177,9 @@ export function RemoveBgControls({ settings: _settings, onChange }: RemoveBgCont
     blurIntensity,
     shadowEnabled,
     shadowOpacity,
+    edgeRefine,
+    decontaminate,
+    outputFormat,
   ]);
 
   return (
@@ -387,6 +402,25 @@ export function RemoveBgControls({ settings: _settings, onChange }: RemoveBgCont
         )}
       </div>
 
+      {/* Output format */}
+      <SectionLabel>{t.toolSettings["remove-background"].outputFormat}</SectionLabel>
+      <div className="grid grid-cols-3 gap-1.5">
+        {(["png", "webp", "avif"] as const).map((fmt) => (
+          <button
+            key={fmt}
+            type="button"
+            onClick={() => setOutputFormat(fmt)}
+            className={`py-2 px-2 rounded-lg border text-xs font-medium uppercase transition-colors ${
+              outputFormat === fmt
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border text-muted-foreground hover:border-primary/50"
+            }`}
+          >
+            {fmt}
+          </button>
+        ))}
+      </div>
+
       {/* Effects */}
       <button
         type="button"
@@ -395,7 +429,7 @@ export function RemoveBgControls({ settings: _settings, onChange }: RemoveBgCont
       >
         {effectsOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         Effects
-        {(blurEnabled || shadowEnabled) && (
+        {(blurEnabled || shadowEnabled || edgeRefine > 0 || decontaminate) && (
           <span className="ms-auto text-primary text-[10px] normal-case font-normal">active</span>
         )}
       </button>
@@ -466,6 +500,48 @@ export function RemoveBgControls({ settings: _settings, onChange }: RemoveBgCont
                 />
               </div>
             )}
+          </div>
+
+          {/* Edge smoothing */}
+          <div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">
+                {t.toolSettings["remove-background"].edgeSmoothing}
+              </span>
+              <span className="text-xs font-mono text-foreground tabular-nums">
+                {edgeRefine === 0
+                  ? t.toolSettings["remove-background"].edgeSmoothingOff
+                  : edgeRefine === 1
+                    ? t.toolSettings["remove-background"].edgeSmoothingLight
+                    : edgeRefine === 2
+                      ? t.toolSettings["remove-background"].edgeSmoothingMedium
+                      : t.toolSettings["remove-background"].edgeSmoothingStrong}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={0}
+              max={3}
+              step={1}
+              value={edgeRefine}
+              onChange={(e) => setEdgeRefine(Number(e.target.value))}
+              className="w-full mt-0.5"
+            />
+          </div>
+
+          {/* Color decontamination */}
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={decontaminate}
+                onChange={(e) => setDecontaminate(e.target.checked)}
+                className="rounded border-border accent-primary"
+              />
+              <span className="text-xs text-muted-foreground">
+                {t.toolSettings["remove-background"].colorDecontamination}
+              </span>
+            </label>
           </div>
         </div>
       )}
@@ -742,6 +818,7 @@ export function RemoveBgSettings({ onBgPreview }: RemoveBgSettingsProps = {}) {
         blurIntensity: settings.blurIntensity,
         shadowEnabled: settings.shadowEnabled,
         shadowOpacity: settings.shadowOpacity,
+        outputFormat: settings.outputFormat,
       };
       formData.append("settings", JSON.stringify(effectSettings));
 

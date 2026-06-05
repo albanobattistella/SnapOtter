@@ -97,6 +97,35 @@ describe("removeBackground", () => {
       });
     });
 
+    it("serializes edgeRefine option into the args JSON", async () => {
+      await removeBackground(FAKE_INPUT, FAKE_OUTPUT_DIR, { edgeRefine: 2 });
+
+      const args = vi.mocked(runPythonWithProgress).mock.calls[0][1];
+      expect(JSON.parse(args[2])).toEqual({ edgeRefine: 2 });
+    });
+
+    it("serializes decontaminate option into the args JSON", async () => {
+      await removeBackground(FAKE_INPUT, FAKE_OUTPUT_DIR, { decontaminate: true });
+
+      const args = vi.mocked(runPythonWithProgress).mock.calls[0][1];
+      expect(JSON.parse(args[2])).toEqual({ decontaminate: true });
+    });
+
+    it("serializes all post-processing options together", async () => {
+      await removeBackground(FAKE_INPUT, FAKE_OUTPUT_DIR, {
+        model: "birefnet-matting",
+        edgeRefine: 1,
+        decontaminate: true,
+      });
+
+      const args = vi.mocked(runPythonWithProgress).mock.calls[0][1];
+      expect(JSON.parse(args[2])).toEqual({
+        model: "birefnet-matting",
+        edgeRefine: 1,
+        decontaminate: true,
+      });
+    });
+
     it("converts input to PNG via sharp before writing to disk", async () => {
       await removeBackground(FAKE_INPUT, FAKE_OUTPUT_DIR);
 

@@ -5,8 +5,75 @@ import os
 
 
 def emit_progress(percent, stage):
-    """Emit structured progress to stderr for bridge.ts to capture."""
     print(json.dumps({"progress": percent, "stage": stage}), file=sys.stderr, flush=True)
+
+
+def _refine_edges(image_bytes, level):
+    """Morphological mask refinement to reduce gray halos on edges.
+
+    level: 1=light, 2=medium, 3=strong
+    """
+    import cv2
+    import numpy as np
+    from PIL import Image
+    import io
+
+    img = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
+    arr = np.array(img)
+    alpha = arr[:, :, 3]
+
+    kernel_size = 1 + level
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
+    alpha = cv2.morphologyEx(alpha, cv2.MORPH_CLOSE, kernel)
+
+    sigma = 0.3 + level * 0.3
+    alpha = cv2.GaussianBlur(alpha, (0, 0), sigma)
+
+    arr[:, :, 3] = alpha
+    out = Image.fromarray(arr, "RGBA")
+    buf = io.BytesIO()
+    out.save(buf, format="PNG")
+    return buf.getvalue()
+
+
+def _decontaminate_edges(image_bytes):
+    """Remove background color spill from semi-transparent edge pixels."""
+    import numpy as np
+    from PIL import Image
+    import io
+
+    img = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
+    arr = np.array(img, dtype=np.float32)
+    alpha = arr[:, :, 3] / 255.0
+    rgb = arr[:, :, :3]
+
+    bg_mask = alpha < 0.04
+    if not np.any(bg_mask):
+        return image_bytes
+
+    bg_color = np.zeros(3, dtype=np.float32)
+    for c in range(3):
+        channel = rgb[:, :, c]
+        bg_pixels = channel[bg_mask]
+        if len(bg_pixels) > 0:
+            bg_color[c] = np.median(bg_pixels)
+
+    edge_mask = (alpha > 0.04) & (alpha < 0.96)
+    if not np.any(edge_mask):
+        return image_bytes
+
+    a = alpha[edge_mask, np.newaxis]
+    fg = rgb[edge_mask]
+    corrected = (fg - bg_color[np.newaxis, :] * (1.0 - a)) / np.maximum(a, 0.01)
+    corrected = np.clip(corrected, 0, 255)
+    rgb[edge_mask] = corrected
+
+    arr[:, :, :3] = rgb
+    result = np.clip(arr, 0, 255).astype(np.uint8)
+    out = Image.fromarray(result, "RGBA")
+    buf = io.BytesIO()
+    out.save(buf, format="PNG")
+    return buf.getvalue()
 
 
 ALLOWED_MODELS = {
@@ -166,6 +233,17 @@ def main():
                 ) from e
 
         emit_progress(80, "Background removed")
+
+        edge_refine = settings.get("edgeRefine", 0)
+        decontaminate = settings.get("decontaminate", False)
+
+        if edge_refine and edge_refine > 0:
+            emit_progress(85, "Refining edges")
+            output_data = _refine_edges(output_data, int(edge_refine))
+
+        if decontaminate:
+            emit_progress(90, "Removing color spill")
+            output_data = _decontaminate_edges(output_data)
 
         # Always return transparent PNG. All background compositing
         # (solid color, gradient, blur, shadow) is handled by Node.js/Sharp.
