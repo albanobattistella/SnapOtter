@@ -408,6 +408,7 @@ function CanvasObjectRenderer({
           tension={a.tension}
           lineCap={a.lineCap}
           lineJoin={a.lineJoin}
+          dash={a.dash}
           opacity={a.opacity}
           globalCompositeOperation={
             a.globalCompositeOperation as "source-over" | "destination-out" | undefined
@@ -433,6 +434,7 @@ function CanvasObjectRenderer({
           stroke={a.stroke}
           strokeWidth={a.strokeWidth}
           cornerRadius={a.cornerRadius}
+          dash={a.dash}
           rotation={a.rotation}
           opacity={a.opacity}
           draggable={draggable}
@@ -457,6 +459,7 @@ function CanvasObjectRenderer({
           fill={a.fill}
           stroke={a.stroke}
           strokeWidth={a.strokeWidth}
+          dash={a.dash}
           rotation={a.rotation}
           opacity={a.opacity}
           draggable={draggable}
@@ -510,6 +513,7 @@ function CanvasObjectRenderer({
           strokeWidth={a.strokeWidth}
           pointerLength={a.pointerLength}
           pointerWidth={a.pointerWidth}
+          dash={a.dash}
           rotation={a.rotation}
           opacity={a.opacity}
           draggable={draggable}
@@ -534,6 +538,7 @@ function CanvasObjectRenderer({
           fill={a.fill}
           stroke={a.stroke}
           strokeWidth={a.strokeWidth}
+          dash={a.dash}
           rotation={a.rotation}
           opacity={a.opacity}
           draggable={draggable}
@@ -559,6 +564,7 @@ function CanvasObjectRenderer({
           fill={a.fill}
           stroke={a.stroke}
           strokeWidth={a.strokeWidth}
+          dash={a.dash}
           rotation={a.rotation}
           opacity={a.opacity}
           draggable={draggable}

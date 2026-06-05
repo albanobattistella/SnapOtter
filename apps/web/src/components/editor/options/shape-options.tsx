@@ -1,7 +1,9 @@
 // apps/web/src/components/editor/options/shape-options.tsx
 
+import { useTranslation } from "@/contexts/i18n-context";
 import { useEditorStore } from "@/stores/editor-store";
-import type { ToolType } from "@/types/editor";
+import type { StrokeDashStyle, ToolType } from "@/types/editor";
+import { ShapeColorPicker } from "../common/shape-color-picker";
 
 const SHAPE_TOOLS = new Set<ToolType>([
   "shape-rect",
@@ -12,38 +14,49 @@ const SHAPE_TOOLS = new Set<ToolType>([
   "shape-star",
 ]);
 
-const SHAPE_TYPE_OPTIONS: { value: ToolType; label: string }[] = [
-  { value: "shape-rect", label: "Rectangle" },
-  { value: "shape-ellipse", label: "Ellipse" },
-  { value: "shape-line", label: "Line" },
-  { value: "shape-arrow", label: "Arrow" },
-  { value: "shape-polygon", label: "Polygon" },
-  { value: "shape-star", label: "Star" },
-];
-
 export function ShapeOptions() {
-  const activeTool = useEditorStore((s) => s.activeTool);
-  const setTool = useEditorStore((s) => s.setTool);
-  const shapeFill = useEditorStore((s) => s.shapeFill);
-  const shapeStroke = useEditorStore((s) => s.shapeStroke);
-  const shapeStrokeWidth = useEditorStore((s) => s.shapeStrokeWidth);
-  const shapeCornerRadius = useEditorStore((s) => s.shapeCornerRadius);
-  const shapePolygonSides = useEditorStore((s) => s.shapePolygonSides);
-  const shapeStarPoints = useEditorStore((s) => s.shapeStarPoints);
-  const setShapeFill = useEditorStore((s) => s.setShapeFill);
-  const setShapeStroke = useEditorStore((s) => s.setShapeStroke);
-  const setShapeStrokeWidth = useEditorStore((s) => s.setShapeStrokeWidth);
-  const setShapeCornerRadius = useEditorStore((s) => s.setShapeCornerRadius);
-  const setShapePolygonSides = useEditorStore((s) => s.setShapePolygonSides);
-  const setShapeStarPoints = useEditorStore((s) => s.setShapeStarPoints);
+  const { t } = useTranslation();
+  const s = t.editor.shapes;
+
+  const activeTool = useEditorStore((st) => st.activeTool);
+  const setTool = useEditorStore((st) => st.setTool);
+  const shapeFill = useEditorStore((st) => st.shapeFill);
+  const shapeFillOpacity = useEditorStore((st) => st.shapeFillOpacity);
+  const shapeStroke = useEditorStore((st) => st.shapeStroke);
+  const shapeStrokeOpacity = useEditorStore((st) => st.shapeStrokeOpacity);
+  const shapeStrokeWidth = useEditorStore((st) => st.shapeStrokeWidth);
+  const shapeStrokeDash = useEditorStore((st) => st.shapeStrokeDash);
+  const shapeCornerRadius = useEditorStore((st) => st.shapeCornerRadius);
+  const shapePolygonSides = useEditorStore((st) => st.shapePolygonSides);
+  const shapeStarPoints = useEditorStore((st) => st.shapeStarPoints);
+  const setShapeFill = useEditorStore((st) => st.setShapeFill);
+  const setShapeFillOpacity = useEditorStore((st) => st.setShapeFillOpacity);
+  const setShapeStroke = useEditorStore((st) => st.setShapeStroke);
+  const setShapeStrokeOpacity = useEditorStore((st) => st.setShapeStrokeOpacity);
+  const setShapeStrokeWidth = useEditorStore((st) => st.setShapeStrokeWidth);
+  const setShapeStrokeDash = useEditorStore((st) => st.setShapeStrokeDash);
+  const setShapeCornerRadius = useEditorStore((st) => st.setShapeCornerRadius);
+  const setShapePolygonSides = useEditorStore((st) => st.setShapePolygonSides);
+  const setShapeStarPoints = useEditorStore((st) => st.setShapeStarPoints);
 
   if (!SHAPE_TOOLS.has(activeTool)) return null;
+
+  const SHAPE_TYPE_OPTIONS: { value: ToolType; label: string }[] = [
+    { value: "shape-rect", label: s.rectangle },
+    { value: "shape-ellipse", label: s.ellipse },
+    { value: "shape-line", label: s.line },
+    { value: "shape-arrow", label: s.arrow },
+    { value: "shape-polygon", label: s.polygon },
+    { value: "shape-star", label: s.star },
+  ];
+
+  const showFill = activeTool !== "shape-line";
 
   return (
     <div className="flex items-center gap-3">
       {/* Shape type selector */}
       <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        Shape
+        {s.shape}
         <select
           value={activeTool}
           onChange={(e) => setTool(e.target.value as ToolType)}
@@ -58,30 +71,28 @@ export function ShapeOptions() {
       </label>
 
       {/* Fill color */}
-      <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        Fill
-        <input
-          type="color"
-          value={shapeFill}
-          onChange={(e) => setShapeFill(e.target.value)}
-          className="w-6 h-6 border border-border rounded cursor-pointer"
+      {showFill && (
+        <ShapeColorPicker
+          label={s.fill}
+          color={shapeFill}
+          opacity={shapeFillOpacity}
+          onColorChange={setShapeFill}
+          onOpacityChange={setShapeFillOpacity}
         />
-      </label>
+      )}
 
       {/* Stroke color */}
-      <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        Stroke
-        <input
-          type="color"
-          value={shapeStroke}
-          onChange={(e) => setShapeStroke(e.target.value)}
-          className="w-6 h-6 border border-border rounded cursor-pointer"
-        />
-      </label>
+      <ShapeColorPicker
+        label={s.stroke}
+        color={shapeStroke}
+        opacity={shapeStrokeOpacity}
+        onColorChange={setShapeStroke}
+        onOpacityChange={setShapeStrokeOpacity}
+      />
 
       {/* Stroke width */}
       <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        Width
+        {s.strokeWidth}
         <input
           type="range"
           min={0}
@@ -100,10 +111,24 @@ export function ShapeOptions() {
         />
       </label>
 
+      {/* Stroke dash style */}
+      <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        {s.dashStyle}
+        <select
+          value={shapeStrokeDash}
+          onChange={(e) => setShapeStrokeDash(e.target.value as StrokeDashStyle)}
+          className="h-6 text-xs bg-muted border border-border rounded px-1"
+        >
+          <option value="solid">{s.solid}</option>
+          <option value="dashed">{s.dashed}</option>
+          <option value="dotted">{s.dotted}</option>
+        </select>
+      </label>
+
       {/* Corner radius (only for rect) */}
       {activeTool === "shape-rect" && (
         <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          Radius
+          {s.cornerRadius}
           <input
             type="range"
             min={0}
@@ -126,7 +151,7 @@ export function ShapeOptions() {
       {/* Polygon sides */}
       {activeTool === "shape-polygon" && (
         <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          Sides
+          {s.sides}
           <input
             type="number"
             min={3}
@@ -141,7 +166,7 @@ export function ShapeOptions() {
       {/* Star points */}
       {activeTool === "shape-star" && (
         <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          Points
+          {s.points}
           <input
             type="number"
             min={3}

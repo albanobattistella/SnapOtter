@@ -10,8 +10,30 @@ import type {
   EditorState,
   FilterConfig,
   SelectionMode,
+  StrokeDashStyle,
   ToolType,
 } from "@/types/editor";
+
+export function hexToRgba(hex: string, opacity: number): string {
+  const r = Number.parseInt(hex.slice(1, 3), 16);
+  const g = Number.parseInt(hex.slice(3, 5), 16);
+  const b = Number.parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
+export function dashStyleToArray(
+  style: StrokeDashStyle,
+  strokeWidth: number,
+): number[] | undefined {
+  switch (style) {
+    case "dashed":
+      return [strokeWidth * 4, strokeWidth * 2];
+    case "dotted":
+      return [strokeWidth, strokeWidth * 2];
+    default:
+      return undefined;
+  }
+}
 
 // Helpers for objects that use points arrays (line, arrow) vs positioned objects
 function hasPointsArray(obj: CanvasObject): obj is CanvasObject & { attrs: { points: number[] } } {
@@ -165,9 +187,12 @@ export const useEditorStore = create<EditorState & EditorStateExtensions>()(
       editingTextId: null,
 
       // --- Shape settings ---
-      shapeFill: "#3b82f6",
-      shapeStroke: "#000000",
+      shapeFill: "#3b82f6" as string | null,
+      shapeFillOpacity: 1,
+      shapeStroke: "#000000" as string | null,
+      shapeStrokeOpacity: 1,
       shapeStrokeWidth: 2,
+      shapeStrokeDash: "solid" as const,
       shapeCornerRadius: 0,
       shapePolygonSides: 6,
       shapeStarPoints: 5,
@@ -1148,8 +1173,13 @@ export const useEditorStore = create<EditorState & EditorStateExtensions>()(
 
       // Shape settings
       setShapeFill: (fill) => set({ shapeFill: fill }),
+      setShapeFillOpacity: (opacity) =>
+        set({ shapeFillOpacity: Math.max(0, Math.min(1, opacity)) }),
       setShapeStroke: (stroke) => set({ shapeStroke: stroke }),
+      setShapeStrokeOpacity: (opacity) =>
+        set({ shapeStrokeOpacity: Math.max(0, Math.min(1, opacity)) }),
       setShapeStrokeWidth: (width) => set({ shapeStrokeWidth: width }),
+      setShapeStrokeDash: (dash) => set({ shapeStrokeDash: dash }),
       setShapeCornerRadius: (radius) => set({ shapeCornerRadius: radius }),
       setShapePolygonSides: (sides) => set({ shapePolygonSides: sides }),
       setShapeStarPoints: (points) => set({ shapeStarPoints: points }),

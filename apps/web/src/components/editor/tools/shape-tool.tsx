@@ -3,7 +3,7 @@
 import type Konva from "konva";
 import { useCallback, useRef } from "react";
 import { generateId } from "@/lib/utils";
-import { useEditorStore } from "@/stores/editor-store";
+import { dashStyleToArray, hexToRgba, useEditorStore } from "@/stores/editor-store";
 import type { CanvasObject, ToolType } from "@/types/editor";
 
 interface PendingShape {
@@ -46,6 +46,22 @@ function constrainToDimension(
   return { w, h };
 }
 
+function computeShapeColors(state: {
+  shapeFill: string | null;
+  shapeFillOpacity: number;
+  shapeStroke: string | null;
+  shapeStrokeOpacity: number;
+  shapeStrokeDash: "solid" | "dashed" | "dotted";
+  shapeStrokeWidth: number;
+}) {
+  const fill = state.shapeFill ? hexToRgba(state.shapeFill, state.shapeFillOpacity) : undefined;
+  const stroke = state.shapeStroke
+    ? hexToRgba(state.shapeStroke, state.shapeStrokeOpacity)
+    : undefined;
+  const dash = dashStyleToArray(state.shapeStrokeDash, state.shapeStrokeWidth);
+  return { fill, stroke, dash };
+}
+
 export function useShapeTool() {
   const dragRef = useRef<DragState | null>(null);
   const pendingRef = useRef<PendingShape | null>(null);
@@ -59,8 +75,11 @@ export function useShapeTool() {
     const {
       activeTool,
       shapeFill,
+      shapeFillOpacity,
       shapeStroke,
+      shapeStrokeOpacity,
       shapeStrokeWidth,
+      shapeStrokeDash,
       shapeCornerRadius,
       shapePolygonSides,
       shapeStarPoints,
@@ -78,6 +97,14 @@ export function useShapeTool() {
     const y = (pointer.y - panOffset.y) / zoom;
 
     const id = generateId();
+    const { fill, stroke, dash } = computeShapeColors({
+      shapeFill,
+      shapeFillOpacity,
+      shapeStroke,
+      shapeStrokeOpacity,
+      shapeStrokeDash,
+      shapeStrokeWidth,
+    });
     let obj: CanvasObject;
 
     switch (activeTool) {
@@ -91,10 +118,11 @@ export function useShapeTool() {
             y,
             width: 0,
             height: 0,
-            fill: shapeFill,
-            stroke: shapeStroke,
+            fill,
+            stroke,
             strokeWidth: shapeStrokeWidth,
             cornerRadius: shapeCornerRadius,
+            dash,
             rotation: 0,
             opacity: 1,
           },
@@ -110,9 +138,10 @@ export function useShapeTool() {
             y,
             radiusX: 0,
             radiusY: 0,
-            fill: shapeFill,
-            stroke: shapeStroke,
+            fill,
+            stroke,
             strokeWidth: shapeStrokeWidth,
+            dash,
             rotation: 0,
             opacity: 1,
           },
@@ -125,11 +154,12 @@ export function useShapeTool() {
           layerId: activeLayerId,
           attrs: {
             points: [x, y, x, y],
-            stroke: shapeStroke,
+            stroke,
             strokeWidth: shapeStrokeWidth,
             tension: 0,
             lineCap: "round",
             lineJoin: "round",
+            dash,
             opacity: 1,
             globalCompositeOperation: "source-over",
           },
@@ -142,11 +172,12 @@ export function useShapeTool() {
           layerId: activeLayerId,
           attrs: {
             points: [x, y, x, y],
-            fill: shapeFill,
-            stroke: shapeStroke,
+            fill,
+            stroke,
             strokeWidth: shapeStrokeWidth,
             pointerLength: 15,
             pointerWidth: 12,
+            dash,
             rotation: 0,
             opacity: 1,
           },
@@ -162,9 +193,10 @@ export function useShapeTool() {
             y,
             sides: shapePolygonSides,
             radius: 0,
-            fill: shapeFill,
-            stroke: shapeStroke,
+            fill,
+            stroke,
             strokeWidth: shapeStrokeWidth,
+            dash,
             rotation: 0,
             opacity: 1,
           },
@@ -181,9 +213,10 @@ export function useShapeTool() {
             numPoints: shapeStarPoints,
             innerRadius: 0,
             outerRadius: 0,
-            fill: shapeFill,
-            stroke: shapeStroke,
+            fill,
+            stroke,
             strokeWidth: shapeStrokeWidth,
+            dash,
             rotation: 0,
             opacity: 1,
           },
@@ -193,12 +226,10 @@ export function useShapeTool() {
         return;
     }
 
-    // Don't add the object yet -- wait until the user drags past the threshold
     pendingRef.current = { startX: x, startY: y, toolType: activeTool, obj };
   }, []);
 
   const handleMouseMove = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
-    // If we have a pending shape but haven't committed it yet, check threshold
     if (pendingRef.current && !dragRef.current) {
       const stage = e.target.getStage();
       if (!stage) return;
@@ -214,7 +245,6 @@ export function useShapeTool() {
 
       if (Math.abs(dx) < MIN_DRAG_THRESHOLD && Math.abs(dy) < MIN_DRAG_THRESHOLD) return;
 
-      // Threshold exceeded -- add the object to the store and promote to active drag
       const { obj, startX, startY, toolType } = pendingRef.current;
       useEditorStore.getState().addObject(obj);
       dragRef.current = { startX, startY, objectId: obj.id, toolType };
@@ -313,7 +343,6 @@ export function useShapeTool() {
   }, []);
 
   const handleMouseUp = useCallback(() => {
-    // Click without drag -- pending shape was never added, just discard it
     if (pendingRef.current) {
       pendingRef.current = null;
     }
@@ -325,7 +354,6 @@ export function useShapeTool() {
     const obj = objects.find((o) => o.id === objectId);
 
     if (obj) {
-      // Remove degenerate shapes that are still too small
       const attrs = obj.attrs;
       let isDegenerate = false;
       if ("width" in attrs && "height" in attrs) {

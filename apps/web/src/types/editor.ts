@@ -2,6 +2,8 @@
 
 export type SelectionMode = "new" | "add" | "subtract";
 
+export type StrokeDashStyle = "solid" | "dashed" | "dotted";
+
 export type ToolType =
   | "move"
   | "marquee-rect"
@@ -36,11 +38,12 @@ export type ToolType =
 
 export interface LineAttrs {
   points: number[];
-  stroke: string;
+  stroke?: string;
   strokeWidth: number;
   tension: number;
   lineCap: "butt" | "round" | "square";
   lineJoin: "bevel" | "round" | "miter";
+  dash?: number[];
   opacity: number;
   globalCompositeOperation: string;
   shadowBlur?: number;
@@ -54,10 +57,11 @@ export interface RectAttrs {
   y: number;
   width: number;
   height: number;
-  fill: string;
-  stroke: string;
+  fill?: string;
+  stroke?: string;
   strokeWidth: number;
   cornerRadius: number;
+  dash?: number[];
   rotation: number;
   opacity: number;
 }
@@ -67,9 +71,10 @@ export interface EllipseAttrs {
   y: number;
   radiusX: number;
   radiusY: number;
-  fill: string;
-  stroke: string;
+  fill?: string;
+  stroke?: string;
   strokeWidth: number;
+  dash?: number[];
   rotation: number;
   opacity: number;
 }
@@ -106,11 +111,12 @@ export interface ImageAttrs {
 
 export interface ArrowAttrs {
   points: number[];
-  fill: string;
-  stroke: string;
+  fill?: string;
+  stroke?: string;
   strokeWidth: number;
   pointerLength: number;
   pointerWidth: number;
+  dash?: number[];
   rotation: number;
   opacity: number;
 }
@@ -120,9 +126,10 @@ export interface PolygonAttrs {
   y: number;
   sides: number;
   radius: number;
-  fill: string;
-  stroke: string;
+  fill?: string;
+  stroke?: string;
   strokeWidth: number;
+  dash?: number[];
   rotation: number;
   opacity: number;
 }
@@ -133,9 +140,10 @@ export interface StarAttrs {
   numPoints: number;
   innerRadius: number;
   outerRadius: number;
-  fill: string;
-  stroke: string;
+  fill?: string;
+  stroke?: string;
   strokeWidth: number;
+  dash?: number[];
   rotation: number;
   opacity: number;
 }
@@ -305,9 +313,12 @@ export interface EditorState {
   editingTextId: string | null;
 
   // Shape settings
-  shapeFill: string;
-  shapeStroke: string;
+  shapeFill: string | null;
+  shapeFillOpacity: number;
+  shapeStroke: string | null;
+  shapeStrokeOpacity: number;
   shapeStrokeWidth: number;
+  shapeStrokeDash: StrokeDashStyle;
   shapeCornerRadius: number;
   shapePolygonSides: number;
   shapeStarPoints: number;
@@ -455,9 +466,12 @@ export interface EditorState {
   setSpongeFlow: (flow: number) => void;
 
   // Shape settings
-  setShapeFill: (fill: string) => void;
-  setShapeStroke: (stroke: string) => void;
+  setShapeFill: (fill: string | null) => void;
+  setShapeFillOpacity: (opacity: number) => void;
+  setShapeStroke: (stroke: string | null) => void;
+  setShapeStrokeOpacity: (opacity: number) => void;
   setShapeStrokeWidth: (width: number) => void;
+  setShapeStrokeDash: (dash: StrokeDashStyle) => void;
   setShapeCornerRadius: (radius: number) => void;
   setShapePolygonSides: (sides: number) => void;
   setShapeStarPoints: (points: number) => void;
