@@ -47,20 +47,133 @@ export function useToolProcessor(toolId: string) {
   const eventSourceRef = useRef<EventSource | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const stallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeJobIdRef = useRef<string | null>(null);
+  const asyncModeRef = useRef(false);
 
   const isAiTool = AI_PYTHON_TOOLS.has(toolId);
   const toolName = TOOLS.find((t) => t.id === toolId)?.name ?? toolId;
 
-  // Clean up on unmount
+  const reconnectSSE = useCallback(() => {
+    const jobId = activeJobIdRef.current;
+    if (!jobId) return;
+    if (eventSourceRef.current && eventSourceRef.current.readyState === EventSource.OPEN) {
+      return;
+    }
+
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+
+    try {
+      const es = new EventSource(`/api/v1/jobs/${jobId}/progress`);
+      eventSourceRef.current = es;
+
+      es.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type !== "single") return;
+
+          if (asyncModeRef.current && stallTimerRef.current) {
+            clearTimeout(stallTimerRef.current);
+            stallTimerRef.current = setTimeout(() => {
+              if (eventSourceRef.current) {
+                eventSourceRef.current.close();
+                eventSourceRef.current = null;
+              }
+              if (elapsedRef.current) clearInterval(elapsedRef.current);
+              activeJobIdRef.current = null;
+              setError(
+                "Processing timed out with no progress for 5 minutes. Try again or use a smaller image.",
+              );
+              setProcessing(false);
+              setProgress(IDLE_PROGRESS);
+            }, SSE_STALL_TIMEOUT_MS);
+          }
+
+          if (data.phase === "complete" && data.result) {
+            if (stallTimerRef.current) clearTimeout(stallTimerRef.current);
+            if (elapsedRef.current) clearInterval(elapsedRef.current);
+            es.close();
+            eventSourceRef.current = null;
+            activeJobIdRef.current = null;
+
+            const result = data.result as ProcessResult;
+            setWarning(result.warning ?? null);
+            const idx = useFileStore.getState().selectedIndex;
+            useFileStore.getState().updateEntry(idx, {
+              processedUrl: result.downloadUrl,
+              processedPreviewUrl: result.previewUrl ?? null,
+              processedFilename: null,
+              status: "completed",
+              originalSize: result.originalSize,
+              processedSize: result.processedSize,
+              ...(result.savedFileId ? { serverFileId: result.savedFileId } : {}),
+            });
+            setProcessing(false);
+            setProgress(IDLE_PROGRESS);
+            return;
+          }
+
+          if (data.phase === "failed") {
+            if (stallTimerRef.current) clearTimeout(stallTimerRef.current);
+            if (elapsedRef.current) clearInterval(elapsedRef.current);
+            es.close();
+            eventSourceRef.current = null;
+            activeJobIdRef.current = null;
+            setError(data.error || "Processing failed");
+            setProcessing(false);
+            setProgress(IDLE_PROGRESS);
+            return;
+          }
+
+          if (typeof data.percent === "number") {
+            const scaled = UPLOAD_WEIGHT + (data.percent / 100) * (100 - UPLOAD_WEIGHT);
+            setProgress((prev) => ({
+              ...prev,
+              phase: "processing",
+              percent: Math.max(prev.percent, scaled),
+              stage: data.stage,
+            }));
+          }
+        } catch {
+          // Ignore malformed SSE
+        }
+      };
+
+      es.onerror = () => {
+        if (!asyncModeRef.current) {
+          es.close();
+          eventSourceRef.current = null;
+        }
+      };
+    } catch {
+      // EventSource creation failed
+    }
+  }, [setError, setProcessing]);
+
+  // Reconnect SSE when tab becomes visible again (mobile tab recovery)
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") return;
+      if (!activeJobIdRef.current) return;
+      if (eventSourceRef.current && eventSourceRef.current.readyState === EventSource.OPEN) {
+        return;
+      }
+      setTimeout(() => reconnectSSE(), 500);
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (elapsedRef.current) clearInterval(elapsedRef.current);
       if (eventSourceRef.current) eventSourceRef.current.close();
       if (xhrRef.current) xhrRef.current.abort();
       if (abortRef.current) abortRef.current.abort();
       if (stallTimerRef.current) clearTimeout(stallTimerRef.current);
     };
-  }, []);
+  }, [reconnectSSE]);
 
   const processFiles = useCallback(
     (files: File[], settings: Record<string, unknown>) => {
@@ -92,6 +205,8 @@ export function useToolProcessor(toolId: string) {
       }, 1000);
 
       const clientJobId = generateId();
+      activeJobIdRef.current = clientJobId;
+      asyncModeRef.current = false;
       let asyncMode = false;
 
       const clearStallTimer = () => {
@@ -139,6 +254,7 @@ export function useToolProcessor(toolId: string) {
               if (elapsedRef.current) clearInterval(elapsedRef.current);
               es.close();
               eventSourceRef.current = null;
+              activeJobIdRef.current = null;
 
               const result = data.result as ProcessResult;
               setWarning(result.warning ?? null);
@@ -161,6 +277,7 @@ export function useToolProcessor(toolId: string) {
               if (elapsedRef.current) clearInterval(elapsedRef.current);
               es.close();
               eventSourceRef.current = null;
+              activeJobIdRef.current = null;
               setError(data.error || "Processing failed");
               setProcessing(false);
               setProgress(IDLE_PROGRESS);
@@ -236,6 +353,7 @@ export function useToolProcessor(toolId: string) {
       xhr.onload = () => {
         if (xhr.status === 202) {
           asyncMode = true;
+          asyncModeRef.current = true;
           resetStallTimer();
           return;
         }
@@ -280,6 +398,7 @@ export function useToolProcessor(toolId: string) {
 
         setProcessing(false);
         setProgress(IDLE_PROGRESS);
+        activeJobIdRef.current = null;
       };
 
       xhr.onerror = () => {
@@ -292,6 +411,7 @@ export function useToolProcessor(toolId: string) {
         setError("Processing was interrupted. Retry when reconnected.");
         setProcessing(false);
         setProgress(IDLE_PROGRESS);
+        activeJobIdRef.current = null;
       };
 
       xhr.ontimeout = () => {
@@ -304,6 +424,7 @@ export function useToolProcessor(toolId: string) {
         setError("Request timed out - the server may be overloaded. Try again.");
         setProcessing(false);
         setProgress(IDLE_PROGRESS);
+        activeJobIdRef.current = null;
       };
 
       xhr.open("POST", `/api/v1/tools/${toolId}`);
@@ -338,6 +459,7 @@ export function useToolProcessor(toolId: string) {
       }, 1000);
 
       const clientJobId = generateId();
+      activeJobIdRef.current = clientJobId;
 
       // Open SSE before upload for real-time progress
       try {
@@ -450,6 +572,7 @@ export function useToolProcessor(toolId: string) {
 
         setProcessing(false);
         setProgress(IDLE_PROGRESS);
+        activeJobIdRef.current = null;
       } catch (err) {
         if (elapsedRef.current) clearInterval(elapsedRef.current);
         if (eventSourceRef.current) {
@@ -459,6 +582,7 @@ export function useToolProcessor(toolId: string) {
         setError(err instanceof Error ? err.message : "Batch processing failed");
         setProcessing(false);
         setProgress(IDLE_PROGRESS);
+        activeJobIdRef.current = null;
       }
     },
     [toolId, processFiles, setProcessing, setError, toolName],
