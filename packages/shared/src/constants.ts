@@ -348,6 +348,14 @@ export const TOOLS: Tool[] = [
     route: "/qr-generate",
   },
   {
+    id: "html-to-image",
+    name: "HTML to Image",
+    description: "Capture webpages as high-quality images",
+    category: "utilities",
+    icon: "Globe",
+    route: "/html-to-image",
+  },
+  {
     id: "barcode-read",
     name: "Barcode Reader",
     description: "Scan images for QR codes, barcodes, and 2D codes",
