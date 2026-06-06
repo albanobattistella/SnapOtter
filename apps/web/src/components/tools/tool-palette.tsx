@@ -75,7 +75,9 @@ export function ToolPalette({ onAddStep, className }: ToolPaletteProps) {
 
       <div className="flex-1 overflow-y-auto px-3 pb-3">
         {availableTools.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">{t.common.noToolsFound}</p>
+          <p className="text-sm text-muted-foreground text-center py-8">
+            {t.fullscreenGrid.noToolsFound}
+          </p>
         ) : isSearching ? (
           <div className="space-y-1">
             {availableTools.map((tool) => (
