@@ -2,7 +2,9 @@ import { create } from "zustand";
 import { formatHeaders } from "@/lib/api";
 
 interface HtmlToImageState {
+  mode: "url" | "html";
   url: string;
+  htmlContent: string;
   format: "jpg" | "png" | "webp";
   quality: number;
   fullPage: boolean;
@@ -14,7 +16,9 @@ interface HtmlToImageState {
   resultSize: number | null;
   error: string | null;
 
+  setMode: (mode: "url" | "html") => void;
   setUrl: (url: string) => void;
+  setHtmlContent: (html: string) => void;
   setFormat: (format: "jpg" | "png" | "webp") => void;
   setQuality: (quality: number) => void;
   setFullPage: (fullPage: boolean) => void;
@@ -26,7 +30,9 @@ interface HtmlToImageState {
 }
 
 const DEFAULTS = {
+  mode: "url" as const,
   url: "",
+  htmlContent: "",
   format: "png" as const,
   quality: 90,
   fullPage: false,
@@ -42,7 +48,9 @@ const DEFAULTS = {
 export const useHtmlToImageStore = create<HtmlToImageState>((set, get) => ({
   ...DEFAULTS,
 
+  setMode: (mode) => set({ mode, error: null }),
   setUrl: (url) => set({ url, error: null }),
+  setHtmlContent: (htmlContent) => set({ htmlContent, error: null }),
   setFormat: (format) => set({ format }),
   setQuality: (quality) => set({ quality }),
   setFullPage: (fullPage) => set({ fullPage }),
@@ -52,7 +60,8 @@ export const useHtmlToImageStore = create<HtmlToImageState>((set, get) => ({
 
   capture: async () => {
     const state = get();
-    if (!state.url || state.capturing) return;
+    const hasInput = state.mode === "url" ? state.url : state.htmlContent;
+    if (!hasInput || state.capturing) return;
 
     set({ capturing: true, error: null, resultUrl: null, resultSize: null });
 
@@ -61,7 +70,7 @@ export const useHtmlToImageStore = create<HtmlToImageState>((set, get) => ({
         method: "POST",
         headers: formatHeaders({ "Content-Type": "application/json" }),
         body: JSON.stringify({
-          url: state.url,
+          ...(state.mode === "url" ? { url: state.url } : { html: state.htmlContent }),
           format: state.format,
           quality: state.quality,
           fullPage: state.fullPage,

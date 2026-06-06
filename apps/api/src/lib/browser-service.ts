@@ -125,6 +125,56 @@ export async function capturePage(url: string, options: CaptureOptions): Promise
   }) as Promise<Buffer>;
 }
 
+export async function captureHtml(html: string, options: CaptureOptions): Promise<Buffer> {
+  return queue.add(async () => {
+    let b: Browser;
+    try {
+      b = await getBrowser();
+    } catch (err) {
+      recordCrash();
+      throw err;
+    }
+
+    const page = await b.newPage({
+      viewport: { width: options.viewportWidth, height: options.viewportHeight },
+      isMobile: options.isMobile,
+    });
+
+    try {
+      await page.setContent(html, { waitUntil: "load", timeout: PAGE_LOAD_TIMEOUT });
+      await page.waitForLoadState("networkidle", { timeout: NETWORK_IDLE_GRACE }).catch(() => {});
+
+      if (options.fullPage) {
+        const scrollHeight = await page.evaluate(() => document.body.scrollHeight);
+        const targetHeight = Math.min(scrollHeight, MAX_FULL_PAGE_HEIGHT);
+        await page.setViewportSize({
+          width: options.viewportWidth,
+          height: targetHeight,
+        });
+      }
+
+      const type = options.format === "jpg" ? "jpeg" : options.format;
+      const screenshotOpts: Parameters<typeof page.screenshot>[0] = {
+        type: type as "jpeg" | "png",
+        fullPage: false,
+      };
+      if (options.format !== "png") {
+        screenshotOpts.quality = options.quality;
+      }
+
+      return (await page.screenshot(screenshotOpts)) as Buffer;
+    } catch (err) {
+      if (!b.isConnected()) {
+        recordCrash();
+        browser = null;
+      }
+      throw err;
+    } finally {
+      await page.close().catch(() => {});
+    }
+  }) as Promise<Buffer>;
+}
+
 export async function shutdownBrowser(): Promise<void> {
   if (browser?.isConnected()) {
     await browser.close().catch(() => {});

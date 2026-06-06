@@ -1012,6 +1012,9 @@ export const sv: TranslationKeys = {
       download: "Ladda ner QR-kod",
     },
     "html-to-image": {
+      modeUrl: "URL",
+      modeHtml: "HTML File",
+      htmlFile: "HTML File",
       url: "URL",
       urlPlaceholder: "https://snapotter.com",
       format: "Output Format",

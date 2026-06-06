@@ -12,6 +12,7 @@ vi.mock("../../apps/api/src/lib/browser-service.js", () => {
   return {
     isBrowserAvailable: vi.fn().mockReturnValue(true),
     capturePage: vi.fn().mockResolvedValue(TEST_PNG),
+    captureHtml: vi.fn().mockResolvedValue(TEST_PNG),
     shutdownBrowser: vi.fn(),
   };
 });
@@ -322,6 +323,40 @@ describe("HTML to Image", () => {
       const res = await post({ url: "https://example.com" }, adminToken);
       expect(res.statusCode).toBe(503);
       expect(JSON.parse(res.body).code).toBe("BROWSER_CRASHED");
+    });
+  });
+
+  describe("html content mode", () => {
+    it("captures HTML content with default settings", async () => {
+      const res = await post({ html: "<html><body><h1>Hello</h1></body></html>" }, adminToken);
+      expect(res.statusCode).toBe(200);
+      const result = JSON.parse(res.body);
+      expect(result.jobId).toBeDefined();
+      expect(result.downloadUrl).toMatch(/\.png$/);
+    });
+
+    it("rejects empty html string", async () => {
+      const res = await post({ html: "" }, adminToken);
+      expect(res.statusCode).toBe(400);
+    });
+
+    it("rejects when both url and html are provided", async () => {
+      const res = await post({ url: "https://example.com", html: "<h1>test</h1>" }, adminToken);
+      expect(res.statusCode).toBe(400);
+    });
+
+    it("rejects when neither url nor html is provided", async () => {
+      const res = await post({ format: "png" }, adminToken);
+      expect(res.statusCode).toBe(400);
+    });
+
+    it("does not perform SSRF check for html mode", async () => {
+      const { validateFetchUrl } = await import("../../apps/api/src/lib/ssrf.js");
+      (validateFetchUrl as ReturnType<typeof vi.fn>).mockClear();
+
+      await post({ html: "<html><body>test</body></html>" }, adminToken);
+
+      expect(validateFetchUrl).not.toHaveBeenCalled();
     });
   });
 });

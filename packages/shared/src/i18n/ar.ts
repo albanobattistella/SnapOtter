@@ -1006,6 +1006,9 @@ export const ar: TranslationKeys = {
       download: "تحميل رمز QR",
     },
     "html-to-image": {
+      modeUrl: "URL",
+      modeHtml: "HTML File",
+      htmlFile: "HTML File",
       url: "URL",
       urlPlaceholder: "https://snapotter.com",
       format: "Output Format",

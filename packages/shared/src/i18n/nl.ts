@@ -1016,6 +1016,9 @@ export const nl: TranslationKeys = {
       download: "QR-code downloaden",
     },
     "html-to-image": {
+      modeUrl: "URL",
+      modeHtml: "HTML File",
+      htmlFile: "HTML File",
       url: "URL",
       urlPlaceholder: "https://snapotter.com",
       format: "Output Format",

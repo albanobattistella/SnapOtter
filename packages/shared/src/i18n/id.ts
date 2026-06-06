@@ -1014,6 +1014,9 @@ export const id: TranslationKeys = {
       download: "Unduh Kode QR",
     },
     "html-to-image": {
+      modeUrl: "URL",
+      modeHtml: "HTML File",
+      htmlFile: "HTML File",
       url: "URL",
       urlPlaceholder: "https://snapotter.com",
       format: "Output Format",

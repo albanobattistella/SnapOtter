@@ -957,6 +957,9 @@ export const ko: TranslationKeys = {
       download: "QR 코드 다운로드",
     },
     "html-to-image": {
+      modeUrl: "URL",
+      modeHtml: "HTML File",
+      htmlFile: "HTML File",
       url: "URL",
       urlPlaceholder: "https://snapotter.com",
       format: "Output Format",
