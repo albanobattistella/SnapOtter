@@ -183,6 +183,9 @@ importers:
       piscina:
         specifier: ^5.1.4
         version: 5.1.4
+      playwright:
+        specifier: ^1.60.0
+        version: 1.60.0
       posthog-node:
         specifier: ^5.35.9
         version: 5.35.14
