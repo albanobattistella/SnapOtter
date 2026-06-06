@@ -91,7 +91,11 @@ export function Footer() {
       </div>
 
       <div className="mx-auto mt-12 flex max-w-6xl items-center justify-between border-t border-border pt-8">
-        <p className="text-sm text-muted">&copy; {new Date().getFullYear()} SnapOtter</p>
+        <p className="text-sm text-muted">
+          &copy; {new Date().getFullYear()} Chocolate Wafers General Trading Pte. Ltd. (UEN
+          202527149C). SnapOtter is a product of Chocolate Wafers General Trading Pte. Ltd.,
+          registered in Singapore.
+        </p>
         <a
           href="https://github.com/snapotter-hq/snapotter"
           target="_blank"

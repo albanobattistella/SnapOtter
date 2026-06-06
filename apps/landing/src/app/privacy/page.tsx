@@ -54,6 +54,16 @@ export default function PrivacyPage() {
 
             <div className="mt-16 space-y-12 text-sm leading-relaxed text-muted">
               <section>
+                <h2 className="text-lg font-semibold text-foreground">Data Controller</h2>
+                <p className="mt-3">
+                  SnapOtter is a product of Chocolate Wafers General Trading Pte. Ltd. (UEN
+                  202527149C), registered in Singapore. References to &quot;we&quot;,
+                  &quot;us&quot;, or &quot;our&quot; in this policy refer to Chocolate Wafers
+                  General Trading Pte. Ltd.
+                </p>
+              </section>
+
+              <section>
                 <h2 className="text-lg font-semibold text-foreground">Overview</h2>
                 <p className="mt-3">
                   SnapOtter is self-hosted software. We do not process, store, or have access to

@@ -56,6 +56,16 @@ export default function TermsPage() {
 
             <div className="mt-16 space-y-12 text-sm leading-relaxed text-muted">
               <section>
+                <h2 className="text-lg font-semibold text-foreground">Who We Are</h2>
+                <p className="mt-3">
+                  SnapOtter is a product of Chocolate Wafers General Trading Pte. Ltd. (UEN
+                  202527149C), an exempt private company registered in Singapore. References to
+                  &quot;we&quot;, &quot;us&quot;, or &quot;our&quot; in these terms refer to
+                  Chocolate Wafers General Trading Pte. Ltd.
+                </p>
+              </section>
+
+              <section>
                 <h2 className="text-lg font-semibold text-foreground">Overview</h2>
                 <p className="mt-3">
                   These terms govern your use of the SnapOtter website and software.
