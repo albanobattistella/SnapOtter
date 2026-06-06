@@ -25,6 +25,7 @@ import { registerEraseObject } from "./erase-object.js";
 import { registerFavicon } from "./favicon.js";
 import { registerFindDuplicates } from "./find-duplicates.js";
 import { registerGifTools } from "./gif-tools.js";
+import { registerHtmlToImage } from "./html-to-image.js";
 import { registerImageEnhancement } from "./image-enhancement.js";
 import { registerImageToBase64 } from "./image-to-base64.js";
 import { registerImageToPdf } from "./image-to-pdf.js";
@@ -113,6 +114,7 @@ export async function registerToolRoutes(app: FastifyInstance): Promise<void> {
     { id: "find-duplicates", register: registerFindDuplicates },
     { id: "color-palette", register: registerColorPalette },
     { id: "qr-generate", register: registerQrGenerate },
+    { id: "html-to-image", register: registerHtmlToImage },
     { id: "barcode-read", register: registerBarcodeRead },
     { id: "image-to-base64", register: registerImageToBase64 },
 
