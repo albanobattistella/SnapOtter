@@ -15,6 +15,17 @@ const envSchema = z
       .default("false")
       .transform((v) => v === "true"),
     STORAGE_MODE: z.enum(["local", "s3"]).default("local"),
+    S3_BUCKET: z.string().default(""),
+    S3_REGION: z.string().default("us-east-1"),
+    S3_ENDPOINT: z.string().default(""),
+    S3_ACCESS_KEY_ID: z.string().default(""),
+    S3_SECRET_ACCESS_KEY: z.string().default(""),
+    S3_FORCE_PATH_STYLE: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((v) => v === "true"),
+    S3_PREFIX: z.string().default(""),
+    SNAPOTTER_LICENSE_KEY: z.string().default(""),
     FILE_MAX_AGE_HOURS: z.coerce.number().default(72),
     CLEANUP_INTERVAL_MINUTES: z.coerce.number().default(60),
     MAX_UPLOAD_SIZE_MB: z.coerce.number().default(0),
@@ -82,6 +93,29 @@ const envSchema = z
       ),
   })
   .superRefine((data, ctx) => {
+    if (data.STORAGE_MODE === "s3") {
+      if (!data.S3_BUCKET) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "S3_BUCKET is required when STORAGE_MODE=s3",
+          path: ["S3_BUCKET"],
+        });
+      }
+      if (!data.S3_ACCESS_KEY_ID) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "S3_ACCESS_KEY_ID is required when STORAGE_MODE=s3",
+          path: ["S3_ACCESS_KEY_ID"],
+        });
+      }
+      if (!data.S3_SECRET_ACCESS_KEY) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "S3_SECRET_ACCESS_KEY is required when STORAGE_MODE=s3",
+          path: ["S3_SECRET_ACCESS_KEY"],
+        });
+      }
+    }
     if (data.OIDC_ENABLED) {
       if (!data.OIDC_ISSUER_URL) {
         ctx.addIssue({

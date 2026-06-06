@@ -110,6 +110,7 @@ export default defineConfig({
       "opentype.js": path.join(apiNodeModules, "opentype.js"),
       "posthog-node": path.join(apiNodeModules, "posthog-node"),
       "@sentry/node": path.join(apiNodeModules, "@sentry/node"),
+      "@aws-sdk/client-s3": path.join(apiNodeModules, "@aws-sdk/client-s3"),
       react: path.join(webNodeModules, "react"),
       "react-dom": path.join(webNodeModules, "react-dom"),
       "react-router-dom": path.join(webNodeModules, "react-router-dom"),

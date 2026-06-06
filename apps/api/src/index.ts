@@ -98,6 +98,20 @@ if (!env.COOKIE_SECRET) {
 
 await initAnalytics();
 
+// Enterprise features (license-gated)
+let enterpriseLicense: { org: string; plan: string } | null = null;
+try {
+  const { initEnterprise } = await import("@snapotter/enterprise");
+  const result = initEnterprise(env.SNAPOTTER_LICENSE_KEY || undefined);
+  if (result.valid && result.license) {
+    enterpriseLicense = result.license;
+  } else if (env.SNAPOTTER_LICENSE_KEY) {
+    console.warn("[WARN] Invalid or expired enterprise license key");
+  }
+} catch {
+  // Enterprise package not available
+}
+
 // Mark any jobs left in processing/queued from a previous unclean shutdown
 recoverStaleJobs();
 
@@ -278,6 +292,9 @@ app.get("/api/v1/admin/health", async (request, reply) => {
     database: dbOk ? "ok" : "error",
     queue: { active: 0, pending: 0 },
     ai: { gpu: isGpuAvailable(), dispatcher: getDispatcherStatus() },
+    enterprise: enterpriseLicense
+      ? { active: true, org: enterpriseLicense.org, plan: enterpriseLicense.plan }
+      : { active: false },
   };
 });
 
@@ -319,6 +336,10 @@ try {
       `[INFO] Rate limit: ${env.RATE_LIMIT_PER_MIN > 0 ? `${env.RATE_LIMIT_PER_MIN}/min` : "disabled"}`,
       `[INFO] Upload limit: ${env.MAX_UPLOAD_SIZE_MB > 0 ? `${env.MAX_UPLOAD_SIZE_MB} MB` : "unlimited"}`,
       `[INFO] Trust proxy: ${env.TRUST_PROXY}`,
+      `[INFO] Storage: ${env.STORAGE_MODE}${env.STORAGE_MODE === "s3" ? ` (${env.S3_BUCKET})` : ""}`,
+      enterpriseLicense
+        ? `[INFO] Enterprise license: ${enterpriseLicense.org} (${enterpriseLicense.plan})`
+        : "[INFO] Edition: Community",
     ].join("\n"),
   );
 } catch (err) {

@@ -35,6 +35,9 @@ test-results/
 playwright-report/
 blob-report/
 
+# License signing key (NEVER commit)
+.license-signing-key
+
 # IDE / tool scratch
 CLAUDE.md
 CONTEXT.md

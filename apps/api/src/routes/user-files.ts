@@ -10,8 +10,6 @@
  * POST   /api/v1/files/save-result  — Save a tool processing result (new version)
  */
 import { randomUUID } from "node:crypto";
-import { createReadStream } from "node:fs";
-import { readFile } from "node:fs/promises";
 import { extname } from "node:path";
 import { and, desc, eq, like, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -24,9 +22,10 @@ import {
   deleteStoredFile,
   deleteThumbnail,
   getCachedThumbnail,
-  getStoredFilePath,
+  readStoredFile,
   saveFile,
   saveThumbnail,
+  streamStoredFile,
 } from "../lib/file-storage.js";
 import { validateImageBuffer } from "../lib/file-validation.js";
 import { sanitizeFilename } from "../lib/filename.js";
@@ -375,14 +374,12 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
         return reply.status(404).send({ error: "File not found" });
       }
 
-      const filePath = getStoredFilePath(file.storedName);
-
-      const stream = createReadStream(filePath);
-      stream.on("error", () => {
-        if (!reply.raw.headersSent) {
-          reply.status(404).send({ error: "File not found on disk" });
-        }
-      });
+      let stream;
+      try {
+        stream = await streamStoredFile(file.storedName);
+      } catch {
+        return reply.status(404).send({ error: "File not found in storage" });
+      }
 
       return reply
         .header("Content-Type", file.mimeType)
@@ -422,10 +419,8 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
           .send(cached);
       }
 
-      const filePath = getStoredFilePath(file.storedName);
-
       try {
-        const rawBuffer = await readFile(filePath);
+        const rawBuffer = await readStoredFile(file.storedName);
         const validation = await validateImageBuffer(rawBuffer, file.originalName);
         let decoded: Buffer<ArrayBuffer> = Buffer.from(rawBuffer);
         if (validation.valid && validation.format === "heif") {
