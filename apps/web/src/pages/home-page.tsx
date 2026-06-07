@@ -99,6 +99,7 @@ export function HomePage() {
   if (isMobile && hasFile) {
     return (
       <AppLayout showToolPanel={false} onFiles={handleFiles}>
+        <h1 className="sr-only">{t.nav.tools}</h1>
         <div className="flex flex-col h-full w-full">
           {/* File info bar */}
           <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
@@ -141,11 +142,25 @@ export function HomePage() {
                     {getToolName(t, tool.id, tool.name)}
                   </span>
                   {status === "not_installed" && (
-                    <Download className="h-3.5 w-3.5 text-muted-foreground" />
+                    <>
+                      <Download className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                      <span className="sr-only">{t.a11y.notInstalled}</span>
+                    </>
                   )}
-                  {status === "queued" && <Clock className="h-3.5 w-3.5 text-muted-foreground" />}
+                  {status === "queued" && (
+                    <>
+                      <Clock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                      <span className="sr-only">{t.a11y.queued}</span>
+                    </>
+                  )}
                   {status === "installing" && (
-                    <Loader2 className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
+                    <>
+                      <Loader2
+                        className="h-3.5 w-3.5 text-muted-foreground animate-spin"
+                        aria-hidden="true"
+                      />
+                      <span className="sr-only">{t.a11y.installing}</span>
+                    </>
                   )}
                 </button>
               );
@@ -160,7 +175,7 @@ export function HomePage() {
               <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
                 <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
                 <p className="text-sm text-muted-foreground">{t.homePage.generatingPreview}</p>
-                <p className="text-xs text-muted-foreground/60">{selectedFileName}</p>
+                <p className="text-xs text-muted-foreground">{selectedFileName}</p>
               </div>
             ) : originalBlobUrl ? (
               <ImageViewer
@@ -182,6 +197,7 @@ export function HomePage() {
   // File uploaded — desktop: tool selector on left, image preview on right
   return (
     <AppLayout showToolPanel={false} onFiles={handleFiles}>
+      <h1 className="sr-only">{t.nav.tools}</h1>
       <div className="flex h-full w-full">
         {/* Left panel: Tool selector */}
         <div className="w-64 lg:w-80 border-r border-border overflow-y-auto shrink-0">
@@ -233,13 +249,31 @@ export function HomePage() {
                       {getToolName(t, tool.id, tool.name)}
                     </span>
                     {status === "not_installed" && (
-                      <Download className="h-3.5 w-3.5 text-muted-foreground ms-auto" />
+                      <>
+                        <Download
+                          className="h-3.5 w-3.5 text-muted-foreground ms-auto"
+                          aria-hidden="true"
+                        />
+                        <span className="sr-only">{t.a11y.notInstalled}</span>
+                      </>
                     )}
                     {status === "queued" && (
-                      <Clock className="h-3.5 w-3.5 text-muted-foreground ms-auto" />
+                      <>
+                        <Clock
+                          className="h-3.5 w-3.5 text-muted-foreground ms-auto"
+                          aria-hidden="true"
+                        />
+                        <span className="sr-only">{t.a11y.queued}</span>
+                      </>
                     )}
                     {status === "installing" && (
-                      <Loader2 className="h-3.5 w-3.5 text-muted-foreground ms-auto animate-spin" />
+                      <>
+                        <Loader2
+                          className="h-3.5 w-3.5 text-muted-foreground ms-auto animate-spin"
+                          aria-hidden="true"
+                        />
+                        <span className="sr-only">{t.a11y.installing}</span>
+                      </>
                     )}
                   </button>
                 );
@@ -279,13 +313,31 @@ export function HomePage() {
                           <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
                           <span className="text-sm">{getToolName(t, tool.id, tool.name)}</span>
                           {status === "not_installed" && (
-                            <Download className="h-3.5 w-3.5 text-muted-foreground ms-auto" />
+                            <>
+                              <Download
+                                className="h-3.5 w-3.5 text-muted-foreground ms-auto"
+                                aria-hidden="true"
+                              />
+                              <span className="sr-only">{t.a11y.notInstalled}</span>
+                            </>
                           )}
                           {status === "queued" && (
-                            <Clock className="h-3.5 w-3.5 text-muted-foreground ms-auto" />
+                            <>
+                              <Clock
+                                className="h-3.5 w-3.5 text-muted-foreground ms-auto"
+                                aria-hidden="true"
+                              />
+                              <span className="sr-only">{t.a11y.queued}</span>
+                            </>
                           )}
                           {status === "installing" && (
-                            <Loader2 className="h-3.5 w-3.5 text-muted-foreground ms-auto animate-spin" />
+                            <>
+                              <Loader2
+                                className="h-3.5 w-3.5 text-muted-foreground ms-auto animate-spin"
+                                aria-hidden="true"
+                              />
+                              <span className="sr-only">{t.a11y.installing}</span>
+                            </>
                           )}
                         </button>
                       );
@@ -305,7 +357,7 @@ export function HomePage() {
             <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
               <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
               <p className="text-sm text-muted-foreground">{t.homePage.generatingPreview}</p>
-              <p className="text-xs text-muted-foreground/60">{selectedFileName}</p>
+              <p className="text-xs text-muted-foreground">{selectedFileName}</p>
             </div>
           ) : originalBlobUrl ? (
             <ImageViewer

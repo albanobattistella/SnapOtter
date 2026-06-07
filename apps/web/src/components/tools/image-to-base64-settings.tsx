@@ -84,7 +84,7 @@ export function ImageToBase64Settings() {
       {/* Output Format */}
       <div>
         <span className="text-xs font-medium text-muted-foreground">Output Image Format</span>
-        <p className="text-[10px] text-muted-foreground/70 mb-1.5">
+        <p className="text-[10px] text-muted-foreground mb-1.5">
           Convert before encoding to control MIME type and size
         </p>
         <div className="flex flex-wrap gap-1.5">
@@ -123,9 +123,7 @@ export function ImageToBase64Settings() {
             onChange={(e) => setQuality(Number(e.target.value))}
             className="w-full mt-1 accent-primary"
           />
-          <p className="text-[10px] text-muted-foreground/70">
-            Lower quality = smaller base64 string
-          </p>
+          <p className="text-[10px] text-muted-foreground">Lower quality = smaller base64 string</p>
         </div>
       )}
 
@@ -141,7 +139,7 @@ export function ImageToBase64Settings() {
           value={maxWidth}
           onChange={(e) => setMaxWidth(Math.max(0, Number(e.target.value)))}
           placeholder="0 = no limit"
-          className="mt-1 w-full rounded bg-muted px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 outline-none"
+          className="mt-1 w-full rounded bg-muted px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground outline-none"
         />
       </div>
 
@@ -157,9 +155,9 @@ export function ImageToBase64Settings() {
           value={maxHeight}
           onChange={(e) => setMaxHeight(Math.max(0, Number(e.target.value)))}
           placeholder="0 = no limit"
-          className="mt-1 w-full rounded bg-muted px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 outline-none"
+          className="mt-1 w-full rounded bg-muted px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground outline-none"
         />
-        <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+        <p className="text-[10px] text-muted-foreground mt-0.5">
           Resize before encoding. Aspect ratio is preserved. 0 = no limit.
         </p>
       </div>
@@ -172,7 +170,7 @@ export function ImageToBase64Settings() {
         disabled={!hasFiles || processing}
         className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
-        {processing && <Loader2 className="h-4 w-4 animate-spin" />}
+        {processing && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
         {processing
           ? "Converting..."
           : `Convert to Base64${files.length > 1 ? ` (${files.length})` : ""}`}

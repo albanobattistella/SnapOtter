@@ -26,9 +26,10 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "@/contexts/i18n-context";
 import { useAuth } from "@/hooks/use-auth";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useMobile } from "@/hooks/use-mobile";
 import { apiDelete, apiGet, apiPost, apiPut, clearToken, formatHeaders } from "@/lib/api";
 import { format, plural } from "@/lib/format";
@@ -127,6 +128,10 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   const { t } = useTranslation();
   const isMobile = useMobile();
   const NAV_ITEMS = useNavItems();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const mobileDialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open && !isMobile);
+  useFocusTrap(mobileDialogRef, open && isMobile);
 
   const visibleNavItems = NAV_ITEMS.filter(
     (item) =>
@@ -148,14 +153,23 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
 
   if (isMobile) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-background">
+      <div
+        ref={mobileDialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-dialog-title-mobile"
+        className="fixed inset-0 z-50 flex flex-col bg-background"
+      >
         {/* Mobile header */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2 shrink-0">
-          <h2 className="text-sm font-semibold text-foreground">{t.settings.heading}</h2>
+          <h2 id="settings-dialog-title-mobile" className="text-sm font-semibold text-foreground">
+            {t.settings.heading}
+          </h2>
           <button
             type="button"
             onClick={onClose}
             className="p-2.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+            aria-label={t.a11y.closeSettings}
           >
             <X className="h-5 w-5" />
           </button>
@@ -169,7 +183,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
               type="button"
               onClick={() => setSection(item.id)}
               className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0",
+                "flex items-center gap-1.5 px-3 py-2.5 rounded-full text-xs font-medium whitespace-nowrap shrink-0",
                 section === item.id
                   ? "bg-primary text-primary-foreground"
                   : "bg-muted text-muted-foreground",
@@ -211,14 +225,18 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
 
       {/* Dialog */}
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
+        aria-labelledby="settings-dialog-title"
         className="relative bg-background border border-border rounded-xl shadow-2xl w-full max-w-3xl h-[85dvh] flex overflow-hidden"
       >
         {/* Sidebar nav */}
         <div className="w-48 border-r border-border bg-muted/30 p-3 space-y-1 shrink-0">
           <div className="flex items-center justify-between mb-4 px-2">
-            <h2 className="text-sm font-semibold text-foreground">{t.settings.heading}</h2>
+            <h2 id="settings-dialog-title" className="text-sm font-semibold text-foreground">
+              {t.settings.heading}
+            </h2>
           </div>
           {visibleNavItems.map((item) => (
             <button
@@ -244,6 +262,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
             type="button"
             onClick={onClose}
             className="absolute top-3 right-3 p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+            aria-label={t.a11y.closeSettings}
           >
             <X className="h-4 w-4" />
           </button>
@@ -426,6 +445,7 @@ function GeneralSection() {
         <select
           value={defaultToolView}
           onChange={(e) => setDefaultToolView(e.target.value)}
+          aria-label={t.settings.general.defaultToolViewLabel}
           className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground"
         >
           <option value="sidebar">{t.settings.general.sidebarOption}</option>
@@ -440,6 +460,7 @@ function GeneralSection() {
         <select
           value={locale}
           onChange={(e) => setLocale(e.target.value)}
+          aria-label={t.settings.system.languageLabel}
           className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground"
         >
           {supportedLocales.map((l) => (
@@ -464,7 +485,7 @@ function GeneralSection() {
           disabled={saving}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
-          {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+          {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
           {t.settings.general.saveButton}
         </button>
         {saveMsg && (
@@ -553,6 +574,7 @@ function SystemSection() {
           type="number"
           value={settings.fileUploadLimitMb || "100"}
           onChange={(e) => updateSetting("fileUploadLimitMb", e.target.value)}
+          aria-label={t.settings.system.fileUploadLimitLabel}
           className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground w-24"
           min={1}
         />
@@ -565,6 +587,7 @@ function SystemSection() {
         <select
           value={settings.defaultTheme || "system"}
           onChange={(e) => updateSetting("defaultTheme", e.target.value)}
+          aria-label={t.settings.system.defaultThemeLabel}
           className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground"
         >
           <option value="light">{t.settings.system.lightOption}</option>
@@ -580,6 +603,7 @@ function SystemSection() {
         <select
           value={settings.defaultLocale || "en"}
           onChange={(e) => updateSetting("defaultLocale", e.target.value)}
+          aria-label={t.settings.system.languageLabel}
           className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground"
         >
           {SUPPORTED_LOCALES.map((l) => (
@@ -598,6 +622,7 @@ function SystemSection() {
           type="number"
           value={settings.loginAttemptLimit || "5"}
           onChange={(e) => updateSetting("loginAttemptLimit", e.target.value)}
+          aria-label={t.settings.system.loginAttemptLimitLabel}
           className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground w-24"
           min={1}
           max={100}
@@ -617,6 +642,7 @@ function SystemSection() {
           type="number"
           value={settings.tempFileMaxAgeHours || "24"}
           onChange={(e) => updateSetting("tempFileMaxAgeHours", e.target.value)}
+          aria-label={t.settings.fileManagement.maxAge}
           className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground w-24"
           min={1}
         />
@@ -627,6 +653,9 @@ function SystemSection() {
       >
         <button
           type="button"
+          role="switch"
+          aria-checked={settings.startupCleanup !== "false"}
+          aria-label={t.settings.fileManagement.startupCleanup}
           onClick={() =>
             updateSetting("startupCleanup", settings.startupCleanup === "false" ? "true" : "false")
           }
@@ -651,7 +680,7 @@ function SystemSection() {
           disabled={saving}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
-          {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+          {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
           {t.settings.system.saveButton}
         </button>
         {saveMsg && (
@@ -731,13 +760,19 @@ function SecuritySection() {
 
         <div className="space-y-3 max-w-sm">
           <div className="relative">
+            <label htmlFor="current-password" className="sr-only">
+              {t.settings.security.currentPasswordPlaceholder}
+            </label>
             <input
+              id="current-password"
               type={showCurrent ? "text" : "password"}
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
               placeholder={t.settings.security.currentPasswordPlaceholder}
               className="w-full px-3 py-2 pe-10 rounded-lg border border-border bg-background text-sm text-foreground"
               required
+              aria-invalid={message?.type === "error" || undefined}
+              aria-describedby={message ? "password-change-error" : undefined}
             />
             <button
               type="button"
@@ -749,13 +784,19 @@ function SecuritySection() {
           </div>
 
           <div className="relative">
+            <label htmlFor="new-password" className="sr-only">
+              {t.settings.security.newPasswordPlaceholder}
+            </label>
             <input
+              id="new-password"
               type={showNew ? "text" : "password"}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder={t.settings.security.newPasswordPlaceholder}
               className="w-full px-3 py-2 pe-10 rounded-lg border border-border bg-background text-sm text-foreground"
               required
+              aria-invalid={message?.type === "error" || undefined}
+              aria-describedby={message ? "password-change-error" : undefined}
             />
             <button
               type="button"
@@ -767,13 +808,19 @@ function SecuritySection() {
           </div>
 
           <div className="relative">
+            <label htmlFor="confirm-password" className="sr-only">
+              {t.settings.security.confirmPasswordPlaceholder}
+            </label>
             <input
+              id="confirm-password"
               type={showConfirm ? "text" : "password"}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder={t.settings.security.confirmPasswordPlaceholder}
               className="w-full px-3 py-2 pe-10 rounded-lg border border-border bg-background text-sm text-foreground"
               required
+              aria-invalid={message?.type === "error" || undefined}
+              aria-describedby={message ? "password-change-error" : undefined}
             />
             <button
               type="button"
@@ -787,6 +834,8 @@ function SecuritySection() {
 
           {message && (
             <p
+              id="password-change-error"
+              role="alert"
               className={cn(
                 "text-sm",
                 message.type === "error"
@@ -803,7 +852,7 @@ function SecuritySection() {
             disabled={submitting}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
           >
-            {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
             {t.settings.security.changePasswordButton}
           </button>
         </div>
@@ -1098,16 +1147,26 @@ function PeopleSection() {
             {t.settings.people.newMemberHeading}
           </h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input
-              type="text"
-              value={newUsername}
-              onChange={(e) => setNewUsername(e.target.value)}
-              placeholder={t.settings.people.usernamePlaceholder}
-              required
-              className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground"
-            />
-            <div className="flex items-center gap-1.5">
+            <div>
+              <label htmlFor="new-user-username" className="sr-only">
+                {t.settings.people.usernamePlaceholder}
+              </label>
               <input
+                id="new-user-username"
+                type="text"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                placeholder={t.settings.people.usernamePlaceholder}
+                required
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground"
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              <label htmlFor="new-user-password" className="sr-only">
+                {t.auth.password}
+              </label>
+              <input
+                id="new-user-password"
                 type={showGeneratedPw ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => {
@@ -1188,7 +1247,7 @@ function PeopleSection() {
               disabled={adding || atLimit}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {adding && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {adding && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
               {t.common.create}
             </button>
             <button
@@ -1223,7 +1282,11 @@ function PeopleSection() {
               {t.settings.people.copyPasswordWarning}
             </p>
           )}
-          {addError && <p className="text-sm text-destructive">{addError}</p>}
+          {addError && (
+            <p role="alert" className="text-sm text-destructive">
+              {addError}
+            </p>
+          )}
         </form>
       )}
 
@@ -1440,6 +1503,7 @@ function PeopleSection() {
                   }}
                   className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                   title="Actions"
+                  aria-label={t.common.actions}
                 >
                   <MoreVertical className="h-4 w-4" />
                 </button>
@@ -1595,6 +1659,7 @@ function ApiKeysSection() {
           value={keyName}
           onChange={(e) => setKeyName(e.target.value)}
           placeholder={t.settings.apiKeys.keyNamePlaceholder}
+          aria-label={t.settings.apiKeys.keyNamePlaceholder}
           className="px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground w-48"
         />
         <button
@@ -1603,7 +1668,11 @@ function ApiKeysSection() {
           disabled={generating}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
-          {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Key className="h-4 w-4" />}
+          {generating ? (
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <Key className="h-4 w-4" aria-hidden="true" />
+          )}
           {t.settings.apiKeys.generateButton}
         </button>
       </div>
@@ -1678,6 +1747,7 @@ function ApiKeysSection() {
               onClick={() => copyKey(newKey)}
               className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground shrink-0"
               title="Copy"
+              aria-label={t.common.copy}
             >
               {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
             </button>
@@ -1718,6 +1788,7 @@ function ApiKeysSection() {
                 onClick={() => deleteKey(k.id)}
                 className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                 title="Delete key"
+                aria-label={t.a11y.deleteKey}
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -1895,7 +1966,7 @@ function TeamsSection() {
               disabled={creating}
               className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              {creating && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              {creating && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
               {t.common.create}
             </button>
             <button
@@ -2359,6 +2430,7 @@ function RolesSection() {
                       }}
                       className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                       title="Edit role"
+                      aria-label={t.a11y.editRole}
                     >
                       <Pencil className="h-4 w-4" />
                     </button>
@@ -2367,6 +2439,7 @@ function RolesSection() {
                       onClick={() => handleDelete(role)}
                       className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                       title="Delete role"
+                      aria-label={t.a11y.deleteRole}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -2740,6 +2813,9 @@ function ToolsSection() {
                     </div>
                     <button
                       type="button"
+                      role="switch"
+                      aria-checked={!isDisabled}
+                      aria-label={getToolName(t, tool.id, tool.name)}
                       onClick={() => toggleTool(tool.id)}
                       className={cn(
                         "w-11 h-6 rounded-full transition-colors relative shrink-0 ms-3",
@@ -2780,7 +2856,7 @@ function ToolsSection() {
           disabled={saving || loadFailed}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
-          {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+          {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
           {t.settings.tools.saveButton}
         </button>
         <span className="text-xs text-muted-foreground">
@@ -2825,6 +2901,9 @@ function AnalyticsSection() {
           </span>
           <button
             type="button"
+            role="switch"
+            aria-checked={enabled}
+            aria-label={t.analytics.settingsTitle}
             onClick={() => toggleAnalytics(!enabled)}
             className={cn(
               "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",

@@ -18,6 +18,7 @@ export function FilesPage() {
   if (isMobile) {
     return (
       <AppLayout showToolPanel={false}>
+        <h1 className="sr-only">{t.files.myFiles}</h1>
         <div className="flex flex-col h-full w-full overflow-hidden">
           {/* Mobile tabs */}
           <div className="flex border-b border-border">
@@ -68,7 +69,7 @@ export function FilesPage() {
             <div
               role="dialog"
               aria-modal="true"
-              aria-label="File Details"
+              aria-label={t.a11y.fileDetails}
               className="fixed inset-0 z-50 bg-black/50"
               onClick={(e) => {
                 if (e.target === e.currentTarget) setShowDetails(false);
@@ -95,6 +96,7 @@ export function FilesPage() {
 
   return (
     <AppLayout showToolPanel={false}>
+      <h1 className="sr-only">{t.files.myFiles}</h1>
       <div className="flex h-full w-full overflow-hidden">
         <FilesNav />
         {activeTab === "recent" ? (

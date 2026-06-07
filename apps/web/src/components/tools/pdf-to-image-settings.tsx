@@ -207,7 +207,7 @@ export function PdfToImageSettings() {
             className="w-full mt-1.5 px-2 py-1.5 rounded border border-border bg-background text-sm text-foreground"
           />
         ) : (
-          <p className="text-xs text-muted-foreground/60 mt-1">{DPI_LABELS[store.dpi] ?? ""}</p>
+          <p className="text-xs text-muted-foreground mt-1">{DPI_LABELS[store.dpi] ?? ""}</p>
         )}
       </div>
 
@@ -265,7 +265,7 @@ export function PdfToImageSettings() {
         disabled={!store.file || !store.pageCount || store.processing || selectedCount === 0}
         className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
       >
-        {store.processing && <Loader2 className="h-4 w-4 animate-spin" />}
+        {store.processing && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
         {store.processing
           ? t.toolSettings["pdf-to-image"].converting
           : `Convert ${selectedCount} page${selectedCount !== 1 ? "s" : ""}`}

@@ -27,6 +27,7 @@ import { useTranslation } from "@/contexts/i18n-context";
 import { useAuth } from "@/hooks/use-auth";
 import { useMobile } from "@/hooks/use-mobile";
 import { formatFileSize } from "@/lib/download";
+import { format } from "@/lib/format";
 import { ICON_MAP } from "@/lib/icon-map";
 import { getToolName } from "@/lib/tool-i18n";
 import { getToolRegistryEntry } from "@/lib/tool-registry";
@@ -117,7 +118,7 @@ function FileSelectionInfo({
             >
               {isSelected && <CheckCircle2 className="h-3 w-3 text-primary shrink-0" />}
               <span className="truncate flex-1 min-w-0">{file.name}</span>
-              <span className="shrink-0 text-[10px] text-muted-foreground/70">
+              <span className="shrink-0 text-[10px] text-muted-foreground">
                 {getFileFormat(file.name)}
               </span>
               <span className="shrink-0 text-[10px] tabular-nums">{formatFileSize(file.size)}</span>
@@ -202,6 +203,13 @@ export function ToolPage() {
   const hasMultiple = entries.length > 1;
   const hasPrev = selectedIndex > 0;
   const hasNext = selectedIndex < entries.length - 1;
+
+  const liveMessage = useMemo(() => {
+    if (!currentEntry) return "";
+    if (currentEntry.status === "completed" && processedUrl) return t.a11y.processingComplete;
+    if (currentEntry.status === "failed") return t.a11y.processingFailed;
+    return "";
+  }, [currentEntry, processedUrl, t.a11y.processingComplete, t.a11y.processingFailed]);
 
   const handleImageKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -635,7 +643,7 @@ export function ToolPage() {
         <div className="flex flex-col items-center justify-center h-full gap-3 text-center">
           <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
           <p className="text-sm text-muted-foreground">{t.toolPage.generatingPreview}</p>
-          <p className="text-xs text-muted-foreground/60">{selectedFileName}</p>
+          <p className="text-xs text-muted-foreground">{selectedFileName}</p>
         </div>
       );
     }
@@ -706,7 +714,7 @@ export function ToolPage() {
             type="button"
             onClick={navigatePrev}
             className="absolute left-3 z-10 w-8 h-8 rounded-full bg-background/80 border border-border shadow-sm flex items-center justify-center hover:bg-background transition-colors"
-            aria-label="Previous image"
+            aria-label={t.a11y.previousImage}
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -716,13 +724,20 @@ export function ToolPage() {
             type="button"
             onClick={navigateNext}
             className="absolute right-3 z-10 w-8 h-8 rounded-full bg-background/80 border border-border shadow-sm flex items-center justify-center hover:bg-background transition-colors"
-            aria-label="Next image"
+            aria-label={t.a11y.nextImage}
           >
             <ChevronRight className="h-4 w-4" />
           </button>
         )}
         {hasMultiple && (
-          <div className="absolute top-3 right-3 z-10 bg-background/80 border border-border px-2 py-0.5 rounded-full text-xs text-muted-foreground tabular-nums">
+          <div
+            role="status"
+            aria-label={format(t.a11y.imageNOfTotal, {
+              n: selectedIndex + 1,
+              total: entries.length,
+            })}
+            className="absolute top-3 right-3 z-10 bg-background/80 border border-border px-2 py-0.5 rounded-full text-xs text-muted-foreground tabular-nums"
+          >
             {selectedIndex + 1} / {entries.length}
           </div>
         )}
@@ -796,9 +811,9 @@ export function ToolPage() {
             <div className="p-2 rounded-lg bg-primary text-primary-foreground">
               <IconComponent className="h-5 w-5" />
             </div>
-            <h2 className="font-semibold text-lg text-foreground flex-1">
+            <h1 className="font-semibold text-lg text-foreground flex-1">
               {getToolName(t, tool.id, tool.name)}
-            </h2>
+            </h1>
             <button
               type="button"
               onClick={() => setMobileSettingsOpen(!mobileSettingsOpen)}
@@ -810,11 +825,14 @@ export function ToolPage() {
 
           {/* Main area: image viewer (full height) */}
           <section
-            aria-label="Image area"
+            aria-label={t.a11y.imageArea}
             className="flex-1 flex flex-col min-h-0 min-w-0"
             onKeyDown={hasMultiple ? handleImageKeyDown : undefined}
             tabIndex={hasMultiple ? 0 : undefined}
           >
+            <div aria-live="polite" aria-atomic="true" className="sr-only">
+              {liveMessage}
+            </div>
             <div className="flex-1 relative flex items-center justify-center p-4 min-h-0 min-w-0">
               {renderNavArrows()}
               {renderImageArea()}
@@ -851,9 +869,9 @@ export function ToolPage() {
             <div className="p-2 rounded-lg bg-primary text-primary-foreground">
               <IconComponent className="h-5 w-5" />
             </div>
-            <h2 className="font-semibold text-lg text-foreground">
+            <h1 className="font-semibold text-lg text-foreground">
               {getToolName(t, tool.id, tool.name)}
-            </h2>
+            </h1>
           </div>
 
           {renderSettingsContent()}
@@ -861,11 +879,14 @@ export function ToolPage() {
 
         {/* Main area: image viewer */}
         <section
-          aria-label="Image area"
+          aria-label={t.a11y.imageArea}
           className="flex-1 flex flex-col min-h-0 min-w-0"
           onKeyDown={hasMultiple ? handleImageKeyDown : undefined}
           tabIndex={hasMultiple ? 0 : undefined}
         >
+          <div aria-live="polite" aria-atomic="true" className="sr-only">
+            {liveMessage}
+          </div>
           <div className="flex-1 relative flex items-center justify-center p-6 min-h-0 min-w-0">
             {renderNavArrows()}
             {renderImageArea()}

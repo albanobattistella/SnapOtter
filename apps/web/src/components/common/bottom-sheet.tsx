@@ -1,6 +1,8 @@
 import { useDrag } from "@use-gesture/react";
 import { X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface BottomSheetProps {
   open: boolean;
@@ -17,7 +19,9 @@ export function BottomSheet({
   children,
   maxHeight = "70dvh",
 }: BottomSheetProps) {
+  const { t } = useTranslation();
   const sheetRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(sheetRef, open);
   const [translateY, setTranslateY] = useState(0);
 
   // Close on Escape key
@@ -74,6 +78,9 @@ export function BottomSheet({
       {/* Sheet */}
       <div
         ref={sheetRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? "bottom-sheet-title" : undefined}
         className="fixed inset-x-0 bottom-0 z-50 bg-background border-t border-border rounded-t-2xl shadow-xl flex flex-col animate-in slide-in-from-bottom"
         style={{
           maxHeight,
@@ -89,11 +96,14 @@ export function BottomSheet({
         {/* Header */}
         {title && (
           <div className="flex items-center justify-between px-4 pb-2 shrink-0">
-            <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+            <h2 id="bottom-sheet-title" className="text-sm font-semibold text-foreground">
+              {title}
+            </h2>
             <button
               type="button"
               onClick={handleDismiss}
               className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              aria-label={t.common.close}
             >
               <X className="h-4 w-4" />
             </button>
