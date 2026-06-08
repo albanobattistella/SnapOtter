@@ -1,0 +1,6 @@
+# pnpm 9.x CVEs -- requires major version bump to pnpm 10.x
+# These are build-time tool vulnerabilities, not runtime application code.
+# pnpm is only used for dependency installation, not user-facing functionality.
+# Tracked for upgrade: https://github.com/pnpm/pnpm/releases/tag/v10.0.0
+CVE-2025-69262
+CVE-2025-69263
