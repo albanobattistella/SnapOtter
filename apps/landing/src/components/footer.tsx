@@ -13,7 +13,7 @@ const columns = [
     title: "Resources",
     links: [
       { label: "Documentation", href: "https://docs.snapotter.com" },
-      { label: "API Reference", href: "https://docs.snapotter.com/api" },
+      { label: "API Reference", href: "https://docs.snapotter.com/api/rest" },
       {
         label: "Docker Hub",
         href: "https://hub.docker.com/r/snapotter/snapotter",
