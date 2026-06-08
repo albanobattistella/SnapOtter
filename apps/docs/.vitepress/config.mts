@@ -109,6 +109,7 @@ export default defineConfig({
           { text: "OIDC / SSO", link: "/guide/oidc" },
           { text: "Database", link: "/guide/database" },
           { text: "Deployment", link: "/guide/deployment" },
+          { text: "Security & Hardening", link: "/guide/security" },
           { text: "Supported Formats", link: "/guide/supported-formats" },
           { text: "Hardware requirements", link: "/guide/deployment#hardware-requirements" },
           { text: "Docker tags", link: "/guide/docker-tags" },
