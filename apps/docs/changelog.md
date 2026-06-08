@@ -4,6 +4,61 @@ description: Release notes and version history for SnapOtter. See what's new, im
 
 # Changelog
 
+## v1.17.2
+
+New HTML to Image tool, WCAG 2.2 AA accessibility, security hardening from penetration testing, and 5 critical Docker fixes.
+
+### New features
+
+- **HTML to Image**: Capture screenshots of URLs or raw HTML as PNG/JPEG/WebP. Full-page captures, custom viewports, dark mode.
+- **Docker _FILE secret convention**: Mount sensitive env vars as files instead of plain-text. (#205)
+- **Enterprise licensing and S3 storage**: Optional commercial license key and S3-compatible object storage.
+- **Shape editor improvements**: Fill/stroke transparency, RGBA color picker, dash line styles.
+- **Pre-built release archives**: Download tarballs from GitHub Releases for non-Docker installs (Proxmox, bare metal, LXC). (#202)
+
+### Improvements
+
+- **WCAG 2.2 AA accessibility**: Skip navigation, focus trapping, aria-live regions, reduced motion support, correct contrast ratios. (#209)
+- **Mobile responsiveness**: Responsive settings, SSE auto-reconnect on mobile tab switch. (#203, #204)
+- **Background removal quality**: Edge smoothing, color decontamination, output format selection.
+- **Italian translation**: ~145 new strings by @albanobattistella. (#206)
+- **Per-tool API documentation**: 53 doc pages with parameters, examples, and response formats.
+- **AI model downloads**: Retry logic with exponential backoff for HuggingFace. (#201)
+
+### Bug fixes
+
+- Fresh Docker containers were completely unusable (rate limit blocked all requests).
+- Face detection AI tools (blur-faces, red-eye-removal, enhance-faces, passport-photo) failed on all platforms.
+- HEIC files broken on ARM (libheif symbol mismatch).
+- Upscale and restore-photo AI bundles failed to install on ARM.
+- OCR used wrong CUDA version on GPU containers.
+- SSRF guard bypass via hex IPv4-mapped IPv6 addresses. (Credit: @tonghuaroot)
+- iPhone HEIC decoding with auxiliary images. (#183, #199)
+- Real-ESRGAN CUDA OOM on 8GB GPUs. (#200)
+- 6 production Sentry errors and 7 QA bugs. (#208)
+
+### Security
+
+- 10 penetration test findings addressed (XFF bypass, malformed JSON crashes, unbounded pipelines, audit log XSS, TRACE method, and more). (#207)
+- SSRF hex IPv6 bypass blocked. (Credit: @tonghuaroot)
+- Dockerfile base images pinned by digest.
+
+### Upgrade
+
+```bash
+docker pull snapotter/snapotter:1.17.2
+```
+
+Or with Docker Compose:
+
+```bash
+docker compose pull && docker compose up -d
+```
+
+[Full diff on GitHub](https://github.com/snapotter-hq/SnapOtter/compare/v1.17.1...v1.17.2)
+
+---
+
 ## v1.17.1
 
 Live demo, per-tool landing pages, and a batch of polish fixes.

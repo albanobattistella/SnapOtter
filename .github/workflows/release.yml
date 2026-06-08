@@ -69,6 +69,41 @@ jobs:
             --notes-file /tmp/release-notes.md
           echo "Release notes updated successfully."
 
+      - name: Update docs changelog
+        if: steps.notes.outputs.has_notes == 'true' && steps.check.outputs.version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.check.outputs.version }}
+        run: |
+          CHANGELOG="apps/docs/changelog.md"
+          if [ ! -f "$CHANGELOG" ]; then
+            echo "No docs changelog found, skipping."
+            exit 0
+          fi
+          NOTES="/tmp/release-notes.md"
+          # Build the new entry: ## vX.Y.Z header + release notes body (skip the first ## Highlights/Upgrade sections wrapper)
+          {
+            echo ""
+            echo "## v${VERSION}"
+            echo ""
+            # Strip the ## Highlights header and ## Upgrade section, keep the rest
+            sed '1{/^## Highlights$/d}' "$NOTES" | sed '/^## Upgrade$/,/^---$/d' | sed '/^---$/d'
+            echo ""
+            echo "[Full diff on GitHub](https://github.com/snapotter-hq/SnapOtter/compare/v$(git tag --sort=-v:refname | grep -E '^v[0-9]' | sed -n '2p' | sed 's/^v//')...v${VERSION})"
+            echo ""
+            echo "---"
+            echo ""
+          } > /tmp/changelog-entry.md
+          # Insert after the "# Changelog" header
+          sed -i '/^# Changelog$/r /tmp/changelog-entry.md' "$CHANGELOG"
+          # Commit and push
+          git config user.name "SnapOtter"
+          git config user.email "snapotter.hq@gmail.com"
+          git add "$CHANGELOG"
+          git commit -m "docs: update changelog for v${VERSION}" || true
+          git push origin HEAD:main || true
+          echo "Docs changelog updated for v${VERSION}."
+
   prebuilt:
     name: Archive (${{ matrix.arch }})
     needs: release
