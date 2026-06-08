@@ -4300,6 +4300,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UnauthorizedError"
+        "422":
+          description: Failed to read image metadata
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
   /api/v1/tools/edit-metadata:
     post:
@@ -4373,7 +4379,8 @@ paths:
       tags: [Tools]
       summary: Inspect metadata (ExifTool)
       description: Read all metadata from an image using ExifTool. Returns all embedded EXIF, IPTC, XMP, and GPS fields.
-      security: []
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -4396,6 +4403,18 @@ paths:
                 additionalProperties: true
         "400":
           description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
+        "422":
+          description: Failed to read image metadata
           content:
             application/json:
               schema:

@@ -29,7 +29,7 @@ test.describe("Docs Homepage", () => {
 
   test("features section renders all 6 feature cards", async ({ page }) => {
     const features = [
-      "52 Image Tools",
+      "53 Image Tools",
       "Local AI",
       "Pipelines",
       "REST API",

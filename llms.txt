@@ -1,0 +1,141 @@
+# SnapOtter
+
+Open-source, self-hostable image manipulation suite with 53 tools. Single Docker container, no external services required. Dual-licensed AGPLv3 and commercial.
+
+All image processing happens locally. Images never leave your infrastructure. Supports 55+ input formats (including 23 camera RAW formats) and 14 output formats.
+
+## Quick Start (Docker)
+
+docker run -d --name snapotter -p 1349:1349 -v snapotter-data:/data snapotter/snapotter:latest
+
+Default credentials: admin / admin (must change on first login).
+Add --gpus all for NVIDIA GPU acceleration on AI tools.
+Multi-arch: AMD64 and ARM64 (Intel, Apple Silicon, Raspberry Pi).
+
+## Tools by Category
+
+### Essentials
+- resize: Resize by pixels, percentage, or social media presets
+- crop: Freeform crop, aspect ratio presets, shape crop
+- rotate: Rotate, flip, and straighten images
+- convert: Convert between image formats
+- compress: Reduce file size by quality or target size
+
+### Optimization
+- optimize-for-web: Smart format selection and quality tuning for web delivery
+- strip-metadata: Remove EXIF, GPS, and camera info for privacy
+- edit-metadata: View and edit EXIF, IPTC, and XMP fields
+- bulk-rename: Pattern-based batch renaming with variables
+- image-to-pdf: Combine images into multi-page PDFs
+- favicon: Generate all favicon and app icon sizes from one image
+
+### Adjustments
+- adjust-colors: Brightness, contrast, saturation, temperature, and effects
+- sharpening: Adaptive, unsharp mask, and high-pass sharpening
+- replace-color: Swap colors with tolerance control or invert
+- color-blindness: Simulate 8 types of color vision deficiency
+
+### AI Tools (local ML, no cloud APIs)
+- remove-background: AI background removal (rembg)
+- upscale: 2x/4x AI super-resolution (RealESRGAN)
+- erase-object: AI inpainting to remove unwanted objects (LaMa)
+- ocr: Extract text from images (PaddleOCR, 80+ languages)
+- blur-faces: AI face detection with blur for GDPR compliance
+- smart-crop: Subject-aware and face-centered cropping
+- image-enhancement: One-click auto-fix for exposure, contrast, color
+- enhance-faces: AI face restoration for blurry or low-res portraits
+- colorize: Convert B&W photos to full color with AI
+- noise-removal: AI denoising for ISO noise, JPEG artifacts, grain
+- red-eye-removal: Automatic red-eye detection and correction
+- restore-photo: AI repair of scratches, tears, and damage
+- passport-photo: Compliant passport/ID photos for 30+ countries
+- content-aware-resize: Seam carving that preserves subjects
+- ai-canvas-expand: Outpainting to extend image borders with AI
+- transparency-fixer: Fix PNGs with fake transparent backgrounds
+
+### Watermark and Overlay
+- watermark-text: Add text watermarks with tiling and opacity
+- watermark-image: Overlay logos with position and opacity control
+- text-overlay: Add styled text, captions, and titles
+- compose: Layer and composite multiple images with blending
+- meme-generator: Create memes with custom text and templates
+
+### Utilities
+- info: View dimensions, EXIF, GPS, color space, file details
+- compare: Side-by-side image comparison with slider overlay
+- find-duplicates: Perceptual hashing for near-duplicate detection
+- color-palette: Extract dominant colors as hex/RGB values
+- qr-generate: Custom QR codes with colors, logos, and patterns
+- html-to-image: Capture webpages as high-quality images
+- barcode-read: Decode QR, Code 128, EAN-13 and more from images
+- image-to-base64: Generate data URIs for HTML/CSS embedding
+
+### Layout and Composition
+- collage: 25+ grid templates for photo collages
+- stitch: Join images side by side, stacked, or in grids
+- split: Cut images into grid tiles for Instagram and print
+- border: Add borders, rounded corners, and drop shadows
+- beautify: Screenshot mockups with device frames and backgrounds
+
+### Format and Conversion
+- svg-to-raster: Convert SVG to PNG/JPEG/WebP at custom scale/DPI
+- vectorize: Trace raster images to SVG vector paths
+- gif-tools: Resize, optimize, reverse, extract GIF frames
+- pdf-to-image: Convert PDF pages to images at custom DPI
+
+## REST API
+
+Base URL: http://localhost:1349/api/v1
+Interactive docs: http://localhost:1349/api/docs (Swagger UI)
+Machine-readable spec: http://localhost:1349/api/docs/json (OpenAPI 3.1)
+LLM-optimized spec: http://localhost:1349/llms.txt (generated from OpenAPI at runtime)
+
+Authentication methods:
+- Session cookie (browser login)
+- API key header: X-API-Key: si_<key>
+- Bearer token: Authorization: Bearer si_<key>
+
+API keys support scoped permissions that intersect with user role permissions.
+
+Processing a file:
+  POST /api/v1/tools/:toolId
+  Content-Type: multipart/form-data
+  Body: file (binary), settings (JSON string)
+  Response: { jobId, downloadUrl, originalSize, processedSize }
+
+AI tools return 202 Accepted and stream progress via SSE:
+  GET /api/v1/jobs/:jobId/progress (EventSource)
+
+Pipelines (chained tool workflows):
+  GET /api/v1/pipelines
+  POST /api/v1/pipelines
+  POST /api/v1/pipelines/:id/run
+
+Batch processing: submit multiple files, receive a ZIP archive.
+
+## Tech Stack
+
+Frontend: React 19, Vite 6, Tailwind CSS 4, Zustand
+Backend: Fastify 5, Sharp (image processing), SQLite via Drizzle ORM
+AI/ML: Python sidecar (rembg, RealESRGAN, PaddleOCR, MediaPipe, LaMa)
+Auth: Session-based with OIDC/SSO support (Google, GitHub, Okta, any OIDC provider)
+Languages: 21 locales with RTL support
+
+## Key Features
+
+- Pipelines: chain tools into reusable workflows, import/export as JSON
+- Batch processing: process hundreds of files at once
+- Image editor: layer-based editor with brushes, shapes, filters, curves
+- OIDC/SSO: Google, GitHub, Okta, or any OpenID Connect provider
+- Role-based access: admin, editor, user roles with 14 granular permissions
+- Custom roles and API key scoping
+
+## Links
+
+- Source code: https://github.com/snapotter-hq/snapotter
+- Documentation: https://docs.snapotter.com
+- Live demo: https://demo.snapotter.com
+- Docker Hub: https://hub.docker.com/r/snapotter/snapotter
+- GHCR: ghcr.io/snapotter-hq/snapotter
+- Discord: https://discord.gg/hr3s7HPUsr
+- Website: https://snapotter.com

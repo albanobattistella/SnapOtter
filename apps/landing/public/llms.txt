@@ -1,6 +1,6 @@
 # SnapOtter
 
-> Open-source, self-hostable image manipulation suite with 52 tools. Single Docker container, no external services. Dual-licensed AGPLv3 / commercial.
+> Open-source, self-hostable image manipulation suite with 53 tools. Single Docker container, no external services. Dual-licensed AGPLv3 / commercial.
 
 SnapOtter runs entirely on your own infrastructure. Images are processed locally with no data sent to external APIs. Deploy once with Docker and use it as much as you need.
 

@@ -35,8 +35,8 @@ const settingsSchema = z.object({
 
 /**
  * Build a 3x3 recomb matrix for color temperature + tint shift.
- * Temperature: cool (blue) ←→ warm (orange) on the blue-orange axis.
- * Tint: green ←→ magenta on the green-magenta axis.
+ * Temperature: cool (blue) <-> warm (orange) on the blue-orange axis.
+ * Tint: green <-> magenta on the green-magenta axis.
  */
 function colorTempTintMatrix(
   temp: number,

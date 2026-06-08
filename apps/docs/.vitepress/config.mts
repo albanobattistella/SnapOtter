@@ -5,7 +5,7 @@ import pkg from "../package.json";
 export default defineConfig({
   title: "SnapOtter",
   description:
-    "Documentation for SnapOtter - A Self Hosted Image Manipulator. 52 tools, local AI, pipelines, REST API.",
+    "Documentation for SnapOtter - A Self Hosted Image Manipulator. 53 tools, local AI, pipelines, REST API.",
   base: "/",
   appearance: { initialValue: "light" },
   srcDir: ".",
@@ -76,7 +76,7 @@ export default defineConfig({
 `,
         customTemplateVariables: {
           description:
-            "SnapOtter is a self-hosted, open-source image processing platform with 52 tools including AI/ML. Runs in a single Docker container with GPU auto-detection.",
+            "SnapOtter is a self-hosted, open-source image processing platform with 53 tools including AI/ML. Runs in a single Docker container with GPU auto-detection.",
           details:
             "Resize, compress, convert, remove backgrounds, upscale, run OCR, and more - without sending images to external services.",
         },
@@ -90,6 +90,7 @@ export default defineConfig({
     nav: [
       { text: "Home", link: "/" },
       { text: "Guide", link: "/guide/getting-started" },
+      { text: "Tools", link: "/tools/resize" },
       { text: "API Reference", link: "/api/rest" },
       { text: "Changelog", link: "/changelog" },
       {
@@ -114,6 +115,104 @@ export default defineConfig({
           { text: "Developer guide", link: "/guide/developer" },
           { text: "Translation guide", link: "/guide/translations" },
           { text: "Contributing", link: "/guide/contributing" },
+        ],
+      },
+      {
+        text: "Tools",
+        items: [
+          {
+            text: "Essentials",
+            items: [
+              { text: "Resize", link: "/tools/resize" },
+              { text: "Crop", link: "/tools/crop" },
+              { text: "Rotate & Flip", link: "/tools/rotate" },
+              { text: "Convert", link: "/tools/convert" },
+              { text: "Compress", link: "/tools/compress" },
+            ],
+          },
+          {
+            text: "Optimization",
+            items: [
+              { text: "Optimize for Web", link: "/tools/optimize-for-web" },
+              { text: "Remove Metadata", link: "/tools/strip-metadata" },
+              { text: "Edit Metadata", link: "/tools/edit-metadata" },
+              { text: "Bulk Rename", link: "/tools/bulk-rename" },
+              { text: "Image to PDF", link: "/tools/image-to-pdf" },
+              { text: "Favicon Generator", link: "/tools/favicon" },
+            ],
+          },
+          {
+            text: "Adjustments",
+            items: [
+              { text: "Adjust Colors", link: "/tools/adjust-colors" },
+              { text: "Sharpening", link: "/tools/sharpening" },
+              { text: "Replace & Invert Color", link: "/tools/replace-color" },
+              { text: "Color Blindness Simulation", link: "/tools/color-blindness" },
+            ],
+          },
+          {
+            text: "Watermark & Overlay",
+            items: [
+              { text: "Text Watermark", link: "/tools/watermark-text" },
+              { text: "Image Watermark", link: "/tools/watermark-image" },
+              { text: "Text Overlay", link: "/tools/text-overlay" },
+              { text: "Image Composition", link: "/tools/compose" },
+              { text: "Meme Generator", link: "/tools/meme-generator" },
+            ],
+          },
+          {
+            text: "Utilities",
+            items: [
+              { text: "Image Info", link: "/tools/info" },
+              { text: "Image Compare", link: "/tools/compare" },
+              { text: "Find Duplicates", link: "/tools/find-duplicates" },
+              { text: "Color Palette", link: "/tools/color-palette" },
+              { text: "QR Code Generator", link: "/tools/qr-generate" },
+              { text: "HTML to Image", link: "/tools/html-to-image" },
+              { text: "Barcode Reader", link: "/tools/barcode-read" },
+              { text: "Image to Base64", link: "/tools/image-to-base64" },
+            ],
+          },
+          {
+            text: "Layout",
+            items: [
+              { text: "Collage / Grid", link: "/tools/collage" },
+              { text: "Stitch / Combine", link: "/tools/stitch" },
+              { text: "Image Splitting", link: "/tools/split" },
+              { text: "Border & Frame", link: "/tools/border" },
+              { text: "Beautify Screenshot", link: "/tools/beautify" },
+            ],
+          },
+          {
+            text: "Format",
+            items: [
+              { text: "SVG to Raster", link: "/tools/svg-to-raster" },
+              { text: "Image to SVG", link: "/tools/vectorize" },
+              { text: "GIF Tools", link: "/tools/gif-tools" },
+              { text: "PDF to Image", link: "/tools/pdf-to-image" },
+            ],
+          },
+          {
+            text: "AI Tools",
+            items: [
+              { text: "Remove Background", link: "/tools/remove-background" },
+              { text: "Image Upscaling", link: "/tools/upscale" },
+              { text: "Object Eraser", link: "/tools/erase-object" },
+              { text: "OCR / Text Extraction", link: "/tools/ocr" },
+              { text: "Face / PII Blur", link: "/tools/blur-faces" },
+              { text: "Smart Crop", link: "/tools/smart-crop" },
+              { text: "Image Enhancement", link: "/tools/image-enhancement" },
+              { text: "Face Enhancement", link: "/tools/enhance-faces" },
+              { text: "AI Colorization", link: "/tools/colorize" },
+              { text: "Noise Removal", link: "/tools/noise-removal" },
+              { text: "Red Eye Removal", link: "/tools/red-eye-removal" },
+              { text: "Photo Restoration", link: "/tools/restore-photo" },
+              { text: "Passport Photo", link: "/tools/passport-photo" },
+              { text: "Content-Aware Resize", link: "/tools/content-aware-resize" },
+              { text: "AI Canvas Expand", link: "/tools/ai-canvas-expand" },
+              { text: "PNG Transparency Fixer", link: "/tools/transparency-fixer" },
+            ],
+          },
         ],
       },
       {

@@ -59,7 +59,7 @@ test.describe("Landing Homepage", () => {
   test("bento grid renders with search and tool count", async ({ page }) => {
     await expect(page.getByText("50+ tools. Zero cloud dependency.")).toBeVisible();
     await expect(page.getByPlaceholder("Search tools...")).toBeVisible();
-    await expect(page.getByText(/Showing 52 of 52 tools/)).toBeVisible();
+    await expect(page.getByText(/Showing 53 of 53 tools/)).toBeVisible();
   });
 
   test("enterprise section renders feature cards", async ({ page }) => {
