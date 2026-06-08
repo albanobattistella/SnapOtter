@@ -66,13 +66,15 @@ describe("Hero", () => {
 describe("TypingCursor", () => {
   it("renders the first phrase", () => {
     render(<TypingCursor />);
-    expect(screen.getByText("No signups. No accounts.")).toBeDefined();
+    expect(
+      screen.getByText("Your images never leave your server. Novel concept, right?"),
+    ).toBeDefined();
   });
 
-  it("uses a 3-second interval for rotation", () => {
+  it("uses a 5-second interval for rotation", () => {
     vi.useFakeTimers();
     render(<TypingCursor />);
-    const first = screen.getByText("No signups. No accounts.");
+    const first = screen.getByText("Your images never leave your server. Novel concept, right?");
     expect(first).toBeDefined();
     vi.useRealTimers();
   });
