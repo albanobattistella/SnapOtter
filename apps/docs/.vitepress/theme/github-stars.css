@@ -18,43 +18,49 @@
 
 /* Compact hero: reduce padding so entire page fits in one viewport */
 .VPHero {
-  padding-top: calc(var(--vp-nav-height) + 20px) !important;
+  padding-top: calc(var(--vp-nav-height) + 24px) !important;
   padding-bottom: 12px !important;
-  text-align: center;
 }
 
 .VPHero .main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
   max-width: 100%;
 }
 
-.VPHero .main .name,
+.VPHero .main .name {
+  max-width: none;
+}
+
 .VPHero .main .name .clip {
-  font-size: 28px;
-  line-height: 1.2;
+  font-size: 32px;
+  line-height: 1.15;
 }
 
 .VPHero .main .text {
   font-size: 32px;
-  line-height: 1.2;
+  line-height: 1.15;
+  max-width: none;
 }
 
 .VPHero .main .tagline {
   font-size: 15px;
-  line-height: 1.4;
-  padding-top: 4px;
-  max-width: 560px;
-  margin: 0 auto;
+  line-height: 1.45;
+  padding-top: 6px;
+  max-width: 520px;
 }
 
 .VPHero .main .actions {
-  padding-top: 12px;
+  padding-top: 14px;
   justify-content: center;
 }
 
 /* Quick start command banner on homepage */
 .quick-start-banner {
   max-width: 960px;
-  margin: 0 auto 12px;
+  margin: 0 auto 14px;
   padding: 0 24px;
   text-align: center;
 }
@@ -67,7 +73,7 @@
 /* Compact 3-column feature grid */
 .VPHomeFeatures {
   padding-top: 0 !important;
-  padding-bottom: 8px !important;
+  padding-bottom: 0 !important;
 }
 
 .VPFeatures .container {
@@ -86,27 +92,27 @@
 }
 
 .VPFeature {
-  padding: 16px;
+  padding: 16px 18px;
+  height: 100%;
 }
 
 .VPFeature .title {
-  font-size: 13px;
+  font-size: 13.5px;
   line-height: 1.3;
 }
 
 .VPFeature .details {
-  font-size: 11.5px;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .VPFooter {
-  padding: 12px 24px;
+  padding: 14px 24px;
 }
 
 .VPFooter .message,
 .VPFooter .copyright {
   font-size: 12px;
-  line-height: 1.4;
 }
 
 @media (max-width: 768px) {
@@ -114,7 +120,6 @@
     grid-template-columns: 1fr !important;
   }
 
-  .VPHero .main .name,
   .VPHero .main .name .clip {
     font-size: 24px;
   }
