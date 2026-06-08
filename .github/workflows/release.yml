@@ -108,15 +108,14 @@ jobs:
         run: |
           rm -rf apps/web/src apps/web/public apps/web/index.html apps/web/tsconfig.json
           rm -rf apps/landing apps/docs apps/demo
-          rm -rf tests .github .husky scripts
+          rm -rf tests .husky scripts
           rm -rf .releaserc.json biome.json .editorconfig .gitattributes
-          rm -rf .git .gitignore
           rm -f CHANGELOG.md README.md CONTRIBUTING.md SECURITY.md
 
           ARCHIVE_NAME="snapotter-v${VERSION}-linux-${ARCH}.tar.gz"
           cd ..
           mv SnapOtter snapotter
-          tar czf "/tmp/${ARCHIVE_NAME}" snapotter/
+          tar czf "/tmp/${ARCHIVE_NAME}" --exclude='.git' --exclude='.github' --exclude='.gitignore' snapotter/
           mv snapotter SnapOtter
           cd SnapOtter
 
