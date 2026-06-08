@@ -943,18 +943,20 @@ export function AutomatePage() {
                     )}
 
                     {!hasFile && (
-                      <div className="flex flex-col items-center gap-3 w-full max-w-md h-full min-h-0">
-                        <Dropzone
-                          onFiles={handleFiles}
-                          accept="image/*"
-                          multiple
-                          currentFiles={files}
-                          compact
-                        />
+                      <div className="flex flex-col items-center gap-2 w-full max-w-sm mx-auto py-2 min-h-0 overflow-hidden">
+                        <div className="w-full max-h-[120px] overflow-hidden">
+                          <Dropzone
+                            onFiles={handleFiles}
+                            accept="image/*"
+                            multiple
+                            currentFiles={files}
+                            compact
+                          />
+                        </div>
                         <button
                           type="button"
                           onClick={() => setLibraryModalOpen(true)}
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-primary border border-dashed border-primary/40 rounded-lg hover:bg-primary/5 transition-colors"
+                          className="flex items-center gap-2 px-4 py-1.5 text-sm text-primary border border-dashed border-primary/40 rounded-lg hover:bg-primary/5 transition-colors"
                         >
                           <FolderOpen className="h-4 w-4" />
                           {t.automate.importFromLibrary}
