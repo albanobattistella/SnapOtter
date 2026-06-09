@@ -67,6 +67,7 @@ export function FeatureInstallPrompt({
   const startTime = startTimes[bundle.id] ?? null;
   const displayName = toolName || bundle.name;
   const displayDescription = toolDescription || bundle.description;
+  const isRepair = bundle.status === "error";
 
   const [messageIndex, setMessageIndex] = useState(() =>
     Math.floor(Math.random() * PROGRESS_MESSAGES.length),
@@ -110,25 +111,33 @@ export function FeatureInstallPrompt({
     <div className="flex flex-col items-center justify-center h-full gap-6 text-center px-4">
       <Download className="h-16 w-16 text-muted-foreground" />
       <div className="space-y-2">
-        <h2 className="text-xl font-semibold text-foreground">{displayName}</h2>
-        <p className="text-muted-foreground max-w-md">{displayDescription}</p>
-        <p className="text-sm text-muted-foreground">
-          {format(t.features.requiresDownload, { size: bundle.estimatedSize })}
+        <h2 className="text-xl font-semibold text-foreground">
+          {isRepair ? t.features.repairRequired : displayName}
+        </h2>
+        <p className="text-muted-foreground max-w-md">
+          {isRepair ? t.features.repairDescription : displayDescription}
         </p>
+        {!isRepair && (
+          <p className="text-sm text-muted-foreground">
+            {format(t.features.requiresDownload, { size: bundle.estimatedSize })}
+          </p>
+        )}
       </div>
 
-      {error && (
+      {(error || (isRepair && bundle.error)) && (
         <div className="flex items-center gap-2 bg-destructive/10 text-destructive rounded-lg px-4 py-3 max-w-md w-full">
           <AlertCircle className="h-4 w-4 shrink-0" />
-          <span className="text-sm flex-1 text-start">{error}</span>
-          <button
-            type="button"
-            onClick={handleInstall}
-            className="flex items-center gap-1 text-sm font-medium hover:opacity-80"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            {t.features.retryButton}
-          </button>
+          <span className="text-sm flex-1 text-start">{error || bundle.error}</span>
+          {error && (
+            <button
+              type="button"
+              onClick={handleInstall}
+              className="flex items-center gap-1 text-sm font-medium hover:opacity-80"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              {t.features.retryButton}
+            </button>
+          )}
         </div>
       )}
 
@@ -163,7 +172,9 @@ export function FeatureInstallPrompt({
           onClick={handleInstall}
           className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 font-medium"
         >
-          {format(t.features.enableButton, { name: displayName })}
+          {isRepair
+            ? format(t.features.repairButton, { name: displayName })
+            : format(t.features.enableButton, { name: displayName })}
         </button>
       )}
     </div>
