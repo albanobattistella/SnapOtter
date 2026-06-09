@@ -6,7 +6,13 @@
  * - Auth Zod schemas enforce max length on username/password fields
  * - New storage env vars have correct defaults
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("../../apps/api/src/db/index.js", () => ({
+  db: {},
+  schema: {},
+}));
+
 import { loadEnv } from "../../apps/api/src/lib/env.js";
 import {
   changePasswordSchema,

@@ -1,4 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("../../../apps/api/src/db/index.js", () => ({
+  db: {
+    select: () => ({ from: () => ({ where: () => ({ get: () => null }) }) }),
+  },
+  schema: { roles: {}, settings: {} },
+}));
+
+vi.mock("../../../apps/api/src/plugins/auth.js", () => ({
+  getAuthUser: () => null,
+}));
+
 import { getPermissions, hasPermission } from "../../../apps/api/src/permissions.js";
 
 describe("role permissions", () => {

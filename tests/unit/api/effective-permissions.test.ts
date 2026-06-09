@@ -8,7 +8,13 @@
 import type { Permission, Role } from "@snapotter/shared";
 import { describe, expect, it, vi } from "vitest";
 
-// Mock the auth plugin to avoid transitively opening a SQLite connection
+vi.mock("../../../apps/api/src/db/index.js", () => ({
+  db: {
+    select: () => ({ from: () => ({ where: () => ({ get: () => null }) }) }),
+  },
+  schema: { roles: {}, settings: {} },
+}));
+
 vi.mock("../../../apps/api/src/plugins/auth.js", () => ({
   getAuthUser: () => null,
 }));
