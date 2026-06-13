@@ -58,10 +58,7 @@ const envSchema = z
     LIBREOFFICE_TIMEOUT_S: z.coerce.number().default(120),
     SESSION_DURATION_HOURS: z.coerce.number().default(168),
     LOGIN_ATTEMPT_LIMIT: z.coerce.number().default(30),
-    TRUST_PROXY: z
-      .enum(["true", "false"])
-      .default("false")
-      .transform((v) => v === "true"),
+    TRUST_PROXY: z.string().default("false"),
     OIDC_ENABLED: z
       .enum(["true", "false"])
       .default("false")

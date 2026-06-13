@@ -294,7 +294,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         await auditLog(request.log, "LOGIN_FAILED", {
           username: sanitizeAuditInput(body.username),
           reason: "unknown_user",
-        });
+        }, request.ip);
         return reply.status(401).send({ error: "Invalid credentials" });
       }
 
@@ -303,7 +303,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         await auditLog(request.log, "LOGIN_FAILED", {
           username: sanitizeAuditInput(body.username),
           reason: "bad_password",
-        });
+        }, request.ip);
         return reply.status(401).send({ error: "Invalid credentials" });
       }
 
@@ -317,7 +317,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         expiresAt,
       });
 
-      await auditLog(request.log, "LOGIN_SUCCESS", { userId: user.id, username: user.username });
+      await auditLog(request.log, "LOGIN_SUCCESS", { userId: user.id, username: user.username }, request.ip);
 
       const [teamRow] = await db.select().from(schema.teams).where(eq(schema.teams.id, user.team));
 
@@ -378,7 +378,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       cookieReply.clearCookie("snapotter-session", { path: "/" });
     }
 
-    await auditLog(request.log, "LOGOUT", { userId: user?.id });
+    await auditLog(request.log, "LOGOUT", { userId: user?.id }, request.ip);
     return reply.send({ ok: true, ...(logoutUrl && { logoutUrl }) });
   });
 
@@ -503,7 +503,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     await auditLog(request.log, "PASSWORD_CHANGED", {
       userId: authUser.id,
       username: authUser.username,
-    });
+    }, request.ip);
 
     return reply.send({ ok: true });
   });
@@ -674,7 +674,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       newUserId: id,
       newUsername: body.username,
       role,
-    });
+    }, request.ip);
 
     return reply.status(201).send({
       id,
@@ -788,7 +788,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         adminId: admin.id,
         targetUserId: id,
         changes: { role: updates.role, team: updates.team },
-      });
+      }, request.ip);
 
       return reply.send({ ok: true });
     },
@@ -849,7 +849,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         adminId: admin.id,
         targetUserId: id,
         targetUsername: user.username,
-      });
+      }, request.ip);
 
       return reply.send({ ok: true });
     },
@@ -887,7 +887,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         adminId: admin.id,
         deletedUserId: id,
         deletedUsername: user.username,
-      });
+      }, request.ip);
 
       return reply.send({ ok: true });
     },

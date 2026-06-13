@@ -263,7 +263,7 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
         userId,
         count: created.length,
         files: created.map((f) => f.originalName),
-      });
+      }, request.ip);
 
       return reply.status(201).send({ files: created });
     },
@@ -495,7 +495,7 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
       .map((f) => f.id);
 
     if (validIds.length === 0) {
-      await auditLog(request.log, "FILE_DELETED", { userId: user.id, count: 0, ids });
+      await auditLog(request.log, "FILE_DELETED", { userId: user.id, count: 0, ids }, request.ip);
       return reply.send({ deleted: 0 });
     }
 
@@ -546,7 +546,7 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
       userId: user.id,
       count: chainRows.length,
       ids,
-    });
+    }, request.ip);
 
     return reply.send({ deleted: chainRows.length });
   });

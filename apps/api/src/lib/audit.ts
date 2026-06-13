@@ -39,8 +39,9 @@ export async function auditLog(
   logger: FastifyBaseLogger,
   event: AuditEvent,
   details: Record<string, unknown> = {},
+  ip: string | null = null,
 ): Promise<void> {
-  logger.info({ audit: true, event, ...details }, `[AUDIT] ${event}`);
+  logger.info({ audit: true, event, ip, ...details }, `[AUDIT] ${event}`);
 
   const actorId = (details.userId as string) ?? (details.adminId as string) ?? null;
   const actorUsername = (details.username as string) ?? (details.newUsername as string) ?? "system";
@@ -56,7 +57,7 @@ export async function auditLog(
       targetType,
       targetId,
       details,
-      ipAddress: null,
+      ipAddress: ip,
     });
   } catch {
     logger.warn({ event }, "Failed to write audit log to DB");

@@ -86,7 +86,7 @@ export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(409).send({ error: "Failed to create API key" });
     }
 
-    await auditLog(request.log, "API_KEY_CREATED", { userId: user.id, keyId: id, keyName: name });
+    await auditLog(request.log, "API_KEY_CREATED", { userId: user.id, keyId: id, keyName: name }, request.ip);
 
     // Return the raw key ONCE — it cannot be retrieved again
     return reply.status(201).send({
@@ -155,7 +155,7 @@ export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
 
       await db.delete(schema.apiKeys).where(eq(schema.apiKeys.id, id));
 
-      await auditLog(request.log, "API_KEY_DELETED", { userId: user.id, keyId: id });
+      await auditLog(request.log, "API_KEY_DELETED", { userId: user.id, keyId: id }, request.ip);
 
       return reply.send({ ok: true });
     },

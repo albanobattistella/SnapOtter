@@ -172,6 +172,14 @@ await startCancelListener();
 ensureAiDirs();
 recoverInterruptedInstalls();
 
+function parseTrustProxy(value: string): boolean | number | string {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  const asNum = Number(value);
+  if (!Number.isNaN(asNum)) return asNum;
+  return value; // CIDR list
+}
+
 const app = Fastify({
   logger: {
     level: env.LOG_LEVEL,
@@ -194,7 +202,7 @@ const app = Fastify({
     redact: ["req.headers.authorization", "req.headers.cookie"],
   },
   bodyLimit: env.MAX_UPLOAD_SIZE_MB > 0 ? env.MAX_UPLOAD_SIZE_MB * 1024 * 1024 : 1073741824,
-  trustProxy: env.TRUST_PROXY,
+  trustProxy: parseTrustProxy(env.TRUST_PROXY),
   routerOptions: { maxParamLength: 500 },
 });
 

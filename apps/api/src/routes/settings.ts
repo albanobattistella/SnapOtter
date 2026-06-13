@@ -95,7 +95,7 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
         adminId: admin.id,
         username: admin.username,
         keys: entries.map((e) => e.key),
-      });
+      }, request.ip);
     }
 
     return reply.send({ ok: true, updatedCount: entries.length });

@@ -229,7 +229,7 @@ export async function oidcRoutes(app: FastifyInstance): Promise<void> {
       );
       await auditLog(request.log, "OIDC_LOGIN_FAILED", {
         reason: sanitizeAuditInput(String(query.error)),
-      });
+      }, request.ip);
       return redirectToLogin(reply, "oidc_auth_failed");
     }
 
@@ -257,7 +257,7 @@ export async function oidcRoutes(app: FastifyInstance): Promise<void> {
       });
     } catch (err) {
       request.log.error({ err }, "OIDC token exchange failed");
-      await auditLog(request.log, "OIDC_LOGIN_FAILED", { reason: "token_exchange_failed" });
+      await auditLog(request.log, "OIDC_LOGIN_FAILED", { reason: "token_exchange_failed" }, request.ip);
       return redirectToLogin(reply, "oidc_auth_failed");
     }
 
@@ -265,7 +265,7 @@ export async function oidcRoutes(app: FastifyInstance): Promise<void> {
     const claims = tokenResponse.claims();
     if (!claims) {
       request.log.error("OIDC callback: no ID token claims");
-      await auditLog(request.log, "OIDC_LOGIN_FAILED", { reason: "no_id_token" });
+      await auditLog(request.log, "OIDC_LOGIN_FAILED", { reason: "no_id_token" }, request.ip);
       return redirectToLogin(reply, "oidc_auth_failed");
     }
 
@@ -318,7 +318,7 @@ export async function oidcRoutes(app: FastifyInstance): Promise<void> {
           userId: existingByEmail.id,
           username: existingByEmail.username,
           email,
-        });
+        }, request.ip);
       }
     }
 
@@ -361,7 +361,7 @@ export async function oidcRoutes(app: FastifyInstance): Promise<void> {
         username: uniqueUsername,
         email,
         role: env.OIDC_DEFAULT_ROLE,
-      });
+      }, request.ip);
     }
 
     // 4d. No user found and no auto-create
@@ -370,7 +370,7 @@ export async function oidcRoutes(app: FastifyInstance): Promise<void> {
       await auditLog(request.log, "OIDC_LOGIN_FAILED", {
         reason: "user_not_authorized",
         sub: sanitizeAuditInput(String(sub)),
-      });
+      }, request.ip);
       return redirectToLogin(reply, "oidc_user_not_authorized");
     }
 
@@ -391,7 +391,7 @@ export async function oidcRoutes(app: FastifyInstance): Promise<void> {
     await auditLog(request.log, "OIDC_LOGIN_SUCCESS", {
       userId,
       username: user?.username ?? username,
-    });
+    }, request.ip);
 
     // 6. Set session cookie
     reply.setCookie("snapotter-session", token, {

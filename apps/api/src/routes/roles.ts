@@ -116,7 +116,7 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
       createdBy: user.id,
     });
 
-    await auditLog(request.log, "ROLE_CREATED", { adminId: user.id, roleId: id, roleName: name });
+    await auditLog(request.log, "ROLE_CREATED", { adminId: user.id, roleId: id, roleName: name }, request.ip);
 
     return reply.status(201).send({
       id,
@@ -185,7 +185,7 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
         }
         await tx.update(schema.roles).set(updates).where(eq(schema.roles.id, id));
       });
-      await auditLog(request.log, "ROLE_UPDATED", { adminId: user.id, roleId: id });
+      await auditLog(request.log, "ROLE_UPDATED", { adminId: user.id, roleId: id }, request.ip);
 
       return reply.send({ ok: true });
     },
@@ -220,7 +220,7 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
         adminId: user.id,
         roleId: id,
         roleName: role.name,
-      });
+      }, request.ip);
 
       return reply.send({ ok: true });
     },
