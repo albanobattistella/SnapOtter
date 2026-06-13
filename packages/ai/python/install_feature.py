@@ -1,4 +1,7 @@
-"""Install a feature bundle: pip packages + model downloads.
+"""Pre-built AI bundle installer for SnapOtter.
+
+Downloads a pre-built tar.gz archive (or uses a local file), verifies its
+SHA256 checksum, extracts site-packages and models, and writes installed.json.
 
 Invoked by the Node.js backend as a subprocess.
 
@@ -9,21 +12,22 @@ Progress is reported via JSON lines on stderr (parsed by the Node bridge).
 Final result is a JSON object on stdout.
 """
 
-import concurrent.futures
+import glob
+import hashlib
 import json
 import os
 import platform
 import shutil
 import subprocess
 import sys
+import tarfile
 import time
 import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────
-
+# -- Helpers --
 
 def emit_progress(percent: int, stage: str) -> None:
     """Emit a progress update via stderr JSON line."""
@@ -38,521 +42,205 @@ def fail(message: str) -> None:
     sys.exit(1)
 
 
+# -- Architecture detection --
+
 def detect_arch() -> str:
-    """Return 'arm64' or 'amd64' based on the host machine."""
+    """Return 'amd64-gpu' or 'arm64-cpu' based on host + GPU."""
     machine = platform.machine().lower()
     if machine in ("aarch64", "arm64"):
-        return "arm64"
-    return "amd64"
+        return "arm64-cpu"
+    return "amd64-gpu"
 
 
-def has_nvidia_gpu() -> bool:
-    """Check whether an NVIDIA GPU is accessible at runtime."""
-    try:
-        result = subprocess.run(
-            ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
-            capture_output=True, text=True, timeout=5,
+# -- Disk space --
+
+def check_disk_space(path: str, needed_bytes: int) -> None:
+    """Fail if insufficient disk space."""
+    usage = shutil.disk_usage(path)
+    if usage.free < needed_bytes:
+        free_gb = usage.free / (1024 ** 3)
+        need_gb = needed_bytes / (1024 ** 3)
+        fail(
+            f"Insufficient disk space: need {need_gb:.1f} GB, "
+            f"have {free_gb:.1f} GB free. "
+            f"Free up space and retry."
         )
-        return result.returncode == 0 and len(result.stdout.strip()) > 0
-    except (FileNotFoundError, subprocess.TimeoutExpired):
-        return False
 
 
-def cpu_fallback_packages(packages: list[str]) -> list[str]:
-    """Replace GPU-only packages with their CPU equivalents.
+# -- Venv site-packages discovery --
 
-    Called on amd64 when no NVIDIA GPU is detected so that onnxruntime /
-    paddlepaddle don't crash with a CUDA segfault.
-    Also replaces CUDA-pinned torch/torchvision with CPU-only versions.
-    """
-    replacements = {
-        "onnxruntime-gpu": "onnxruntime",
-        "paddlepaddle-gpu": "paddlepaddle",
-    }
-    result = []
-    for pkg in packages:
-        # Handle multi-package CUDA torch entries like:
-        # "torch==2.7.0+cu126 torchvision==0.22.0+cu126 --index-url ..."
-        first_token = pkg.split()[0] if pkg.strip() else ""
-        if first_token.startswith("torch==") and "+cu" in first_token:
-            # Extract torch and torchvision versions, use CPU-only index
-            cpu_pkgs = []
-            for token in pkg.split():
-                if token.startswith("torch==") and "+cu" in token:
-                    base_ver = token.split("+")[0]  # "torch==2.6.0"
-                    cpu_pkgs.append(base_ver)
-                elif token.startswith("torchvision==") and "+cu" in token:
-                    base_ver = token.split("+")[0]  # "torchvision==0.21.0"
-                    cpu_pkgs.append(base_ver)
-            # Use CPU-only wheels (~200MB vs ~2.6GB with CUDA)
-            cpu_pkgs.append("--index-url")
-            cpu_pkgs.append("https://download.pytorch.org/whl/cpu")
-            # Join into a single string so pip_install processes them as one command
-            result.append(" ".join(cpu_pkgs))
-            continue
-
-        name = pkg.split("==")[0].split(">=")[0].split("[")[0].strip()
-        if name in replacements:
-            # Extract only the version spec, drop any inline flags
-            # (e.g. "--extra-index-url https://...cu126/" is GPU-specific)
-            tokens = pkg.split()
-            version_token = tokens[0][len(name):]  # e.g. ">=3.2.1"
-            result.append(replacements[name] + version_token)
-        else:
-            result.append(pkg)
-    return result
-
-
-def check_disk_space(path: str, min_bytes: int = 100 * 1024 * 1024) -> None:
-    """Exit with a clear error if free disk space is below min_bytes."""
-    try:
-        usage = shutil.disk_usage(path)
-        if usage.free < min_bytes:
-            free_mb = usage.free / (1024 * 1024)
-            min_mb = min_bytes / (1024 * 1024)
-            fail(
-                f"Insufficient disk space: {free_mb:.0f} MB free, "
-                f"need at least {min_mb:.0f} MB"
-            )
-    except OSError as e:
-        # If we can't check, warn but continue
-        sys.stderr.write(f"Warning: could not check disk space: {e}\n")
-        sys.stderr.flush()
-
-
-# ── pip install ──────────────────────────────────────────────────────────
-
-
-def _pip_error_hint(package: str, stderr: str) -> str:
-    """Return a user-friendly hint for known pip install failure patterns."""
-    if "KeyError" in stderr and "__version__" in stderr:
-        return (
-            "The 'basicsr' dependency failed to build due to a known "
-            "compatibility issue with newer setuptools versions. "
-            "Try running: pip install basicsr==1.4.2 --no-build-isolation "
-            "inside the container, then retry this installation."
-        )
-    if "MemoryError" in stderr or "Cannot allocate memory" in stderr:
-        return (
-            "Installation ran out of memory. "
-            "Increase the container's memory limit to at least 6 GB and retry."
-        )
-    if "No space left on device" in stderr:
-        return (
-            "Disk space exhausted during package installation. "
-            "Free up disk space or increase the container's disk size and retry."
-        )
+def get_site_packages_dir(venv_path: str) -> str:
+    """Find the site-packages directory inside a Python venv."""
+    matches = glob.glob(os.path.join(venv_path, "lib", "python*", "site-packages"))
+    if matches:
+        return matches[0]
     return ""
 
 
-def pip_install(package: str, extra_flags: list[str] | None = None) -> None:
-    """Run pip install for a single package spec. Raises on failure."""
-    cmd = [sys.executable, "-m", "pip", "install", "--no-cache-dir"]
-    if extra_flags:
-        cmd.extend(extra_flags)
+# -- SHA256 verification --
 
-    # Package spec may include inline flags like
-    # "realesrgan==0.3.0 --extra-index-url https://..."
-    parts = package.split()
-    cmd.extend(parts)
-
-    result = subprocess.run(
-        cmd,
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode != 0:
-        stderr = result.stderr.strip()
-        hint = _pip_error_hint(package, stderr)
-        if hint:
-            raise RuntimeError(f"pip install failed for '{package}': {hint}")
-        tail = stderr[-500:] if len(stderr) > 500 else stderr
-        raise RuntimeError(f"pip install failed for '{package}': {tail}")
-
-
-def install_packages(bundle: dict, arch: str) -> None:
-    """Install pip packages for the bundle (common + arch-specific + post-install)."""
-    packages_section = bundle.get("packages", {})
-    common_pkgs = packages_section.get("common", [])
-    arch_pkgs = packages_section.get(arch, [])
-    all_pkgs = common_pkgs + arch_pkgs
-
-    # On amd64 without GPU, swap GPU packages for CPU equivalents to avoid
-    # segfaults from onnxruntime-gpu / paddlepaddle-gpu trying to init CUDA.
-    if arch == "amd64" and not has_nvidia_gpu():
-        all_pkgs = cpu_fallback_packages(all_pkgs)
-        sys.stderr.write("No NVIDIA GPU detected — using CPU package variants\n")
-        sys.stderr.flush()
-    pip_flags = bundle.get("pipFlags", {})
-    post_install = bundle.get("postInstall", [])
-
-    total_pkgs = len(all_pkgs) + len(post_install)
-    if total_pkgs == 0:
-        return
-
-    for i, pkg in enumerate(all_pkgs):
-        progress = int((i / total_pkgs) * 50)
-        # Extract display name(s) from package spec (may contain multiple
-        # packages and flags like "torch==2.6.0+cu126 torchvision==... --index-url ...")
-        tokens = [t for t in pkg.split() if not t.startswith("-") and "://" not in t]
-        pkg_name = ", ".join(t.split("==")[0].split(">=")[0].split("[")[0] for t in tokens) if tokens else pkg
-        emit_progress(progress, f"Installing {pkg_name}...")
-
-        # Check for package-specific pip flags
-        extra = None
-        for flag_key, flag_val in pip_flags.items():
-            if flag_key in pkg:
-                extra = flag_val.split() if isinstance(flag_val, str) else flag_val
+def verify_sha256(filepath: str, expected: str) -> bool:
+    """Stream-hash a file and compare to expected hex digest."""
+    h = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        while True:
+            chunk = f.read(8192)
+            if not chunk:
                 break
-        pip_install(pkg, extra)
-
-    # Post-install fixups (e.g., re-pin numpy after codeformer drags in a newer one)
-    for j, pkg in enumerate(post_install):
-        progress = int(((len(all_pkgs) + j) / total_pkgs) * 50)
-        pkg_name = pkg.split("==")[0].split(">=")[0].strip()
-        emit_progress(progress, f"Post-install: {pkg_name}...")
-        pip_install(pkg)
+            h.update(chunk)
+    return h.hexdigest() == expected
 
 
-def handle_nccl_conflict() -> None:
-    """Re-install torch's NCCL dependency if both torch and paddlepaddle-gpu coexist.
+# -- Download with resume --
 
-    PaddlePaddle ships its own NCCL, which can conflict with the version
-    that torch expects. Force-reinstalling torch's pinned nccl resolves this.
+def download_with_resume(
+    url: str,
+    dest: str,
+    expected_size: int,
+    progress_start: int,
+    progress_end: int,
+) -> None:
+    """Download a file with resume support via Range headers.
+
+    Uses .partial and .meta sidecar files for crash recovery.
     """
-    try:
-        from importlib.metadata import PackageNotFoundError, requires
+    partial_path = dest + ".partial"
+    meta_path = dest + ".meta"
 
-        # Only needed if both torch AND paddlepaddle-gpu are installed
+    # Check for existing partial download
+    bytes_downloaded = 0
+    if os.path.exists(partial_path) and os.path.exists(meta_path):
         try:
-            requires("torch")
-        except PackageNotFoundError:
-            return
-        try:
-            requires("paddlepaddle-gpu")
-        except PackageNotFoundError:
-            return
+            with open(meta_path, "r") as f:
+                meta = json.load(f)
+            bytes_downloaded = meta.get("bytesDownloaded", 0)
+            if bytes_downloaded > 0:
+                actual_size = os.path.getsize(partial_path)
+                if actual_size != bytes_downloaded:
+                    bytes_downloaded = 0  # Mismatch, restart
+        except (json.JSONDecodeError, OSError):
+            bytes_downloaded = 0
 
-        # Find torch's NCCL requirement
-        reqs = requires("torch") or []
-        nccl_reqs = [r.split(";")[0].strip() for r in reqs if "nccl" in r.lower()]
-        if nccl_reqs:
-            emit_progress(48, "Fixing NCCL conflict...")
-            subprocess.run(
-                [sys.executable, "-m", "pip", "install", nccl_reqs[0]],
-                capture_output=True,
-                text=True,
-            )
-    except Exception:
-        # Non-fatal — if we can't fix it, the user may not even hit the conflict
-        pass
-
-
-# ── Model downloads ──────────────────────────────────────────────────────
-
-
-def urlretrieve_with_retry(url: str, dest: str, max_retries: int = 3) -> None:
-    """Download a URL to a local file with retry + exponential backoff."""
-    for attempt in range(max_retries):
-        try:
-            req = urllib.request.Request(
-                url, headers={"User-Agent": "snapotter-installer/1.0"}
-            )
-            with urllib.request.urlopen(req, timeout=300) as resp, open(dest, "wb") as f:
-                shutil.copyfileobj(resp, f)
-            return
-        except Exception as e:
-            if attempt < max_retries - 1:
-                time.sleep(10 * (2 ** attempt))
-            else:
-                raise RuntimeError(f"Failed to download {url}: {e}")
-
-
-def download_url_model(model: dict, models_dir: str) -> None:
-    """Download a model via direct URL with atomic rename."""
-    rel_path = model["path"]
-    url = model["url"]
-    min_size = model.get("minSize", 0)
-    final_path = os.path.join(models_dir, rel_path)
-    tmp_path = final_path + ".downloading"
-
-    # Idempotent: skip if already present and big enough
-    if os.path.exists(final_path):
-        if min_size <= 0 or os.path.getsize(final_path) >= min_size:
-            return
-
-    os.makedirs(os.path.dirname(final_path), exist_ok=True)
-
-    # Clean up orphaned partial download
-    if os.path.exists(tmp_path):
-        os.remove(tmp_path)
-
-    urlretrieve_with_retry(url, tmp_path)
-
-    # Verify size
-    actual_size = os.path.getsize(tmp_path)
-    if min_size > 0 and actual_size < min_size:
-        os.remove(tmp_path)
-        raise RuntimeError(
-            f"Model {model['id']} too small: {actual_size} bytes "
-            f"(expected >= {min_size})"
-        )
-
-    # Atomic rename
-    os.rename(tmp_path, final_path)
-
-
-_matting_registered = False
-
-
-def _register_birefnet_matting() -> None:
-    """Register the custom BiRefNet-matting ONNX session.
-
-    This model is not built into rembg — it must be registered before
-    calling new_session("birefnet-matting").  The same registration is
-    done in remove_bg.py (runtime) and download_models.py (build-time).
-    """
-    global _matting_registered
-    if _matting_registered:
-        return
-    _matting_registered = True
-
-    import pooch
-    from rembg.sessions import sessions_class
-    from rembg.sessions.birefnet_general import BiRefNetSessionGeneral
-
-    class BiRefNetMattingSession(BiRefNetSessionGeneral):
-        @classmethod
-        def download_models(cls, *args, **kwargs):
-            fname = f"{cls.name(*args, **kwargs)}.onnx"
-            pooch.retrieve(
-                "https://github.com/ZhengPeng7/BiRefNet/releases/download/v1/BiRefNet-matting-epoch_100.onnx",
-                None,
-                fname=fname,
-                path=cls.u2net_home(*args, **kwargs),
-                progressbar=True,
-            )
-            return os.path.join(cls.u2net_home(*args, **kwargs), fname)
-
-        @classmethod
-        def name(cls, *args, **kwargs):
-            return "birefnet-matting"
-
-    sessions_class.append(BiRefNetMattingSession)
-
-
-_hr_matting_registered = False
-
-
-def _register_birefnet_hr_matting() -> None:
-    """Register the custom BiRefNet HR-matting ONNX session for 2048x2048 high-res matting.
-
-    Like _register_birefnet_matting(), this model is not built into rembg and
-    must be registered before calling new_session("birefnet-hr-matting").
-    """
-    global _hr_matting_registered
-    if _hr_matting_registered:
-        return
-    _hr_matting_registered = True
-
-    import numpy as np
-    import pooch
-    from PIL import Image
-    from rembg.sessions import sessions_class
-    from rembg.sessions.birefnet_general import BiRefNetSessionGeneral
-
-    class BiRefNetHRMattingSession(BiRefNetSessionGeneral):
-        @classmethod
-        def download_models(cls, *args, **kwargs):
-            fname = f"{cls.name(*args, **kwargs)}.onnx"
-            pooch.retrieve(
-                "https://github.com/ZhengPeng7/BiRefNet/releases/download/v1/BiRefNet_HR-matting-epoch_135.onnx",
-                None,
-                fname=fname,
-                path=cls.u2net_home(*args, **kwargs),
-                progressbar=True,
-            )
-            return os.path.join(cls.u2net_home(*args, **kwargs), fname)
-
-        @classmethod
-        def name(cls, *args, **kwargs):
-            return "birefnet-hr-matting"
-
-        def predict(self, img, *args, **kwargs):
-            ort_outs = self.inner_session.run(
-                None,
-                self.normalize(
-                    img, (0.485, 0.456, 0.406), (0.229, 0.224, 0.225), (2048, 2048)
-                ),
-            )
-            pred = ort_outs[0][:, 0, :, :]
-            ma = np.max(pred)
-            mi = np.min(pred)
-            denom = ma - mi
-            pred = (pred - mi) / denom if denom > 0 else pred * 0
-            pred = np.squeeze(pred)
-            mask = Image.fromarray((pred * 255).astype("uint8"), mode="L")
-            mask = mask.resize(img.size, Image.LANCZOS)
-            return [mask]
-
-    sessions_class.append(BiRefNetHRMattingSession)
-
-
-def download_rembg_session(model: dict, models_dir: str) -> None:
-    """Download a rembg model by initializing a session."""
-    args = model.get("args", [])
-    if not args:
-        raise RuntimeError(f"rembg_session model {model['id']} has no args")
-
-    model_name = args[0]
-
-    # Set U2NET_HOME so rembg stores models in our models_dir
-    u2net_dir = os.path.join(models_dir, "rembg")
-    os.makedirs(u2net_dir, exist_ok=True)
-    os.environ["U2NET_HOME"] = u2net_dir
-
-    try:
-        from rembg import new_session
-    except ImportError:
-        raise RuntimeError(
-            f"rembg package not available for model '{model_name}' "
-            f"-- pip install may have failed in an earlier step"
-        )
-    _register_birefnet_matting()
-    _register_birefnet_hr_matting()
-    try:
-        new_session(model_name)
-    except Exception as e:
-        raise RuntimeError(
-            f"Failed to download rembg model '{model_name}': {e}. "
-            f"This is usually caused by network issues (timeouts or rate limiting). "
-            f"Check your internet connection and retry."
-        )
-
-
-def download_hf_snapshot(model: dict, models_dir: str) -> None:
-    """Download a model via huggingface_hub.snapshot_download."""
-    args = model.get("args", [])
-    if len(args) < 2:
-        raise RuntimeError(
-            f"hf_snapshot model {model['id']} needs [repo_id, local_subdir]"
-        )
-
-    repo_id = args[0]
-    local_subdir = args[1]
-    local_dir = os.path.join(models_dir, local_subdir)
-    repo_type = model.get("repoType", "model")
-    min_size = model.get("minSize", 0)
-    target_file = model.get("file")
-
-    os.makedirs(local_dir, exist_ok=True)
-
-    # Idempotent: if target file exists and meets minSize, skip
-    if target_file:
-        final_file = os.path.join(local_dir, target_file)
-        if os.path.exists(final_file):
-            if min_size <= 0 or os.path.getsize(final_file) >= min_size:
-                return
-
-    from huggingface_hub import snapshot_download
-
-    kwargs: dict = {"repo_id": repo_id, "local_dir": local_dir, "repo_type": repo_type}
-    if target_file:
-        kwargs["allow_patterns"] = [target_file]
+    if bytes_downloaded == 0 and os.path.exists(partial_path):
+        os.unlink(partial_path)
 
     max_retries = 3
     for attempt in range(max_retries):
         try:
-            snapshot_download(**kwargs)
-            break
+            headers = {"User-Agent": "snapotter-installer/2.0"}
+            if bytes_downloaded > 0:
+                headers["Range"] = f"bytes={bytes_downloaded}-"
+                emit_progress(
+                    progress_start,
+                    f"Resuming download from {bytes_downloaded / (1024**3):.1f} GB...",
+                )
+
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=300) as resp:
+                mode = "ab" if bytes_downloaded > 0 else "wb"
+                with open(partial_path, mode) as f:
+                    while True:
+                        chunk = resp.read(65536)
+                        if not chunk:
+                            break
+                        f.write(chunk)
+                        bytes_downloaded += len(chunk)
+
+                        # Update progress
+                        if expected_size > 0:
+                            pct = bytes_downloaded / expected_size
+                            progress = int(
+                                progress_start + pct * (progress_end - progress_start)
+                            )
+                            progress = min(progress, progress_end)
+                            stage = f"Downloading... {bytes_downloaded / (1024**3):.1f} GB"
+                            emit_progress(progress, stage)
+
+                        # Write meta periodically (every 10 MB)
+                        if bytes_downloaded % (10 * 1024 * 1024) < 65536:
+                            with open(meta_path, "w") as mf:
+                                json.dump({"bytesDownloaded": bytes_downloaded}, mf)
+
+            # Download complete
+            os.rename(partial_path, dest)
+            if os.path.exists(meta_path):
+                os.unlink(meta_path)
+            return
+
         except Exception as e:
+            # Write meta for resume on next attempt
+            with open(meta_path, "w") as mf:
+                json.dump({"bytesDownloaded": bytes_downloaded}, mf)
+
             if attempt < max_retries - 1:
                 delay = 10 * (2 ** attempt)
-                sys.stderr.write(
-                    f"HuggingFace download failed for {model.get('id', repo_id)} "
-                    f"(attempt {attempt + 1}/{max_retries}), retrying in {delay}s: {e}\n"
+                emit_progress(
+                    progress_start,
+                    f"Download failed (attempt {attempt + 1}/{max_retries}), "
+                    f"retrying in {delay}s: {e}",
                 )
-                sys.stderr.flush()
                 time.sleep(delay)
             else:
+                # Clean up on final failure
+                for p in (partial_path, meta_path):
+                    if os.path.exists(p):
+                        os.unlink(p)
                 raise RuntimeError(
-                    f"Failed to download {model.get('id', repo_id)} from "
-                    f"HuggingFace repo {repo_id} after {max_retries} attempts: {e}"
+                    f"Failed to download after {max_retries} attempts: {e}"
                 )
 
-    # Verify file size if applicable
-    if target_file and min_size > 0:
-        final_file = os.path.join(local_dir, target_file)
-        if os.path.exists(final_file):
-            actual = os.path.getsize(final_file)
-            if actual < min_size:
-                raise RuntimeError(
-                    f"Model {model['id']} file {target_file} too small: "
-                    f"{actual} bytes (expected >= {min_size})"
-                )
-        else:
-            raise RuntimeError(
-                f"Model {model['id']} file {target_file} not found after download"
-            )
+
+# -- Safe tar extraction --
+
+def safe_extract(tar_path: str, staging_dir: str) -> None:
+    """Extract a tar.gz with security guards."""
+    os.makedirs(staging_dir, exist_ok=True)
+    with tarfile.open(tar_path, "r:gz") as tf:
+        for member in tf.getmembers():
+            # Block symlinks, hardlinks, devices
+            if not member.isfile() and not member.isdir():
+                raise RuntimeError(f"Blocked unsafe tar entry type: {member.name}")
+            # Block absolute paths and traversal
+            if member.name.startswith("/") or ".." in member.name.split("/"):
+                raise RuntimeError(f"Blocked unsafe tar path: {member.name}")
+        tf.extractall(staging_dir, filter="data")
 
 
-def download_single_model(model: dict, models_dir: str) -> None:
-    """Dispatch to the correct download function for a single model entry."""
-    download_fn = model.get("downloadFn")
-    if download_fn == "rembg_session":
-        download_rembg_session(model, models_dir)
-    elif download_fn == "hf_snapshot":
-        download_hf_snapshot(model, models_dir)
-    elif "url" in model and "path" in model:
-        download_url_model(model, models_dir)
-    else:
-        raise RuntimeError(
-            f"Model {model['id']} has no recognized download method"
-        )
+# -- File move --
+
+def move_tree(src: str, dst: str) -> None:
+    """Recursively merge src into dst, overwriting existing files."""
+    if os.path.isdir(src):
+        shutil.copytree(src, dst, dirs_exist_ok=True)
+        shutil.rmtree(src)
 
 
-def download_models(models: list[dict], models_dir: str) -> list[str]:
-    """Download all models in parallel. Returns list of failed model IDs."""
-    if not models:
-        return []
+# -- Fixups (NCCL wheel) --
 
-    failed: list[str] = []
-    total = len(models)
-
-    def _download(idx: int, model: dict) -> tuple[str, Exception | None]:
-        model_id = model.get("id", f"model-{idx}")
+def apply_fixups(staging_dir: str, venv_path: str) -> None:
+    """Install any wheels from fixups/ directory (local only, no network)."""
+    fixups_dir = os.path.join(staging_dir, "fixups")
+    if not os.path.isdir(fixups_dir):
+        return
+    wheels = [f for f in os.listdir(fixups_dir) if f.endswith(".whl")]
+    if not wheels:
+        return
+    python_path = os.path.join(venv_path, "bin", "python3")
+    if not os.path.exists(python_path):
+        return
+    for wheel in wheels:
+        pkg_name = wheel.split("-")[0]
         try:
-            download_single_model(model, models_dir)
-            return (model_id, None)
-        except Exception as e:
-            return (model_id, e)
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-        futures = {
-            pool.submit(_download, i, m): i
-            for i, m in enumerate(models)
-        }
-
-        completed = 0
-        for future in concurrent.futures.as_completed(futures):
-            completed += 1
-            progress = 50 + int((completed / total) * 50)
-
-            model_id, error = future.result()
-            if error:
-                failed.append(model_id)
-                sys.stderr.write(
-                    f"Error downloading {model_id}: {error}\n"
-                )
-                sys.stderr.flush()
-            else:
-                emit_progress(progress, f"Downloaded {model_id}")
-
-    return failed
+            subprocess.run(
+                [python_path, "-m", "pip", "install", "--no-index",
+                 f"--find-links={fixups_dir}", pkg_name],
+                capture_output=True, text=True, timeout=60,
+            )
+        except Exception:
+            pass  # Non-fatal
 
 
-# ── installed.json management ────────────────────────────────────────────
-
+# -- installed.json management --
 
 def read_installed(ai_dir: str) -> dict:
     """Read the current installed.json, returning empty structure if missing."""
@@ -576,15 +264,9 @@ def write_installed_atomic(ai_dir: str, data: dict) -> None:
     os.rename(tmp_path, path)
 
 
-# ── Main ─────────────────────────────────────────────────────────────────
-
+# -- Main --
 
 def main() -> None:
-    if sys.version_info >= (3, 14):
-        print(f"[WARN] Python {sys.version_info.major}.{sys.version_info.minor} detected. "
-              f"Some packages may not have pre-built wheels. Build from source may be attempted.",
-              file=sys.stderr, flush=True)
-
     if len(sys.argv) < 4:
         fail(
             f"Usage: {sys.argv[0]} <bundleId> <manifestPath> <modelsDir>\n"
@@ -594,71 +276,153 @@ def main() -> None:
     bundle_id = sys.argv[1]
     manifest_path = sys.argv[2]
     models_dir = sys.argv[3]
-
-    # Derive AI dir (parent of models dir)
     ai_dir = os.path.dirname(models_dir)
+    staging_base = os.path.join(ai_dir, "staging")
+    venv_path = os.environ.get("PYTHON_VENV_PATH", os.path.join(ai_dir, "venv"))
 
-    # ── Load manifest ────────────────────────────────────────────────────
-
+    # -- Load manifest --
     emit_progress(0, "Reading manifest...")
 
     try:
         with open(manifest_path, "r") as f:
             manifest = json.load(f)
-    except (OSError, json.JSONDecodeError) as e:
-        fail(f"Cannot read manifest at {manifest_path}: {e}")
+    except Exception as e:
+        fail(f"Failed to read manifest: {e}")
 
     bundles = manifest.get("bundles", {})
     if bundle_id not in bundles:
-        fail(f"Bundle '{bundle_id}' not found in manifest")
+        fail(f"Unknown bundle: {bundle_id}")
 
     bundle = bundles[bundle_id]
-    version = manifest.get("imageVersion", "0.0.0")
+    archives = bundle.get("archives")
+    if not archives:
+        fail(f"Bundle '{bundle_id}' has no archives in manifest (v2 required)")
 
-    # ── Detect architecture ──────────────────────────────────────────────
-
+    # -- Detect architecture --
     arch = detect_arch()
-    emit_progress(1, f"Architecture: {arch}")
+    archive = archives.get(arch)
+    if not archive:
+        fail(f"No archive for architecture '{arch}' in bundle '{bundle_id}'")
 
-    # ── Disk space pre-check ─────────────────────────────────────────────
+    archive_file = archive["file"]
+    expected_sha256 = archive["sha256"]
+    compressed_size = archive.get("compressedSize", 0)
+    extracted_size = archive.get("extractedSize", 0)
 
-    check_disk_space(models_dir)
+    # -- Check for local file override (testing / offline) --
+    local_path = os.environ.get("SNAPOTTER_BUNDLE_LOCAL_PATH")
 
-    # ── Install pip packages ─────────────────────────────────────────────
+    if local_path:
+        # Local mode: use the file directly, verify checksum
+        emit_progress(5, "Using local bundle archive...")
+        tar_path = local_path
 
-    emit_progress(2, "Installing packages...")
+        if not os.path.exists(tar_path):
+            fail(f"Local bundle file not found: {tar_path}")
+
+        # Verify checksum
+        emit_progress(10, "Verifying checksum...")
+        if not verify_sha256(tar_path, expected_sha256):
+            fail(
+                f"SHA256 checksum mismatch for local file.\n"
+                f"Expected: {expected_sha256}\n"
+                f"This usually means the manifest and archive are out of sync."
+            )
+    else:
+        # Remote mode: download from HuggingFace
+        bundle_repo = manifest.get("bundleRepo", "snapotter/feature-bundles")
+        url = f"https://huggingface.co/{bundle_repo}/resolve/main/{archive_file}"
+
+        # Disk space check
+        needed = compressed_size + extracted_size + 500 * 1024 * 1024  # 500 MB buffer
+        if needed > 0:
+            check_disk_space(ai_dir, needed)
+
+        # Download
+        os.makedirs(staging_base, exist_ok=True)
+        tar_path = os.path.join(staging_base, f"{bundle_id}-{arch}.tar.gz")
+
+        emit_progress(2, f"Downloading {bundle.get('name', bundle_id)} bundle...")
+
+        try:
+            download_with_resume(url, tar_path, compressed_size, 2, 85)
+        except RuntimeError as e:
+            fail(
+                f"{e}\n\n"
+                f"You can download the bundle manually from:\n"
+                f"  {url}\n"
+                f"Then upload it via Settings > AI Features > Offline Import."
+            )
+
+        # Verify checksum
+        emit_progress(86, "Verifying integrity...")
+        if not verify_sha256(tar_path, expected_sha256):
+            # Delete and retry once from scratch
+            os.unlink(tar_path)
+            emit_progress(86, "Checksum mismatch, retrying download...")
+            try:
+                download_with_resume(url, tar_path, compressed_size, 2, 85)
+            except RuntimeError as e:
+                fail(str(e))
+
+            if not verify_sha256(tar_path, expected_sha256):
+                os.unlink(tar_path)
+                fail(
+                    f"SHA256 checksum mismatch after re-download.\n"
+                    f"Expected: {expected_sha256}\n"
+                    f"The archive may be corrupted. Try again later."
+                )
+
+    # -- Extract to staging --
+    staging_dir = os.path.join(ai_dir, f"staging-{bundle_id}")
+    emit_progress(88, "Extracting packages and models...")
+
     try:
-        install_packages(bundle, arch)
-    except RuntimeError as e:
-        fail(str(e))
+        if os.path.exists(staging_dir):
+            shutil.rmtree(staging_dir)
+        safe_extract(tar_path, staging_dir)
+    except Exception as e:
+        if os.path.exists(staging_dir):
+            shutil.rmtree(staging_dir, ignore_errors=True)
+        fail(f"Failed to extract archive: {e}")
 
-    emit_progress(50, "Packages installed")
+    # -- Read bundle.json from tar --
+    bundle_json_path = os.path.join(staging_dir, "bundle.json")
+    if not os.path.exists(bundle_json_path):
+        shutil.rmtree(staging_dir, ignore_errors=True)
+        fail("Archive is missing bundle.json")
 
-    # ── NCCL conflict handling ───────────────────────────────────────────
+    try:
+        with open(bundle_json_path, "r") as f:
+            bundle_meta = json.load(f)
+    except Exception as e:
+        shutil.rmtree(staging_dir, ignore_errors=True)
+        fail(f"Invalid bundle.json: {e}")
 
-    handle_nccl_conflict()
+    version = bundle_meta.get("version", manifest.get("imageVersion", "unknown"))
+    model_ids = bundle_meta.get("models", [])
 
-    # ── Download models ──────────────────────────────────────────────────
+    # -- Move site-packages --
+    emit_progress(92, "Installing packages...")
+    site_packages_dir = get_site_packages_dir(venv_path)
+    staging_sp = os.path.join(staging_dir, "site-packages")
 
-    models = bundle.get("models", [])
-    model_ids = [m.get("id", f"model-{i}") for i, m in enumerate(models)]
+    if os.path.isdir(staging_sp) and site_packages_dir:
+        move_tree(staging_sp, site_packages_dir)
 
-    emit_progress(50, "Downloading models...")
+    # -- Move models --
+    emit_progress(95, "Installing models...")
+    staging_models = os.path.join(staging_dir, "models")
+    if os.path.isdir(staging_models):
+        os.makedirs(models_dir, exist_ok=True)
+        move_tree(staging_models, models_dir)
 
-    os.makedirs(models_dir, exist_ok=True)
-    failed = download_models(models, models_dir)
+    # -- Apply fixups --
+    emit_progress(97, "Finalizing...")
+    apply_fixups(staging_dir, venv_path)
 
-    if failed:
-        fail(
-            f"Failed to download {len(failed)} model(s): {', '.join(failed)}. "
-            f"This is usually caused by network issues (timeouts, DNS, or rate limiting). "
-            f"Check your internet connection and retry the installation."
-        )
-
-    # ── Write installed.json ─────────────────────────────────────────────
-
-    emit_progress(98, "Finalizing...")
-
+    # -- Write installed.json --
+    emit_progress(98, "Recording installation...")
     installed = read_installed(ai_dir)
     installed["bundles"][bundle_id] = {
         "version": version,
@@ -667,8 +431,14 @@ def main() -> None:
     }
     write_installed_atomic(ai_dir, installed)
 
-    # ── Report success ───────────────────────────────────────────────────
+    # -- Cleanup --
+    if os.path.exists(staging_dir):
+        shutil.rmtree(staging_dir, ignore_errors=True)
+    # Clean up downloaded tar (but not if local override)
+    if not local_path and os.path.exists(tar_path):
+        os.unlink(tar_path)
 
+    # -- Done --
     emit_progress(100, "Complete")
 
     result = {
