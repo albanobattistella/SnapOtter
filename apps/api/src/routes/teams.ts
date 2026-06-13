@@ -14,7 +14,7 @@ import { z } from "zod";
 import { db, schema } from "../db/index.js";
 import { requirePermission } from "../permissions.js";
 
-const teamNameSchema = z.object({
+const teamBodySchema = z.object({
   name: z
     .string({ required_error: "Team name is required" })
     .transform((v) => v.trim())
@@ -24,6 +24,8 @@ const teamNameSchema = z.object({
         .min(1, "Team name is required")
         .max(50, "Team name must be 50 characters or fewer"),
     ),
+  storageQuota: z.number().int().positive().nullable().optional(),
+  retentionHours: z.number().int().positive().nullable().optional(),
 });
 
 export async function teamsRoutes(app: FastifyInstance): Promise<void> {
@@ -36,6 +38,8 @@ export async function teamsRoutes(app: FastifyInstance): Promise<void> {
       .select({
         id: schema.teams.id,
         name: schema.teams.name,
+        storageQuota: schema.teams.storageQuota,
+        retentionHours: schema.teams.retentionHours,
         memberCount: sql<number>`(SELECT COUNT(*)::int FROM users WHERE users.team = ${schema.teams.id})`,
         createdAt: schema.teams.createdAt,
       })
@@ -54,14 +58,14 @@ export async function teamsRoutes(app: FastifyInstance): Promise<void> {
     const admin = await requirePermission("teams:manage")(request, reply);
     if (!admin) return;
 
-    const parsed = teamNameSchema.safeParse(request.body);
+    const parsed = teamBodySchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
         error: parsed.error.issues.map((i) => i.message).join("; "),
         code: "VALIDATION_ERROR",
       });
     }
-    const trimmedName = parsed.data.name;
+    const { name: trimmedName, storageQuota, retentionHours } = parsed.data;
 
     // Check for duplicate name (case-insensitive)
     const [existing] = await db
@@ -75,9 +79,19 @@ export async function teamsRoutes(app: FastifyInstance): Promise<void> {
 
     const id = randomUUID();
 
-    await db.insert(schema.teams).values({ id, name: trimmedName });
+    await db.insert(schema.teams).values({
+      id,
+      name: trimmedName,
+      storageQuota: storageQuota ?? null,
+      retentionHours: retentionHours ?? null,
+    });
 
-    return reply.status(201).send({ id, name: trimmedName });
+    return reply.status(201).send({
+      id,
+      name: trimmedName,
+      storageQuota: storageQuota ?? null,
+      retentionHours: retentionHours ?? null,
+    });
   });
 
   // PUT /api/v1/teams/:id — Rename team (admin only)
@@ -94,14 +108,14 @@ export async function teamsRoutes(app: FastifyInstance): Promise<void> {
         return reply.status(404).send({ error: "Team not found", code: "NOT_FOUND" });
       }
 
-      const parsed = teamNameSchema.safeParse(request.body);
+      const parsed = teamBodySchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.status(400).send({
           error: parsed.error.issues.map((i) => i.message).join("; "),
           code: "VALIDATION_ERROR",
         });
       }
-      const trimmedName = parsed.data.name;
+      const { name: trimmedName, storageQuota, retentionHours } = parsed.data;
 
       // Check for duplicate name (case-insensitive), excluding current team
       const [duplicate] = await db
@@ -115,7 +129,11 @@ export async function teamsRoutes(app: FastifyInstance): Promise<void> {
         return reply.status(409).send({ error: "Team name already exists", code: "CONFLICT" });
       }
 
-      await db.update(schema.teams).set({ name: trimmedName }).where(eq(schema.teams.id, id));
+      const updateFields: Partial<typeof schema.teams.$inferInsert> = { name: trimmedName };
+      if (storageQuota !== undefined) updateFields.storageQuota = storageQuota;
+      if (retentionHours !== undefined) updateFields.retentionHours = retentionHours;
+
+      await db.update(schema.teams).set(updateFields).where(eq(schema.teams.id, id));
 
       return reply.send({ ok: true });
     },

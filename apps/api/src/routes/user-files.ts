@@ -82,26 +82,63 @@ function serializeFile(row: typeof schema.userFiles.$inferSelect) {
 }
 
 /**
- * Check whether a user has exceeded their storage quota.
- * Returns the total bytes used, or throws if the quota is exceeded.
+ * Check whether a user (and their team) has exceeded their storage quota.
+ * Uses the pre-computed storageUsed counter on the users table.
+ * Throws with statusCode 413 if the quota is exceeded.
  */
-async function checkStorageQuota(userId: string | null): Promise<void> {
-  if (!userId || env.MAX_STORAGE_PER_USER_MB <= 0) return;
+async function checkStorageQuota(userId: string | null, additionalBytes = 0): Promise<void> {
+  if (!userId) return;
 
-  const [result] = await db
-    .select({ total: sql<number>`coalesce(sum(${schema.userFiles.size}), 0)` })
-    .from(schema.userFiles)
-    .where(eq(schema.userFiles.userId, userId));
+  const [user] = await db
+    .select({
+      storageUsed: schema.users.storageUsed,
+      storageQuota: schema.users.storageQuota,
+      team: schema.users.team,
+    })
+    .from(schema.users)
+    .where(eq(schema.users.id, userId))
+    .limit(1);
 
-  const usedBytes = result?.total ?? 0;
-  const limitBytes = env.MAX_STORAGE_PER_USER_MB * 1024 * 1024;
+  if (!user) return;
+  const { storageUsed, storageQuota, team } = user;
 
-  if (usedBytes >= limitBytes) {
+  // Per-user quota: user-level override, then env fallback
+  const userLimit =
+    storageQuota ??
+    (env.MAX_STORAGE_PER_USER_MB > 0 ? env.MAX_STORAGE_PER_USER_MB * 1024 * 1024 : 0);
+  if (userLimit > 0 && storageUsed + additionalBytes > userLimit) {
     const error = new Error(
-      `Storage quota exceeded. Used ${(usedBytes / (1024 * 1024)).toFixed(1)}MB of ${env.MAX_STORAGE_PER_USER_MB}MB`,
+      `Storage quota exceeded. Used ${((storageUsed + additionalBytes) / (1024 * 1024)).toFixed(1)}MB of ${(userLimit / (1024 * 1024)).toFixed(1)}MB`,
     );
     (error as Error & { statusCode: number }).statusCode = 413;
     throw error;
+  }
+
+  // Per-team quota
+  if (team) {
+    const [teamRow] = await db
+      .select({ storageQuota: schema.teams.storageQuota })
+      .from(schema.teams)
+      .where(eq(schema.teams.id, team))
+      .limit(1);
+
+    if (teamRow?.storageQuota) {
+      const [teamUsed] = await db
+        .select({
+          total: sql<number>`coalesce(sum(${schema.users.storageUsed}), 0)`,
+        })
+        .from(schema.users)
+        .where(eq(schema.users.team, team));
+
+      const teamTotal = Number(teamUsed.total);
+      if (teamTotal + additionalBytes > teamRow.storageQuota) {
+        const error = new Error(
+          `Team storage quota exceeded. Team used ${((teamTotal + additionalBytes) / (1024 * 1024)).toFixed(1)}MB of ${(teamRow.storageQuota / (1024 * 1024)).toFixed(1)}MB`,
+        );
+        (error as Error & { statusCode: number }).statusCode = 413;
+        throw error;
+      }
+    }
   }
 }
 
