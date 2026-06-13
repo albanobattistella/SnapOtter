@@ -21,14 +21,31 @@ export ARCH="${2:?Usage: build-bundle.sh <bundleId> <arch> <outputDir>}"
 OUTPUT_DIR="${3:?Usage: build-bundle.sh <bundleId> <arch> <outputDir>}"
 
 MANIFEST="/app/docker/feature-manifest.json"
-SITE_PACKAGES="$(python3 -c 'import site; print(site.getsitepackages()[0])')"
+VENV_PATH="${PYTHON_VENV_PATH:-/opt/venv}"
 export MODELS_DIR="/tmp/bundle-models"
 export BUILD_DIR="/tmp/bundle-build"
+
+# When running with --entrypoint bash (bypassing entrypoint.sh), the venv
+# at /data/ai/venv won't exist yet. Use /opt/venv directly -- it's the base
+# venv baked into the Docker image, and that's exactly what we want as the
+# starting point for building bundle deltas.
+if [[ ! -f "${VENV_PATH}/bin/activate" && -f "/opt/venv/bin/activate" ]]; then
+  VENV_PATH="/opt/venv"
+fi
+
+# Activate the venv so pip/python3 use it (not system Python)
+if [[ -f "${VENV_PATH}/bin/activate" ]]; then
+  # shellcheck disable=SC1091
+  source "${VENV_PATH}/bin/activate"
+fi
+
+SITE_PACKAGES="$("${VENV_PATH}/bin/python3" -c 'import site; print(site.getsitepackages()[0])')"
 
 # Parse platform from arch: amd64-gpu -> amd64, arm64-cpu -> arm64
 export PLATFORM="${ARCH%%-*}"
 
 echo "=== Building bundle: ${BUNDLE_ID} arch=${ARCH} platform=${PLATFORM} ==="
+echo "Venv: ${VENV_PATH}"
 echo "Site-packages: ${SITE_PACKAGES}"
 
 # Validate manifest exists
@@ -85,7 +102,7 @@ for pkg_string in packages:
             break
 
     # pkg_string may contain embedded flags (e.g. --index-url), so pass as-is
-    cmd = f"pip install --no-cache-dir {extra_flags} {pkg_string}".strip()
+    cmd = f"{sys.executable} -m pip install --no-cache-dir {extra_flags} {pkg_string}".strip()
     print(f"  > {cmd}", flush=True)
     result = subprocess.run(cmd, shell=True)
     if result.returncode != 0:
@@ -111,7 +128,7 @@ if not post_install:
     sys.exit(0)
 
 for pkg in post_install:
-    cmd = f"pip install --no-cache-dir --force-reinstall {pkg}"
+    cmd = f"{sys.executable} -m pip install --no-cache-dir --force-reinstall {pkg}"
     print(f"  > {cmd}", flush=True)
     result = subprocess.run(cmd, shell=True)
     if result.returncode != 0:
@@ -135,7 +152,7 @@ if not base_packages:
     sys.exit(0)
 
 pkgs = " ".join(base_packages)
-cmd = f"pip install --no-cache-dir --force-reinstall {pkgs}"
+cmd = f"{sys.executable} -m pip install --no-cache-dir --force-reinstall {pkgs}"
 print(f"  > {cmd}", flush=True)
 result = subprocess.run(cmd, shell=True)
 if result.returncode != 0:
@@ -262,7 +279,7 @@ os.makedirs(fixups_dir, exist_ok=True)
 for pkg in nccl_pkgs:
     print(f"  Downloading NCCL wheel: {pkg}", flush=True)
     result = subprocess.run(
-        ["pip", "download", "--no-cache-dir", "-d", fixups_dir, pkg]
+        [sys.executable, "-m", "pip", "download", "--no-cache-dir", "-d", fixups_dir, pkg]
     )
     if result.returncode != 0:
         print(f"  WARNING: Failed to download NCCL wheel: {pkg}", file=sys.stderr)

@@ -655,15 +655,21 @@ export async function importBundleArchive(
     if (existsSync(stagingFixups)) {
       const wheels = readdirSync(stagingFixups).filter((f) => f.endsWith(".whl"));
       if (wheels.length > 0) {
-        const venvPython =
-          (process.env.PYTHON_VENV_PATH || join(AI_DIR, "venv")) + "/bin/python3";
+        const venvPython = `${process.env.PYTHON_VENV_PATH || join(AI_DIR, "venv")}/bin/python3`;
         for (const wheel of wheels) {
           try {
-            execFileSync(venvPython, [
-              "-m", "pip", "install", "--no-index",
-              `--find-links=${stagingFixups}`,
-              wheel.split("-")[0],
-            ], { stdio: "ignore", timeout: 30_000 });
+            execFileSync(
+              venvPython,
+              [
+                "-m",
+                "pip",
+                "install",
+                "--no-index",
+                `--find-links=${stagingFixups}`,
+                wheel.split("-")[0],
+              ],
+              { stdio: "ignore", timeout: 30_000 },
+            );
           } catch {
             // Non-fatal
           }

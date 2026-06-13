@@ -1,13 +1,6 @@
-import { spawnSync, execFileSync } from "node:child_process";
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -93,19 +86,15 @@ describe("install_feature.py prebuilt mode", () => {
     const { tarPath, sha256 } = createTestTar("face-detection");
     writeManifest("face-detection", tarPath, sha256);
 
-    const result = spawnSync(
-      "python3",
-      [scriptPath, "face-detection", manifestPath, modelsDir],
-      {
-        env: {
-          ...process.env,
-          DATA_DIR: tempDir,
-          PYTHON_VENV_PATH: venvDir,
-          SNAPOTTER_BUNDLE_LOCAL_PATH: tarPath,
-        },
-        timeout: 30_000,
+    const result = spawnSync("python3", [scriptPath, "face-detection", manifestPath, modelsDir], {
+      env: {
+        ...process.env,
+        DATA_DIR: tempDir,
+        PYTHON_VENV_PATH: venvDir,
+        SNAPOTTER_BUNDLE_LOCAL_PATH: tarPath,
       },
-    );
+      timeout: 30_000,
+    });
 
     expect(result.status, `stderr: ${result.stderr?.toString()}`).toBe(0);
     expect(existsSync(join(modelsDir, "testmodel", "weights.bin"))).toBe(true);
@@ -120,19 +109,15 @@ describe("install_feature.py prebuilt mode", () => {
     const { tarPath } = createTestTar("face-detection");
     writeManifest("face-detection", tarPath, "badhash".padEnd(64, "0"));
 
-    const result = spawnSync(
-      "python3",
-      [scriptPath, "face-detection", manifestPath, modelsDir],
-      {
-        env: {
-          ...process.env,
-          DATA_DIR: tempDir,
-          PYTHON_VENV_PATH: venvDir,
-          SNAPOTTER_BUNDLE_LOCAL_PATH: tarPath,
-        },
-        timeout: 30_000,
+    const result = spawnSync("python3", [scriptPath, "face-detection", manifestPath, modelsDir], {
+      env: {
+        ...process.env,
+        DATA_DIR: tempDir,
+        PYTHON_VENV_PATH: venvDir,
+        SNAPOTTER_BUNDLE_LOCAL_PATH: tarPath,
       },
-    );
+      timeout: 30_000,
+    });
 
     expect(result.status).not.toBe(0);
   });
@@ -141,23 +126,24 @@ describe("install_feature.py prebuilt mode", () => {
     const { tarPath, sha256 } = createTestTar("face-detection");
     writeManifest("face-detection", tarPath, sha256);
 
-    const result = spawnSync(
-      "python3",
-      [scriptPath, "face-detection", manifestPath, modelsDir],
-      {
-        env: {
-          ...process.env,
-          DATA_DIR: tempDir,
-          PYTHON_VENV_PATH: venvDir,
-          SNAPOTTER_BUNDLE_LOCAL_PATH: tarPath,
-        },
-        timeout: 30_000,
+    const result = spawnSync("python3", [scriptPath, "face-detection", manifestPath, modelsDir], {
+      env: {
+        ...process.env,
+        DATA_DIR: tempDir,
+        PYTHON_VENV_PATH: venvDir,
+        SNAPOTTER_BUNDLE_LOCAL_PATH: tarPath,
       },
-    );
+      timeout: 30_000,
+    });
 
     const stderr = result.stderr?.toString() ?? "";
     const progressLines = stderr.split("\n").filter((l) => {
-      try { const p = JSON.parse(l); return typeof p.progress === "number"; } catch { return false; }
+      try {
+        const p = JSON.parse(l);
+        return typeof p.progress === "number";
+      } catch {
+        return false;
+      }
     });
     expect(progressLines.length).toBeGreaterThan(0);
 

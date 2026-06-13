@@ -102,11 +102,11 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: |
           mkdir -p /tmp/bundles
-          docker run --rm \
+          docker run --rm --entrypoint bash \
             -v "$PWD/docker/build-bundle.sh:/build-bundle.sh:ro" \
             -v "/tmp/bundles:/output" \
             "ghcr.io/snapotter-hq/snapotter:${VERSION}" \
-            bash /build-bundle.sh "${BUNDLE}" "${ARCH}" /output
+            /build-bundle.sh "${BUNDLE}" "${ARCH}" /output
 
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
