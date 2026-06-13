@@ -64,6 +64,7 @@ import { settingsRoutes } from "../../apps/api/src/routes/settings.js";
 import { teamsRoutes } from "../../apps/api/src/routes/teams.js";
 import { registerToolRoutes } from "../../apps/api/src/routes/tools/index.js";
 import { userFileRoutes } from "../../apps/api/src/routes/user-files.js";
+import { registerEnterpriseRoutes } from "../../apps/api/src/routes/enterprise/index.js";
 
 // Run migrations (idempotent -- template already has the schema, but this
 // ensures the __drizzle_migrations journal is consistent in each fork).
@@ -184,6 +185,9 @@ export async function buildTestApp(): Promise<TestApp> {
 
   // Admin ops routes (runtime log level, Prometheus metrics)
   await adminOpsRoutes(app);
+
+  // Enterprise routes (license-gated features)
+  await registerEnterpriseRoutes(app);
 
   // Analytics routes
   await analyticsRoutes(app);

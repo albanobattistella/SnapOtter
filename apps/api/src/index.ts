@@ -50,6 +50,7 @@ import { settingsRoutes } from "./routes/settings.js";
 import { teamsRoutes } from "./routes/teams.js";
 import { registerToolRoutes } from "./routes/tools/index.js";
 import { userFileRoutes } from "./routes/user-files.js";
+import { registerEnterpriseRoutes } from "./routes/enterprise/index.js";
 
 // Run before anything else
 try {
@@ -346,6 +347,9 @@ await rolesRoutes(app);
 
 // Admin ops routes (runtime log level, Prometheus metrics)
 await adminOpsRoutes(app);
+
+// Enterprise routes (license-gated features)
+await registerEnterpriseRoutes(app);
 
 // API docs (Scalar)
 await docsRoutes(app);
