@@ -26,6 +26,7 @@ export const SYSTEM_JOBS = {
   siemForward: "system:siem-forward",
   auditArchive: "system:audit-archive",
   storageReconciliation: "system:storage-reconciliation",
+  gdprExport: "system:gdpr-export",
 } as const;
 
 // -- Scheduling ---------------------------------------------------------------
@@ -79,6 +80,21 @@ export async function runSystemJob(job: Job): Promise<unknown> {
     case SYSTEM_JOBS.storageReconciliation: {
       const { storageReconciliationJob } = await import("./storage-reconciliation.js");
       return storageReconciliationJob();
+    }
+    case SYSTEM_JOBS.gdprExport: {
+      const { gdprExportJob } = await import("./gdpr-export.js");
+      const exportData = job.data as unknown as { userId: string; jobId: string };
+      const { outputRef } = await gdprExportJob(exportData.userId, exportData.jobId);
+      // Update the job row with the output reference
+      await db
+        .update(schema.jobs)
+        .set({
+          status: "completed",
+          completedAt: new Date(),
+          outputRefs: [outputRef],
+        })
+        .where(eq(schema.jobs.id, exportData.jobId));
+      return { outputRef };
     }
     default:
       // batch-finalize runs on the system pool too but is routed by the
