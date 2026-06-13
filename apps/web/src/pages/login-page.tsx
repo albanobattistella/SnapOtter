@@ -133,6 +133,11 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showMfaPrompt, setShowMfaPrompt] = useState(false);
+  const [mfaToken, setMfaToken] = useState("");
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const mfaInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const authError = searchParams.get("error");
@@ -167,6 +172,12 @@ export function LoginPage() {
         return;
       }
       const data = await res.json();
+      if (data.requiresMfa) {
+        setMfaToken(data.mfaToken);
+        setShowMfaPrompt(true);
+        setTimeout(() => mfaInputRef.current?.focus(), 100);
+        return;
+      }
       setToken(data.token);
       localStorage.setItem("snapotter-username", data.user?.username || username);
       if (data.user?.mustChangePassword) {
@@ -178,6 +189,35 @@ export function LoginPage() {
       setError(t.auth.connectionError);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMfaComplete = async () => {
+    setMfaLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/auth/mfa/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mfaToken, code: mfaCode }),
+      });
+      if (!res.ok) {
+        setError(t.auth.mfaInvalidCode);
+        setMfaCode("");
+        return;
+      }
+      const data = await res.json();
+      setToken(data.token);
+      localStorage.setItem("snapotter-username", data.user?.username || username);
+      if (data.user?.mustChangePassword) {
+        window.location.href = "/change-password";
+      } else {
+        window.location.href = "/";
+      }
+    } catch {
+      setError(t.auth.connectionError);
+    } finally {
+      setMfaLoading(false);
     }
   };
 
@@ -219,48 +259,123 @@ export function LoginPage() {
               </p>
             </div>
           )}
-          <form onSubmit={handleSubmit} className={`space-y-4${ssoEnforced ? " opacity-60" : ""}`}>
-            <div>
-              <label htmlFor="username" className="block text-sm font-medium mb-1 text-foreground">
-                {t.auth.username}
-              </label>
+          {showMfaPrompt ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-primary"
+                    role="img"
+                    aria-hidden="true"
+                  >
+                    <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{t.auth.mfaRequired}</p>
+                </div>
+              </div>
               <input
-                id="username"
+                ref={mfaInputRef}
                 type="text"
-                name="username"
-                autoComplete="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder={t.auth.enterUsername}
-                className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                required
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={8}
+                autoComplete="one-time-code"
+                placeholder="000000"
+                value={mfaCode}
+                onChange={(e) => setMfaCode(e.target.value.replace(/[^0-9]/g, ""))}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && mfaCode.length >= 6) handleMfaComplete();
+                }}
+                className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground text-center text-2xl font-mono tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-primary/20"
               />
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <button
+                type="button"
+                onClick={handleMfaComplete}
+                disabled={mfaLoading || mfaCode.length < 6}
+                className="w-full py-3 rounded-lg bg-primary/80 text-primary-foreground font-medium hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {mfaLoading ? t.auth.verifying : t.auth.verify}
+              </button>
+              <p className="text-xs text-muted-foreground text-center">{t.auth.mfaRecoveryHint}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMfaPrompt(false);
+                  setMfaToken("");
+                  setMfaCode("");
+                  setError("");
+                }}
+                className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {t.common.back}
+              </button>
             </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium mb-1 text-foreground">
-                {t.auth.password}
-              </label>
-              <input
-                id="password"
-                type="password"
-                name="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={t.auth.enterPassword}
-                className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
-                required
-              />
-            </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <button
-              type="submit"
-              disabled={loading || !username || !password}
-              className="w-full py-3 rounded-lg bg-primary/80 text-primary-foreground font-medium hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          ) : (
+            <form
+              onSubmit={handleSubmit}
+              className={`space-y-4${ssoEnforced ? " opacity-60" : ""}`}
             >
-              {loading ? t.auth.loggingIn : t.auth.loginButton}
-            </button>
-          </form>
+              <div>
+                <label
+                  htmlFor="username"
+                  className="block text-sm font-medium mb-1 text-foreground"
+                >
+                  {t.auth.username}
+                </label>
+                <input
+                  id="username"
+                  type="text"
+                  name="username"
+                  autoComplete="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder={t.auth.enterUsername}
+                  className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  required
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium mb-1 text-foreground"
+                >
+                  {t.auth.password}
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  name="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={t.auth.enterPassword}
+                  className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  required
+                />
+              </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <button
+                type="submit"
+                disabled={loading || !username || !password}
+                className="w-full py-3 rounded-lg bg-primary/80 text-primary-foreground font-medium hover:bg-primary transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? t.auth.loggingIn : t.auth.loginButton}
+              </button>
+            </form>
+          )}
           {!ssoEnforced && (oidcEnabled || samlEnabled) && (
             <>
               <div className="flex items-center gap-3 my-4">
