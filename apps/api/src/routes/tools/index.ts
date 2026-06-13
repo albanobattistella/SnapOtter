@@ -5,6 +5,9 @@ import { db, schema } from "../../db/index.js";
 import { registerColorAdjustments } from "./adjust-colors.js";
 import { registerAiCanvasExpand } from "./ai-canvas-expand.js";
 import { registerAspectPad } from "./aspect-pad.js";
+import { registerAudioChannels } from "./audio-channels.js";
+import { registerAudioMetadata } from "./audio-metadata.js";
+import { registerAudioSpeed } from "./audio-speed.js";
 import { registerBarcodeRead } from "./barcode-read.js";
 import { registerBeautify } from "./beautify.js";
 import { registerBlurFaces } from "./blur-faces.js";
@@ -39,6 +42,7 @@ import { registerEraseObject } from "./erase-object.js";
 import { registerExtractAudio } from "./extract-audio.js";
 import { registerExtractPages } from "./extract-pages.js";
 import { registerExtractSubtitles } from "./extract-subtitles.js";
+import { registerFadeAudio } from "./fade-audio.js";
 import { registerFavicon } from "./favicon.js";
 import { registerFindDuplicates } from "./find-duplicates.js";
 import { registerFlattenPdf } from "./flatten-pdf.js";
@@ -56,10 +60,13 @@ import { registerJsonXml } from "./json-xml.js";
 import { registerLinearizePdf } from "./linearize-pdf.js";
 import { registerMarkdownToPdf } from "./markdown-to-pdf.js";
 import { registerMemeGenerator } from "./meme-generator.js";
+import { registerMergeAudio } from "./merge-audio.js";
 import { registerMergePdf } from "./merge-pdf.js";
 import { registerMergeVideos } from "./merge-videos.js";
 import { registerMuteVideo } from "./mute-video.js";
+import { registerNoiseReduction } from "./noise-reduction.js";
 import { registerNoiseRemoval } from "./noise-removal.js";
+import { registerNormalizeAudio } from "./normalize-audio.js";
 import { registerNupPdf } from "./nup-pdf.js";
 import { registerOcr } from "./ocr.js";
 import { registerOptimizeForWeb } from "./optimize-for-web.js";
@@ -71,6 +78,7 @@ import { registerPdfToImage } from "./pdf-to-image.js";
 import { registerPdfToText } from "./pdf-to-text.js";
 import { registerPdfToWord } from "./pdf-to-word.js";
 import { registerPdfaConvert } from "./pdfa-convert.js";
+import { registerPitchShift } from "./pitch-shift.js";
 import { registerProtectPdf } from "./protect-pdf.js";
 import { registerQrGenerate } from "./qr-generate.js";
 import { registerRedEyeRemoval } from "./red-eye-removal.js";
@@ -83,13 +91,17 @@ import { registerReplaceColor } from "./replace-color.js";
 import { registerResize } from "./resize.js";
 import { registerResizeVideo } from "./resize-video.js";
 import { registerRestorePhoto } from "./restore-photo.js";
+import { registerReverseAudio } from "./reverse-audio.js";
 import { registerReverseVideo } from "./reverse-video.js";
+import { registerRingtoneMaker } from "./ringtone-maker.js";
 import { registerRotate } from "./rotate.js";
 import { registerRotatePdf } from "./rotate-pdf.js";
 import { registerRotateVideo } from "./rotate-video.js";
 import { registerSharpening } from "./sharpening.js";
+import { registerSilenceRemoval } from "./silence-removal.js";
 import { registerSmartCrop } from "./smart-crop.js";
 import { registerSplit } from "./split.js";
+import { registerSplitAudio } from "./split-audio.js";
 import { registerSplitCsv } from "./split-csv.js";
 import { registerSplitPdf } from "./split-pdf.js";
 import { registerStabilizeVideo } from "./stabilize-video.js";
@@ -110,10 +122,12 @@ import { registerVideoSpeed } from "./video-speed.js";
 import { registerVideoToFrames } from "./video-to-frames.js";
 import { registerVideoToGif } from "./video-to-gif.js";
 import { registerVideoToWebp } from "./video-to-webp.js";
+import { registerVolumeAdjust } from "./volume-adjust.js";
 import { registerWatermarkImage } from "./watermark-image.js";
 import { registerWatermarkPdf } from "./watermark-pdf.js";
 import { registerWatermarkText } from "./watermark-text.js";
 import { registerWatermarkVideo } from "./watermark-video.js";
+import { registerWaveformImage } from "./waveform-image.js";
 import { registerWordToPdf } from "./word-to-pdf.js";
 
 /**
@@ -229,9 +243,23 @@ export async function registerToolRoutes(app: FastifyInstance): Promise<void> {
     { id: "watermark-video", register: registerWatermarkVideo },
 
     // Audio
+    { id: "audio-channels", register: registerAudioChannels },
+    { id: "audio-metadata", register: registerAudioMetadata },
+    { id: "audio-speed", register: registerAudioSpeed },
     { id: "convert-audio", register: registerConvertAudio },
-    { id: "trim-audio", register: registerTrimAudio },
     { id: "extract-audio", register: registerExtractAudio },
+    { id: "fade-audio", register: registerFadeAudio },
+    { id: "merge-audio", register: registerMergeAudio },
+    { id: "noise-reduction", register: registerNoiseReduction },
+    { id: "normalize-audio", register: registerNormalizeAudio },
+    { id: "pitch-shift", register: registerPitchShift },
+    { id: "reverse-audio", register: registerReverseAudio },
+    { id: "ringtone-maker", register: registerRingtoneMaker },
+    { id: "silence-removal", register: registerSilenceRemoval },
+    { id: "split-audio", register: registerSplitAudio },
+    { id: "trim-audio", register: registerTrimAudio },
+    { id: "volume-adjust", register: registerVolumeAdjust },
+    { id: "waveform-image", register: registerWaveformImage },
 
     // PDF & Documents
     { id: "merge-pdf", register: registerMergePdf },

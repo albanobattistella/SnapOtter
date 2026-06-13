@@ -121,9 +121,23 @@ export const TOOL_DISPLAY_MODES: Record<string, DisplayMode> = {
   "video-metadata": "no-comparison",
 
   // Audio tools
+  "audio-channels": "media-player",
+  "audio-metadata": "no-comparison",
+  "audio-speed": "media-player",
   "convert-audio": "media-player",
-  "trim-audio": "media-player",
   "extract-audio": "media-player",
+  "fade-audio": "media-player",
+  "merge-audio": "media-player",
+  "noise-reduction": "media-player",
+  "normalize-audio": "media-player",
+  "pitch-shift": "media-player",
+  "reverse-audio": "media-player",
+  "ringtone-maker": "media-player",
+  "silence-removal": "media-player",
+  "split-audio": "no-comparison",
+  "trim-audio": "media-player",
+  "volume-adjust": "media-player",
+  "waveform-image": "no-comparison",
 
   // PDF & Document tools
   "merge-pdf": "document",
@@ -165,6 +179,7 @@ export const TOOL_DISPLAY_MODES: Record<string, DisplayMode> = {
  * Consumed by use-tool-processor; backend routes declare maxInputs.
  */
 export const MULTI_FILE_TOOLS: ReadonlySet<string> = new Set([
+  "merge-audio",
   "merge-pdf",
   "merge-videos",
   "replace-audio",

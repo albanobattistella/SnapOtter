@@ -1,9 +1,12 @@
 import type { LucideIcon } from "lucide-react";
 import {
+  Activity,
   Anchor,
   AppWindow,
   Archive,
   AudioLines,
+  AudioWaveform,
+  BellRing,
   BookImage,
   BookOpen,
   Braces,
@@ -57,6 +60,7 @@ import {
   MessageSquareText,
   MicVocal,
   Minimize2,
+  Music,
   Palette,
   PenLine,
   PenTool,
@@ -88,6 +92,7 @@ import {
   Volume2,
   VolumeX,
   Wand,
+  Waves,
   Wrench,
   Zap,
   ZoomIn,
@@ -96,10 +101,13 @@ import {
 // Only the icons actually used by tool definitions in @snapotter/shared constants.
 // Avoids `import * as icons from "lucide-react"` which pulls the entire 1000+ icon library.
 export const ICON_MAP: Record<string, LucideIcon> = {
+  Activity,
   Anchor,
   AppWindow,
   Archive,
   AudioLines,
+  AudioWaveform,
+  BellRing,
   BookImage,
   BookOpen,
   Braces,
@@ -152,6 +160,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   MessageSquareText,
   MicVocal,
   Minimize2,
+  Music,
   Palette,
   PenLine,
   PenTool,
@@ -182,6 +191,7 @@ export const ICON_MAP: Record<string, LucideIcon> = {
   Volume2,
   VolumeX,
   Wand,
+  Waves,
   Wrench,
   Zap,
   ZoomIn,
