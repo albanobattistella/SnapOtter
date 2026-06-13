@@ -1,11 +1,13 @@
 import { createHash, randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, asc, eq, ne, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { env } from "../config.js";
 import { db, schema } from "../db/index.js";
+import { sharedRedis } from "../jobs/connection.js";
 import { auditFromRequest, sanitizeAuditInput } from "../lib/audit.js";
+import { getSettingNumber } from "../lib/settings-helpers.js";
 import { getPermissions, requirePermission } from "../permissions.js";
 
 const scryptAsync = promisify(scrypt);
@@ -318,6 +320,23 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         userId: user.id,
         expiresAt,
       });
+
+      // ── Concurrent session limit (FIFO eviction) ──────────────
+      const maxSessions = await getSettingNumber("maxSessionsPerUser");
+      if (maxSessions > 0) {
+        const sessions = await db
+          .select({ id: schema.sessions.id, createdAt: schema.sessions.createdAt })
+          .from(schema.sessions)
+          .where(eq(schema.sessions.userId, user.id))
+          .orderBy(asc(schema.sessions.createdAt));
+
+        if (sessions.length > maxSessions) {
+          const toDelete = sessions.slice(0, sessions.length - maxSessions);
+          for (const s of toDelete) {
+            await db.delete(schema.sessions).where(eq(schema.sessions.id, s.id));
+          }
+        }
+      }
 
       await audit("LOGIN_SUCCESS", { userId: user.id, username: user.username });
 
@@ -1026,6 +1045,36 @@ export async function authMiddleware(app: FastifyInstance): Promise<void> {
     if (!user) {
       if (isPublic) return;
       return reply.status(401).send({ error: "User not found" });
+    }
+
+    // ── Idle timeout enforcement ───────────────────────────────────
+    const idleTimeoutMinutes = await getSettingNumber("sessionIdleTimeoutMinutes");
+    if (idleTimeoutMinutes > 0) {
+      const redis = sharedRedis();
+      const idleKey = `session:idle:${token}`;
+      const lastSeen = await redis.get(idleKey);
+
+      if (!lastSeen) {
+        // Redis key expired or first request -- check Postgres lastActivity
+        if (session.lastActivity) {
+          const elapsed = Date.now() - session.lastActivity.getTime();
+          if (elapsed > idleTimeoutMinutes * 60 * 1000) {
+            await db.delete(schema.sessions).where(eq(schema.sessions.id, token));
+            if (isPublic) return;
+            return reply
+              .status(401)
+              .send({ error: "Session expired due to inactivity", code: "IDLE_TIMEOUT" });
+          }
+        }
+        // Flush lastActivity to Postgres on cache miss (avoids per-request DB writes)
+        await db
+          .update(schema.sessions)
+          .set({ lastActivity: new Date() })
+          .where(eq(schema.sessions.id, token));
+      }
+
+      // Refresh Redis key with TTL = idle timeout
+      await redis.setex(idleKey, idleTimeoutMinutes * 60, Date.now().toString());
     }
 
     // Attach user info to request for downstream handlers
