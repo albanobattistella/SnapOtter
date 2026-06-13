@@ -293,6 +293,11 @@ await app.register(cookie, {
   hook: "onRequest",
 });
 
+// IP allowlist (enterprise -- must run before auth to reject early)
+import { registerIpAllowlist } from "./plugins/ip-allowlist.js";
+
+await registerIpAllowlist(app);
+
 // Public config routes (no auth required)
 await configRoutes(app);
 
