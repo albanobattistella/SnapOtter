@@ -17,18 +17,35 @@ export interface Tool {
 }
 
 export type ToolCategory =
+  // Image
   | "essentials"
   | "optimization"
   | "adjustments"
-  | "ai"
+  | "enhance"
   | "watermark"
   | "utilities"
   | "layout"
   | "format"
-  | "video"
-  | "audio"
-  | "documents"
-  | "data";
+  // Video
+  | "video-edit"
+  | "video-convert"
+  | "video-effects"
+  | "video-subtitles"
+  | "video-metadata"
+  // Audio
+  | "audio-edit"
+  | "audio-convert"
+  | "audio-effects"
+  | "audio-metadata"
+  // Documents
+  | "pdf-organize"
+  | "pdf-edit"
+  | "pdf-security"
+  | "pdf-optimize"
+  | "doc-convert"
+  // Data & Files
+  | "data"
+  | "archives";
 
 export interface CategoryInfo {
   id: ToolCategory;

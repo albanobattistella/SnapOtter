@@ -38,18 +38,35 @@ export const en = {
     pageNotFoundDescription: "The page you are looking for does not exist or has been moved.",
   },
   categories: {
+    // Image
     essentials: "Essentials",
-    optimization: "Optimization",
     adjustments: "Adjustments",
+    enhance: "Enhance & AI",
     watermark: "Watermark & Overlay",
-    utilities: "Utilities",
     layout: "Layout & Composition",
+    utilities: "Utilities",
+    optimization: "Optimization",
     format: "Format & Conversion",
-    video: "Video",
-    audio: "Audio",
-    documents: "PDF & Documents",
+    // Video
+    "video-edit": "Edit",
+    "video-convert": "Convert",
+    "video-effects": "Effects & Compose",
+    "video-subtitles": "Subtitles",
+    "video-metadata": "Metadata",
+    // Audio
+    "audio-edit": "Edit",
+    "audio-convert": "Convert",
+    "audio-effects": "Effects & Compose",
+    "audio-metadata": "Metadata",
+    // Documents
+    "pdf-organize": "Organize",
+    "pdf-edit": "Edit & Annotate",
+    "pdf-security": "Security",
+    "pdf-optimize": "Optimize",
+    "doc-convert": "Convert",
+    // Data & Files
     data: "Data Files",
-    ai: "AI Tools",
+    archives: "Archives",
   },
   modalities: {
     image: "Image",
