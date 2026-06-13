@@ -1,6 +1,7 @@
 import { CATEGORIES, MODALITIES, TOOLS } from "@snapotter/shared";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "@/contexts/i18n-context";
+import { useFuseSearch } from "@/hooks/use-fuse-search";
 import { ICON_MAP } from "@/lib/icon-map";
 import { getCategoryName, getModalityName } from "@/lib/tool-i18n";
 import { useFeaturesStore } from "@/stores/features-store";
@@ -31,13 +32,7 @@ export function ToolPanel() {
     });
   }, [disabledTools, experimentalEnabled, loaded]);
 
-  const filteredTools = useMemo(() => {
-    if (!search) return visibleTools;
-    const q = search.toLowerCase();
-    return visibleTools.filter(
-      (t) => t.name.toLowerCase().includes(q) || t.description.toLowerCase().includes(q),
-    );
-  }, [search, visibleTools]);
+  const filteredTools = useFuseSearch(visibleTools, search);
 
   const groupedByModality = useMemo(() => {
     const byModality = new Map<string, Map<string, typeof TOOLS>>();

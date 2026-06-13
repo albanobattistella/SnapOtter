@@ -18,6 +18,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { OtterLogo } from "@/components/common/otter-logo";
 import { MobileBottomNav } from "@/components/layout/mobile-bottom-nav";
 import { useTranslation } from "@/contexts/i18n-context";
+import { useFuseSearch } from "@/hooks/use-fuse-search";
 import { useMobile } from "@/hooks/use-mobile";
 import { track } from "@/lib/analytics";
 import { apiGet } from "@/lib/api";
@@ -69,20 +70,12 @@ export function FullscreenGridPage() {
     });
   }, [disabledTools, experimentalEnabled]);
 
-  const filteredTools = useMemo(() => {
-    let tools = visibleTools;
-    if (modalityTab !== "all") {
-      tools = tools.filter((t) => t.modality === modalityTab);
-    }
-    if (!search) return tools;
-    const q = search.toLowerCase();
-    return tools.filter(
-      (t) =>
-        t.name.toLowerCase().includes(q) ||
-        t.description.toLowerCase().includes(q) ||
-        t.category.toLowerCase().includes(q),
-    );
-  }, [search, visibleTools, modalityTab]);
+  const modalityFiltered = useMemo(() => {
+    if (modalityTab === "all") return visibleTools;
+    return visibleTools.filter((t) => t.modality === modalityTab);
+  }, [visibleTools, modalityTab]);
+
+  const filteredTools = useFuseSearch(modalityFiltered, search);
 
   useEffect(() => {
     if (!search) return;
