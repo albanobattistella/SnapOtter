@@ -2010,10 +2010,12 @@ describe("useFeaturesStore", () => {
     expect(s.loaded).toBe(true);
   });
 
-  it("fetch skips when already loaded without error", async () => {
+  it("fetch triggers background refresh when already loaded without error", async () => {
+    const bundles = [{ id: "ocr", name: "OCR", status: "installed" }];
+    mockApiGet.mockResolvedValueOnce({ bundles });
     useFeaturesStore.setState({ loaded: true, loadError: false });
     await useFeaturesStore.getState().fetch();
-    expect(mockApiGet).not.toHaveBeenCalled();
+    expect(mockApiGet).toHaveBeenCalledWith("/v1/features");
   });
 
   it("fetch sets loaded=true and loadError=true on error", async () => {

@@ -97,6 +97,12 @@ export function FeatureInstallPrompt({
     installBundle(bundle.id);
   }
 
+  // Defensive guard: if the bundle is already installed (status may have
+  // been refreshed after mount), never render the install prompt.
+  if (bundle.status === "installed") {
+    return null;
+  }
+
   if (!isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-4">

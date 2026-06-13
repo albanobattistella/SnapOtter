@@ -178,7 +178,13 @@ export const useFeaturesStore = create<FeaturesState>((set, get) => {
     startTimes: {},
 
     fetch: async () => {
-      if (get().loaded && !get().loadError) return;
+      if (get().loaded && !get().loadError) {
+        // Already loaded successfully before. Refresh in the background
+        // so navigating between tool pages picks up status changes
+        // (e.g. a bundle installed from the settings page).
+        refreshBundles();
+        return;
+      }
       try {
         const data = await apiGet<{ bundles: FeatureBundleState[] }>("/v1/features");
         set({ bundles: data.bundles, loaded: true, loadError: false });
@@ -251,13 +257,23 @@ export const useFeaturesStore = create<FeaturesState>((set, get) => {
       } catch (err) {
         const installing = { ...get().installing };
         delete installing[bundleId];
-        set({
-          installing,
-          errors: {
-            ...get().errors,
-            [bundleId]: err instanceof Error ? err.message : "Failed to start installation",
-          },
-        });
+
+        const message = err instanceof Error ? err.message : "Failed to start installation";
+        const isAlreadyInstalled = /already installed/i.test(message);
+
+        if (isAlreadyInstalled) {
+          // 409 "already installed": clear the error and refresh status
+          // so the UI transitions to the installed state silently.
+          const errors = { ...get().errors };
+          delete errors[bundleId];
+          set({ installing, errors });
+          await refreshBundles();
+        } else {
+          set({
+            installing,
+            errors: { ...get().errors, [bundleId]: message },
+          });
+        }
         resolveCompletion(bundleId);
       }
     },

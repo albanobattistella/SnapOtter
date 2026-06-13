@@ -123,12 +123,15 @@ describe("useFeaturesStore", () => {
       expect(useFeaturesStore.getState().loadError).toBe(true);
     });
 
-    it("skips fetch if already loaded without error", async () => {
-      useFeaturesStore.setState({ loaded: true, loadError: false });
+    it("does a background refresh if already loaded without error", async () => {
+      const bundles = [makeBundleState({ id: "bundle-a" })];
+      useFeaturesStore.setState({ loaded: true, loadError: false, bundles });
+      apiGetMock.mockResolvedValueOnce({ bundles });
 
       await useFeaturesStore.getState().fetch();
 
-      expect(apiGetMock).not.toHaveBeenCalled();
+      // Should call apiGet for a background refresh (not short-circuit)
+      expect(apiGetMock).toHaveBeenCalledWith("/v1/features");
     });
 
     it("retries fetch if previously loaded with error", async () => {
