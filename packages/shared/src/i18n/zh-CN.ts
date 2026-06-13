@@ -2853,6 +2853,16 @@ export const zhCN: TranslationKeys = {
       startupCleanup: "启动时清理",
       startupCleanupDescription: "服务器启动时清理旧的临时文件",
     },
+    dataRetention: {
+      title: "Data Retention",
+      fileMaxAgeHours: "Processing file retention (hours)",
+      fileMaxAgeHoursDesc: "How long to keep uploaded and processed files. Default: 72 hours.",
+      jobsRetentionDays: "Job record retention (days)",
+      jobsRetentionDaysDesc: "How long to keep job metadata. 0 = keep forever. Default: 30 days.",
+      auditRetentionDays: "Audit log retention (days)",
+      auditRetentionDaysDesc:
+        "How long to keep audit log entries. 0 = keep forever. Default: forever.",
+    },
     analytics: {
       heading: "产品分析",
       description: "分享匿名使用数据，帮助改进 SnapOtter。",

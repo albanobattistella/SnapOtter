@@ -686,6 +686,52 @@ function SystemSection() {
         </button>
       </SettingRow>
 
+      <div className="pt-4 border-t border-border">
+        <h4 className="text-sm font-semibold text-foreground mb-3">
+          {t.settings.dataRetention.title}
+        </h4>
+      </div>
+      <SettingRow
+        label={t.settings.dataRetention.fileMaxAgeHours}
+        description={t.settings.dataRetention.fileMaxAgeHoursDesc}
+      >
+        <input
+          type="number"
+          value={settings.tempFileMaxAgeHours || "72"}
+          onChange={(e) => updateSetting("tempFileMaxAgeHours", e.target.value)}
+          aria-label={t.settings.dataRetention.fileMaxAgeHours}
+          className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground w-24"
+          min={1}
+          max={8760}
+        />
+      </SettingRow>
+      <SettingRow
+        label={t.settings.dataRetention.jobsRetentionDays}
+        description={t.settings.dataRetention.jobsRetentionDaysDesc}
+      >
+        <input
+          type="number"
+          value={settings.jobsRetentionDays || "30"}
+          onChange={(e) => updateSetting("jobsRetentionDays", e.target.value)}
+          aria-label={t.settings.dataRetention.jobsRetentionDays}
+          className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground w-24"
+          min={0}
+        />
+      </SettingRow>
+      <SettingRow
+        label={t.settings.dataRetention.auditRetentionDays}
+        description={t.settings.dataRetention.auditRetentionDaysDesc}
+      >
+        <input
+          type="number"
+          value={settings.auditRetentionDays || "0"}
+          onChange={(e) => updateSetting("auditRetentionDays", e.target.value)}
+          aria-label={t.settings.dataRetention.auditRetentionDays}
+          className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground w-24"
+          min={0}
+        />
+      </SettingRow>
+
       <div className="flex items-center gap-3 pt-2">
         <button
           type="button"

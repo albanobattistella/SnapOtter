@@ -2923,6 +2923,16 @@ export const vi: TranslationKeys = {
       startupCleanup: "Dọn dẹp khi khởi động",
       startupCleanupDescription: "Dọn dẹp tệp tạm cũ khi máy chủ khởi động",
     },
+    dataRetention: {
+      title: "Data Retention",
+      fileMaxAgeHours: "Processing file retention (hours)",
+      fileMaxAgeHoursDesc: "How long to keep uploaded and processed files. Default: 72 hours.",
+      jobsRetentionDays: "Job record retention (days)",
+      jobsRetentionDaysDesc: "How long to keep job metadata. 0 = keep forever. Default: 30 days.",
+      auditRetentionDays: "Audit log retention (days)",
+      auditRetentionDaysDesc:
+        "How long to keep audit log entries. 0 = keep forever. Default: forever.",
+    },
     analytics: {
       heading: "Phân tích sản phẩm",
       description: "Chia sẻ dữ liệu sử dụng ẩn danh để giúp cải thiện SnapOtter.",

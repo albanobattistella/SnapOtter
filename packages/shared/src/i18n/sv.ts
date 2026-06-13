@@ -2923,6 +2923,16 @@ export const sv: TranslationKeys = {
       startupCleanup: "Rensning vid start",
       startupCleanupDescription: "Rensa gamla temporara filer nar servern startar",
     },
+    dataRetention: {
+      title: "Data Retention",
+      fileMaxAgeHours: "Processing file retention (hours)",
+      fileMaxAgeHoursDesc: "How long to keep uploaded and processed files. Default: 72 hours.",
+      jobsRetentionDays: "Job record retention (days)",
+      jobsRetentionDaysDesc: "How long to keep job metadata. 0 = keep forever. Default: 30 days.",
+      auditRetentionDays: "Audit log retention (days)",
+      auditRetentionDaysDesc:
+        "How long to keep audit log entries. 0 = keep forever. Default: forever.",
+    },
     analytics: {
       heading: "Produktanalys",
       description: "Dela anonym anvandningsdata for att forbaattra SnapOtter.",

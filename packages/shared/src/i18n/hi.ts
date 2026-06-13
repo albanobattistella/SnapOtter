@@ -2909,6 +2909,16 @@ export const hi: TranslationKeys = {
       startupCleanup: "स्टार्टअप क्लीनअप",
       startupCleanupDescription: "सर्वर शुरू होने पर पुरानी अस्थायी फाइलें साफ करें",
     },
+    dataRetention: {
+      title: "Data Retention",
+      fileMaxAgeHours: "Processing file retention (hours)",
+      fileMaxAgeHoursDesc: "How long to keep uploaded and processed files. Default: 72 hours.",
+      jobsRetentionDays: "Job record retention (days)",
+      jobsRetentionDaysDesc: "How long to keep job metadata. 0 = keep forever. Default: 30 days.",
+      auditRetentionDays: "Audit log retention (days)",
+      auditRetentionDaysDesc:
+        "How long to keep audit log entries. 0 = keep forever. Default: forever.",
+    },
     analytics: {
       heading: "प्रोडक्ट एनालिटिक्स",
       description: "SnapOtter को बेहतर बनाने में मदद के लिए गुमनाम उपयोग डेटा शेयर करें।",

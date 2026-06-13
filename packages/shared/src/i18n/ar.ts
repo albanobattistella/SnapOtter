@@ -2913,6 +2913,16 @@ export const ar: TranslationKeys = {
       startupCleanup: "تنظيف عند بدء التشغيل",
       startupCleanupDescription: "تنظيف الملفات المؤقتة القديمة عند بدء تشغيل الخادم",
     },
+    dataRetention: {
+      title: "Data Retention",
+      fileMaxAgeHours: "Processing file retention (hours)",
+      fileMaxAgeHoursDesc: "How long to keep uploaded and processed files. Default: 72 hours.",
+      jobsRetentionDays: "Job record retention (days)",
+      jobsRetentionDaysDesc: "How long to keep job metadata. 0 = keep forever. Default: 30 days.",
+      auditRetentionDays: "Audit log retention (days)",
+      auditRetentionDaysDesc:
+        "How long to keep audit log entries. 0 = keep forever. Default: forever.",
+    },
     analytics: {
       heading: "تحليلات المنتج",
       description: "مشاركة بيانات الاستخدام المجهولة للمساعدة في تحسين SnapOtter.",

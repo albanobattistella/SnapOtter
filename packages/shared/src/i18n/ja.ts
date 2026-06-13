@@ -2882,6 +2882,16 @@ export const ja: TranslationKeys = {
       startupCleanup: "起動時クリーンアップ",
       startupCleanupDescription: "サーバー起動時に古い一時ファイルをクリーンアップ",
     },
+    dataRetention: {
+      title: "Data Retention",
+      fileMaxAgeHours: "Processing file retention (hours)",
+      fileMaxAgeHoursDesc: "How long to keep uploaded and processed files. Default: 72 hours.",
+      jobsRetentionDays: "Job record retention (days)",
+      jobsRetentionDaysDesc: "How long to keep job metadata. 0 = keep forever. Default: 30 days.",
+      auditRetentionDays: "Audit log retention (days)",
+      auditRetentionDaysDesc:
+        "How long to keep audit log entries. 0 = keep forever. Default: forever.",
+    },
     analytics: {
       heading: "プロダクト分析",
       description: "匿名の使用データを共有してSnapOtterの改善にご協力ください。",

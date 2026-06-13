@@ -2928,6 +2928,16 @@ export const nl: TranslationKeys = {
       startupCleanup: "Opruimen bij opstarten",
       startupCleanupDescription: "Oude tijdelijke bestanden opruimen wanneer de server start",
     },
+    dataRetention: {
+      title: "Data Retention",
+      fileMaxAgeHours: "Processing file retention (hours)",
+      fileMaxAgeHoursDesc: "How long to keep uploaded and processed files. Default: 72 hours.",
+      jobsRetentionDays: "Job record retention (days)",
+      jobsRetentionDaysDesc: "How long to keep job metadata. 0 = keep forever. Default: 30 days.",
+      auditRetentionDays: "Audit log retention (days)",
+      auditRetentionDaysDesc:
+        "How long to keep audit log entries. 0 = keep forever. Default: forever.",
+    },
     analytics: {
       heading: "Productanalyse",
       description: "Deel anonieme gebruiksgegevens om SnapOtter te verbeteren.",

@@ -2916,6 +2916,16 @@ export const es: TranslationKeys = {
       startupCleanup: "Limpieza al inicio",
       startupCleanupDescription: "Limpia archivos temporales antiguos cuando el servidor arranca",
     },
+    dataRetention: {
+      title: "Data Retention",
+      fileMaxAgeHours: "Processing file retention (hours)",
+      fileMaxAgeHoursDesc: "How long to keep uploaded and processed files. Default: 72 hours.",
+      jobsRetentionDays: "Job record retention (days)",
+      jobsRetentionDaysDesc: "How long to keep job metadata. 0 = keep forever. Default: 30 days.",
+      auditRetentionDays: "Audit log retention (days)",
+      auditRetentionDaysDesc:
+        "How long to keep audit log entries. 0 = keep forever. Default: forever.",
+    },
     analytics: {
       heading: "Analitica del producto",
       description: "Comparte datos de uso anonimos para ayudar a mejorar SnapOtter.",

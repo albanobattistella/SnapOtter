@@ -2927,6 +2927,16 @@ export const uk: TranslationKeys = {
       startupCleanup: "Очищення при запуску",
       startupCleanupDescription: "Видаляти старі тимчасові файли при запуску сервера",
     },
+    dataRetention: {
+      title: "Data Retention",
+      fileMaxAgeHours: "Processing file retention (hours)",
+      fileMaxAgeHoursDesc: "How long to keep uploaded and processed files. Default: 72 hours.",
+      jobsRetentionDays: "Job record retention (days)",
+      jobsRetentionDaysDesc: "How long to keep job metadata. 0 = keep forever. Default: 30 days.",
+      auditRetentionDays: "Audit log retention (days)",
+      auditRetentionDaysDesc:
+        "How long to keep audit log entries. 0 = keep forever. Default: forever.",
+    },
     analytics: {
       heading: "Аналітика",
       description: "Надсилання анонімних даних про використання для поліпшення SnapOtter.",

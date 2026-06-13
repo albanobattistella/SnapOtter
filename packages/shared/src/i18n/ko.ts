@@ -2867,6 +2867,16 @@ export const ko: TranslationKeys = {
       startupCleanup: "시작 시 정리",
       startupCleanupDescription: "서버 시작 시 오래된 임시 파일 정리",
     },
+    dataRetention: {
+      title: "Data Retention",
+      fileMaxAgeHours: "Processing file retention (hours)",
+      fileMaxAgeHoursDesc: "How long to keep uploaded and processed files. Default: 72 hours.",
+      jobsRetentionDays: "Job record retention (days)",
+      jobsRetentionDaysDesc: "How long to keep job metadata. 0 = keep forever. Default: 30 days.",
+      auditRetentionDays: "Audit log retention (days)",
+      auditRetentionDaysDesc:
+        "How long to keep audit log entries. 0 = keep forever. Default: forever.",
+    },
     analytics: {
       heading: "제품 분석",
       description: "익명 사용 데이터를 공유하여 SnapOtter 개선에 도움을 주세요.",
