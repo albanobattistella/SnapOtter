@@ -140,6 +140,10 @@ export const th: TranslationKeys = {
       name: "OCR / แยกข้อความ",
       description: "แยกข้อความจากภาพด้วยความแม่นยำของ AI",
     },
+    "ocr-pdf": {
+      name: "PDF OCR",
+      description: "แยกข้อความจากเอกสาร PDF ด้วย OCR ที่ขับเคลื่อนด้วย AI",
+    },
     "blur-faces": {
       name: "เบลอใบหน้า / ข้อมูลส่วนตัว",
       description: "ตรวจจับอัตโนมัติและเบลอใบหน้าและข้อมูลที่ละเอียดอ่อน",
@@ -184,9 +188,25 @@ export const th: TranslationKeys = {
       name: "ภาพหนังสือเดินทาง",
       description: "สร้างภาพหนังสือเดินทาง วีซ่า และบัตรประชาชนตามมาตรฐานราชการด้วยการตรวจจับใบหน้าอัตโนมัติ",
     },
+    "transcribe-audio": {
+      name: "ถอดเสียงเป็นข้อความ",
+      description: "แปลงเสียงพูดเป็นข้อความด้วยการถอดเสียง AI",
+    },
+    "auto-subtitles": {
+      name: "คำบรรยายอัตโนมัติ",
+      description: "สร้างไฟล์คำบรรยายจากแทร็กเสียงของวิดีโอ",
+    },
     "transparency-fixer": {
       name: "แก้ไขความโปร่งใส PNG",
       description: "แก้ไข PNG ที่มีพื้นหลังโปร่งใสปลอมในคลิกเดียว",
+    },
+    "background-replace": {
+      name: "เปลี่ยนพื้นหลัง",
+      description: "เปลี่ยนพื้นหลังของภาพเป็นสีพื้น",
+    },
+    "blur-background": {
+      name: "เบลอพื้นหลัง",
+      description: "เบลอพื้นหลังโดยยังคงความชัดของวัตถุ",
     },
     "watermark-text": {
       name: "ลายน้ำข้อความ",
@@ -1059,6 +1079,17 @@ export const th: TranslationKeys = {
       submitBatch: "แยกข้อความ ({count} ไฟล์)",
       progressLabel: "กำลังแยกข้อความ",
     },
+    "ocr-pdf": {
+      quality: "คุณภาพ",
+      language: "ภาษา",
+      autoDetect: "ตรวจจับอัตโนมัติ",
+      pages: "หน้า",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "ป้อนหมายเลขหน้าหรือช่วง (เช่น 1-3, 5, 8-10) สูงสุด 50 หน้า",
+      submit: "แยกข้อความ",
+      submitBatch: "แยกข้อความ ({count} ไฟล์)",
+      progressLabel: "กำลังแยกข้อความจาก PDF",
+    },
     "blur-faces": {
       blurRadius: "รัศมีเบลอ",
       blurLight: "เบา",
@@ -1277,6 +1308,23 @@ export const th: TranslationKeys = {
       scrollToZoom: "เลื่อนเพื่อซูม",
       photoGenerated: "สร้างภาพแล้ว ดาวน์โหลดจากแผงซ้าย",
     },
+    "transcribe-audio": {
+      language: "ภาษา",
+      autoDetect: "ตรวจจับอัตโนมัติ",
+      outputFormat: "รูปแบบผลลัพธ์",
+      plainText: "ข้อความธรรมดา",
+      submit: "ถอดเสียง",
+      submitBatch: "ถอดเสียง ({count} ไฟล์)",
+      progressLabel: "กำลังถอดเสียง",
+    },
+    "auto-subtitles": {
+      language: "ภาษา",
+      autoDetect: "ตรวจจับอัตโนมัติ",
+      format: "รูปแบบคำบรรยาย",
+      submit: "สร้างคำบรรยาย",
+      submitBatch: "สร้างคำบรรยาย ({count} ไฟล์)",
+      progressLabel: "กำลังสร้างคำบรรยาย",
+    },
     "transparency-fixer": {
       description: "อัปโหลด PNG ที่มีพื้นหลังโปร่งใสปลอม แล้วเราจะแก้ไขให้ในคลิกเดียว",
       removeWatermark: "ลบลายน้ำ",
@@ -1288,6 +1336,18 @@ export const th: TranslationKeys = {
       submit: "แก้ไขความโปร่งใส",
       submitBatch: "แก้ไขความโปร่งใส ({count} ไฟล์)",
       progressLabel: "กำลังแก้ไขความโปร่งใส",
+    },
+    "background-replace": {
+      color: "สีพื้นหลัง",
+      submit: "เปลี่ยนพื้นหลัง",
+      submitBatch: "เปลี่ยนพื้นหลัง ({count} ไฟล์)",
+      progressLabel: "กำลังเปลี่ยนพื้นหลัง",
+    },
+    "blur-background": {
+      intensity: "ความเข้มเบลอ",
+      submit: "เบลอพื้นหลัง",
+      submitBatch: "เบลอพื้นหลัง ({count} ไฟล์)",
+      progressLabel: "กำลังเบลอพื้นหลัง",
     },
     "watermark-text": {
       watermarkText: "ข้อความลายน้ำ",

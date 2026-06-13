@@ -130,6 +130,10 @@ export const es: TranslationKeys = {
       name: "OCR / Extraccion de texto",
       description: "Extrae texto de imagenes con precision potenciada por AI",
     },
+    "ocr-pdf": {
+      name: "OCR de PDF",
+      description: "Extrae texto de documentos PDF con OCR potenciado por IA",
+    },
     "blur-faces": {
       name: "Desenfocar rostros / datos sensibles",
       description: "Detecta y desenfoca rostros e informacion sensible automaticamente",
@@ -177,9 +181,25 @@ export const es: TranslationKeys = {
       description:
         "Crea fotos de pasaporte, visa e identificacion que cumplen con los requisitos oficiales, con deteccion automatica de rostro",
     },
+    "transcribe-audio": {
+      name: "Transcribir audio",
+      description: "Convierte voz a texto con transcripcion impulsada por IA",
+    },
+    "auto-subtitles": {
+      name: "Subtitulos automaticos",
+      description: "Genera archivos de subtitulos a partir de pistas de audio de video",
+    },
     "transparency-fixer": {
       name: "Corrector de transparencia PNG",
       description: "Corrige PNGs con transparencia falsa en un clic",
+    },
+    "background-replace": {
+      name: "Reemplazar fondo",
+      description: "Reemplazar el fondo de la imagen con un color solido",
+    },
+    "blur-background": {
+      name: "Desenfocar fondo",
+      description: "Desenfocar el fondo manteniendo el sujeto nitido",
     },
     "watermark-text": {
       name: "Marca de agua de texto",
@@ -1057,6 +1077,17 @@ export const es: TranslationKeys = {
       submitBatch: "Extraer texto ({count} archivos)",
       progressLabel: "Extrayendo texto",
     },
+    "ocr-pdf": {
+      quality: "Calidad",
+      language: "Idioma",
+      autoDetect: "Detectar automaticamente",
+      pages: "Paginas",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "Ingrese numeros de pagina o rangos (ej. 1-3, 5, 8-10). Maximo 50 paginas.",
+      submit: "Extraer texto",
+      submitBatch: "Extraer texto ({count} archivos)",
+      progressLabel: "Extrayendo texto del PDF",
+    },
     "blur-faces": {
       blurRadius: "Radio de desenfoque",
       blurLight: "Ligero",
@@ -1282,6 +1313,23 @@ export const es: TranslationKeys = {
       scrollToZoom: "Desplaza para hacer zoom",
       photoGenerated: "Foto generada. Descargala desde el panel izquierdo.",
     },
+    "transcribe-audio": {
+      language: "Idioma",
+      autoDetect: "Deteccion automatica",
+      outputFormat: "Formato de salida",
+      plainText: "Texto plano",
+      submit: "Transcribir",
+      submitBatch: "Transcribir ({count} archivos)",
+      progressLabel: "Transcribiendo audio",
+    },
+    "auto-subtitles": {
+      language: "Idioma",
+      autoDetect: "Deteccion automatica",
+      format: "Formato de subtitulos",
+      submit: "Generar subtitulos",
+      submitBatch: "Generar subtitulos ({count} archivos)",
+      progressLabel: "Generando subtitulos",
+    },
     "transparency-fixer": {
       description: "Sube un PNG con fondo transparente falso y lo corregimos en un clic.",
       removeWatermark: "Eliminar marca de agua",
@@ -1293,6 +1341,18 @@ export const es: TranslationKeys = {
       submit: "Corregir transparencia",
       submitBatch: "Corregir transparencia ({count} archivos)",
       progressLabel: "Corrigiendo transparencia",
+    },
+    "background-replace": {
+      color: "Color de fondo",
+      submit: "Reemplazar fondo",
+      submitBatch: "Reemplazar fondo ({count} archivos)",
+      progressLabel: "Reemplazando fondo",
+    },
+    "blur-background": {
+      intensity: "Intensidad de desenfoque",
+      submit: "Desenfocar fondo",
+      submitBatch: "Desenfocar fondo ({count} archivos)",
+      progressLabel: "Desenfocando fondo",
     },
     "watermark-text": {
       watermarkText: "Texto de marca de agua",

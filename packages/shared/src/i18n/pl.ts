@@ -139,6 +139,10 @@ export const pl: TranslationKeys = {
       name: "OCR / Wyodrębnianie tekstu",
       description: "Wyodrębnianie tekstu z obrazów z dokładnością AI",
     },
+    "ocr-pdf": {
+      name: "PDF OCR",
+      description: "Wyodrebnianie tekstu z dokumentów PDF za pomoca OCR opartego na AI",
+    },
     "blur-faces": {
       name: "Rozmywanie twarzy / danych",
       description: "Automatyczne wykrywanie i rozmywanie twarzy oraz danych wrażliwych",
@@ -187,9 +191,25 @@ export const pl: TranslationKeys = {
       description:
         "Tworzenie zdjęć paszportowych, wizowych i do dowodów zgodnych z wymogami z automatycznym wykrywaniem twarzy",
     },
+    "transcribe-audio": {
+      name: "Transkrypcja audio",
+      description: "Zamien mowe na tekst za pomoca transkrypcji opartej na AI",
+    },
+    "auto-subtitles": {
+      name: "Automatyczne napisy",
+      description: "Generuj pliki napisow ze sciezek dzwiekowych wideo",
+    },
     "transparency-fixer": {
       name: "Naprawa przezroczystości PNG",
       description: "Naprawa fałszywej przezroczystości PNG jednym kliknięciem",
+    },
+    "background-replace": {
+      name: "Zamiana tla",
+      description: "Zamien tlo obrazu na jednolity kolor",
+    },
+    "blur-background": {
+      name: "Rozmycie tla",
+      description: "Rozmyj tlo zachowujac ostrosc obiektu",
     },
     "watermark-text": {
       name: "Tekstowy znak wodny",
@@ -1074,6 +1094,17 @@ export const pl: TranslationKeys = {
       submitBatch: "Wyodrębnij tekst ({count} plików)",
       progressLabel: "Wyodrębnianie tekstu",
     },
+    "ocr-pdf": {
+      quality: "Jakosc",
+      language: "Jezyk",
+      autoDetect: "Automatyczne wykrywanie",
+      pages: "Strony",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "Wprowadz numery stron lub zakresy (np. 1-3, 5, 8-10). Maks. 50 stron.",
+      submit: "Wyodrebnij tekst",
+      submitBatch: "Wyodrebnij tekst ({count} plików)",
+      progressLabel: "Wyodrębnianie tekstu z PDF",
+    },
     "blur-faces": {
       blurRadius: "Promień rozmycia",
       blurLight: "Lekkie",
@@ -1299,6 +1330,23 @@ export const pl: TranslationKeys = {
       scrollToZoom: "Przewiń, aby powiększyć",
       photoGenerated: "Zdjęcie wygenerowane. Pobierz z lewego panelu.",
     },
+    "transcribe-audio": {
+      language: "Jezyk",
+      autoDetect: "Automatyczne wykrywanie",
+      outputFormat: "Format wyjsciowy",
+      plainText: "Zwykly tekst",
+      submit: "Transkrybuj",
+      submitBatch: "Transkrybuj ({count} plikow)",
+      progressLabel: "Transkrypcja audio",
+    },
+    "auto-subtitles": {
+      language: "Jezyk",
+      autoDetect: "Automatyczne wykrywanie",
+      format: "Format napisow",
+      submit: "Generuj napisy",
+      submitBatch: "Generuj napisy ({count} plikow)",
+      progressLabel: "Generowanie napisow",
+    },
     "transparency-fixer": {
       description: "Prześlij PNG z fałszywą przezroczystością, a naprawimy to jednym kliknięciem.",
       removeWatermark: "Usuń znak wodny",
@@ -1310,6 +1358,18 @@ export const pl: TranslationKeys = {
       submit: "Napraw przezroczystość",
       submitBatch: "Napraw przezroczystość ({count} plików)",
       progressLabel: "Naprawa przezroczystości",
+    },
+    "background-replace": {
+      color: "Kolor tla",
+      submit: "Zamien tlo",
+      submitBatch: "Zamien tlo ({count} plikow)",
+      progressLabel: "Zamiana tla",
+    },
+    "blur-background": {
+      intensity: "Intensywnosc rozmycia",
+      submit: "Rozmyj tlo",
+      submitBatch: "Rozmyj tlo ({count} plikow)",
+      progressLabel: "Rozmywanie tla",
     },
     "watermark-text": {
       watermarkText: "Tekst znaku wodnego",

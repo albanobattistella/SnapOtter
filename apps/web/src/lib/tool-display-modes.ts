@@ -101,6 +101,11 @@ export const TOOL_DISPLAY_MODES: Record<string, DisplayMode> = {
   "transparency-fixer": "before-after",
   "content-aware-resize": "side-by-side",
   "ai-canvas-expand": "before-after",
+  "ocr-pdf": "no-comparison",
+  "transcribe-audio": "no-comparison",
+  "auto-subtitles": "no-comparison",
+  "background-replace": "no-comparison",
+  "blur-background": "no-comparison",
 
   // Video tools
   "convert-video": "media-player",

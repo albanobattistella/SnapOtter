@@ -141,6 +141,10 @@ export const id: TranslationKeys = {
       name: "OCR / Ekstraksi Teks",
       description: "Ekstrak teks dari gambar dengan akurasi AI",
     },
+    "ocr-pdf": {
+      name: "OCR PDF",
+      description: "Ekstrak teks dari dokumen PDF menggunakan OCR bertenaga AI",
+    },
     "blur-faces": {
       name: "Blur Wajah / Info Pribadi",
       description: "Deteksi otomatis dan blur wajah serta informasi sensitif",
@@ -187,9 +191,25 @@ export const id: TranslationKeys = {
       description:
         "Buat foto paspor, visa, dan KTP sesuai standar pemerintah dengan deteksi wajah otomatis",
     },
+    "transcribe-audio": {
+      name: "Transkripsi Audio",
+      description: "Ubah ucapan menjadi teks dengan transkripsi bertenaga AI",
+    },
+    "auto-subtitles": {
+      name: "Subtitle Otomatis",
+      description: "Buat file subtitle dari trek audio video",
+    },
     "transparency-fixer": {
       name: "Perbaikan Transparansi PNG",
       description: "Perbaiki PNG transparansi palsu dalam satu klik",
+    },
+    "background-replace": {
+      name: "Ganti Latar Belakang",
+      description: "Ganti latar belakang gambar dengan warna solid",
+    },
+    "blur-background": {
+      name: "Buramkan Latar Belakang",
+      description: "Buramkan latar belakang sambil menjaga subjek tetap tajam",
     },
     "watermark-text": {
       name: "Watermark Teks",
@@ -1071,6 +1091,17 @@ export const id: TranslationKeys = {
       submitBatch: "Ekstrak Teks ({count} file)",
       progressLabel: "Mengekstrak teks",
     },
+    "ocr-pdf": {
+      quality: "Kualitas",
+      language: "Bahasa",
+      autoDetect: "Deteksi otomatis",
+      pages: "Halaman",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "Masukkan nomor halaman atau rentang (mis. 1-3, 5, 8-10). Maks 50 halaman.",
+      submit: "Ekstrak Teks",
+      submitBatch: "Ekstrak Teks ({count} file)",
+      progressLabel: "Mengekstrak teks dari PDF",
+    },
     "blur-faces": {
       blurRadius: "Radius Blur",
       blurLight: "Ringan",
@@ -1295,6 +1326,23 @@ export const id: TranslationKeys = {
       scrollToZoom: "Gulir untuk zoom",
       photoGenerated: "Foto telah dibuat. Unduh dari panel kiri.",
     },
+    "transcribe-audio": {
+      language: "Bahasa",
+      autoDetect: "Deteksi otomatis",
+      outputFormat: "Format Output",
+      plainText: "Teks Biasa",
+      submit: "Transkripsi",
+      submitBatch: "Transkripsi ({count} file)",
+      progressLabel: "Mentranskripsi audio",
+    },
+    "auto-subtitles": {
+      language: "Bahasa",
+      autoDetect: "Deteksi otomatis",
+      format: "Format Subtitle",
+      submit: "Buat Subtitle",
+      submitBatch: "Buat Subtitle ({count} file)",
+      progressLabel: "Membuat subtitle",
+    },
     "transparency-fixer": {
       description:
         "Unggah PNG dengan latar transparan palsu dan kami akan memperbaikinya dalam satu klik.",
@@ -1307,6 +1355,18 @@ export const id: TranslationKeys = {
       submit: "Perbaiki Transparansi",
       submitBatch: "Perbaiki Transparansi ({count} file)",
       progressLabel: "Memperbaiki transparansi",
+    },
+    "background-replace": {
+      color: "Warna Latar Belakang",
+      submit: "Ganti Latar Belakang",
+      submitBatch: "Ganti Latar Belakang ({count} file)",
+      progressLabel: "Mengganti latar belakang",
+    },
+    "blur-background": {
+      intensity: "Intensitas Keburaman",
+      submit: "Buramkan Latar Belakang",
+      submitBatch: "Buramkan Latar Belakang ({count} file)",
+      progressLabel: "Memburamkan latar belakang",
     },
     "watermark-text": {
       watermarkText: "Teks Watermark",

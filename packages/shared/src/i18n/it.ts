@@ -140,6 +140,10 @@ export const it: TranslationKeys = {
       name: "OCR / Estrazione testo",
       description: "Estrai testo dalle immagini con precisione basata sull'IA",
     },
+    "ocr-pdf": {
+      name: "OCR PDF",
+      description: "Estrai testo da documenti PDF con OCR basato su IA",
+    },
     "blur-faces": {
       name: "Sfocatura volti / dati sensibili",
       description: "Rileva e sfoca automaticamente volti e informazioni sensibili",
@@ -187,9 +191,25 @@ export const it: TranslationKeys = {
       description:
         "Crea foto per passaporto, visto e documenti d'identita conformi ai requisiti ufficiali con rilevamento automatico del volto",
     },
+    "transcribe-audio": {
+      name: "Trascrivi audio",
+      description: "Converti il parlato in testo con trascrizione basata su IA",
+    },
+    "auto-subtitles": {
+      name: "Sottotitoli automatici",
+      description: "Genera file di sottotitoli dalle tracce audio dei video",
+    },
     "transparency-fixer": {
       name: "Correttore trasparenza PNG",
       description: "Correggi PNG con falsa trasparenza in un clic",
+    },
+    "background-replace": {
+      name: "Sostituzione sfondo",
+      description: "Sostituisci lo sfondo con un colore uniforme",
+    },
+    "blur-background": {
+      name: "Sfocatura sfondo",
+      description: "Sfoca lo sfondo mantenendo il soggetto nitido",
     },
     "watermark-text": {
       name: "Filigrana testo",
@@ -1070,6 +1090,17 @@ export const it: TranslationKeys = {
       submitBatch: "Estrai testo ({count} file)",
       progressLabel: "Estrazione testo",
     },
+    "ocr-pdf": {
+      quality: "Qualita",
+      language: "Lingua",
+      autoDetect: "Rilevamento automatico",
+      pages: "Pagine",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "Inserisci numeri di pagina o intervalli (es. 1-3, 5, 8-10). Max 50 pagine.",
+      submit: "Estrai testo",
+      submitBatch: "Estrai testo ({count} file)",
+      progressLabel: "Estrazione testo dal PDF",
+    },
     "blur-faces": {
       blurRadius: "Raggio sfocatura",
       blurLight: "Leggero",
@@ -1295,6 +1326,23 @@ export const it: TranslationKeys = {
       scrollToZoom: "Scorri per ingrandire",
       photoGenerated: "Foto generata. Scaricala dal pannello sinistro.",
     },
+    "transcribe-audio": {
+      language: "Lingua",
+      autoDetect: "Rilevamento automatico",
+      outputFormat: "Formato di output",
+      plainText: "Testo semplice",
+      submit: "Trascrivi",
+      submitBatch: "Trascrivi ({count} file)",
+      progressLabel: "Trascrizione audio",
+    },
+    "auto-subtitles": {
+      language: "Lingua",
+      autoDetect: "Rilevamento automatico",
+      format: "Formato sottotitoli",
+      submit: "Genera sottotitoli",
+      submitBatch: "Genera sottotitoli ({count} file)",
+      progressLabel: "Generazione sottotitoli",
+    },
     "transparency-fixer": {
       description: "Carica un PNG con sfondo trasparente falso e lo correggiamo in un clic.",
       removeWatermark: "Rimuovi filigrana",
@@ -1306,6 +1354,18 @@ export const it: TranslationKeys = {
       submit: "Correggi trasparenza",
       submitBatch: "Correggi trasparenza ({count} file)",
       progressLabel: "Correzione trasparenza",
+    },
+    "background-replace": {
+      color: "Colore di sfondo",
+      submit: "Sostituisci sfondo",
+      submitBatch: "Sostituisci sfondo ({count} file)",
+      progressLabel: "Sostituzione sfondo",
+    },
+    "blur-background": {
+      intensity: "Intensita sfocatura",
+      submit: "Sfoca sfondo",
+      submitBatch: "Sfoca sfondo ({count} file)",
+      progressLabel: "Sfocatura sfondo",
     },
     "watermark-text": {
       watermarkText: "Testo della filigrana",

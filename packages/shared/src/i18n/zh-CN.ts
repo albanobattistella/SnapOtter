@@ -116,6 +116,10 @@ export const zhCN: TranslationKeys = {
       name: "OCR / 文字提取",
       description: "AI 高精度图片文字识别",
     },
+    "ocr-pdf": {
+      name: "PDF OCR",
+      description: "使用AI驱动的OCR从PDF文档中提取文字",
+    },
     "blur-faces": {
       name: "人脸 / 隐私模糊",
       description: "自动检测并模糊人脸和敏感信息",
@@ -160,9 +164,25 @@ export const zhCN: TranslationKeys = {
       name: "证件照",
       description: "自动人脸检测，生成符合各国规格的护照、签证和证件照",
     },
+    "transcribe-audio": {
+      name: "音频转文字",
+      description: "使用AI转录将语音转换为文字",
+    },
+    "auto-subtitles": {
+      name: "自动字幕",
+      description: "从视频音轨生成字幕文件",
+    },
     "transparency-fixer": {
       name: "PNG 透明度修复",
       description: "一键修复伪透明 PNG 图片",
+    },
+    "background-replace": {
+      name: "替换背景",
+      description: "将图像背景替换为纯色",
+    },
+    "blur-background": {
+      name: "模糊背景",
+      description: "模糊背景同时保持主体清晰",
     },
     "watermark-text": { name: "文字水印", description: "添加文字水印覆盖层" },
     "watermark-image": { name: "图片水印", description: "叠加 Logo 作为水印" },
@@ -1013,6 +1033,17 @@ export const zhCN: TranslationKeys = {
       submitBatch: "提取文字（{count} 个文件）",
       progressLabel: "正在提取文字",
     },
+    "ocr-pdf": {
+      quality: "质量",
+      language: "语言",
+      autoDetect: "自动检测",
+      pages: "页面",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "输入页码或范围（例如 1-3, 5, 8-10）。最多50页。",
+      submit: "提取文字",
+      submitBatch: "提取文字（{count}个文件）",
+      progressLabel: "正在从PDF中提取文字",
+    },
     "blur-faces": {
       blurRadius: "模糊半径",
       blurLight: "轻度",
@@ -1231,6 +1262,23 @@ export const zhCN: TranslationKeys = {
       scrollToZoom: "滚轮缩放",
       photoGenerated: "照片已生成。从左侧面板下载。",
     },
+    "transcribe-audio": {
+      language: "语言",
+      autoDetect: "自动检测",
+      outputFormat: "输出格式",
+      plainText: "纯文本",
+      submit: "转录",
+      submitBatch: "转录 ({count} 个文件)",
+      progressLabel: "正在转录音频",
+    },
+    "auto-subtitles": {
+      language: "语言",
+      autoDetect: "自动检测",
+      format: "字幕格式",
+      submit: "生成字幕",
+      submitBatch: "生成字幕 ({count} 个文件)",
+      progressLabel: "正在生成字幕",
+    },
     "transparency-fixer": {
       description: "上传一张伪透明 PNG 图片，一键修复透明背景。",
       removeWatermark: "移除水印",
@@ -1242,6 +1290,18 @@ export const zhCN: TranslationKeys = {
       submit: "修复透明度",
       submitBatch: "修复透明度（{count} 个文件）",
       progressLabel: "正在修复透明度",
+    },
+    "background-replace": {
+      color: "背景颜色",
+      submit: "替换背景",
+      submitBatch: "替换背景 ({count} 个文件)",
+      progressLabel: "正在替换背景",
+    },
+    "blur-background": {
+      intensity: "模糊强度",
+      submit: "模糊背景",
+      submitBatch: "模糊背景 ({count} 个文件)",
+      progressLabel: "正在模糊背景",
     },
     "watermark-text": {
       watermarkText: "水印文字",

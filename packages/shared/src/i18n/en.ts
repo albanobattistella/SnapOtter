@@ -116,6 +116,10 @@ export const en = {
       name: "OCR / Text Extraction",
       description: "Extract text from images with AI-powered accuracy",
     },
+    "ocr-pdf": {
+      name: "PDF OCR",
+      description: "Extract text from PDF documents using AI-powered OCR",
+    },
     "blur-faces": {
       name: "Face / PII Blur",
       description: "Auto-detect and blur faces and sensitive info",
@@ -162,9 +166,25 @@ export const en = {
       description:
         "Create government-compliant passport, visa, and ID photos with auto face detection",
     },
+    "transcribe-audio": {
+      name: "Transcribe Audio",
+      description: "Convert speech to text with AI-powered transcription",
+    },
+    "auto-subtitles": {
+      name: "Auto Subtitles",
+      description: "Generate subtitle files from video audio tracks",
+    },
     "transparency-fixer": {
       name: "PNG Transparency Fixer",
       description: "Fix fake transparent PNGs in one click",
+    },
+    "background-replace": {
+      name: "Background Replace",
+      description: "Replace image background with a solid color",
+    },
+    "blur-background": {
+      name: "Blur Background",
+      description: "Blur the background while keeping the subject sharp",
     },
     "watermark-text": { name: "Text Watermark", description: "Add text watermark overlay" },
     "watermark-image": { name: "Image Watermark", description: "Overlay a logo as watermark" },
@@ -1023,6 +1043,17 @@ export const en = {
       submitBatch: "Extract Text ({count} files)",
       progressLabel: "Extracting text",
     },
+    "ocr-pdf": {
+      quality: "Quality",
+      language: "Language",
+      autoDetect: "Auto-detect",
+      pages: "Pages",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "Enter page numbers or ranges (e.g. 1-3, 5, 8-10). Max 50 pages.",
+      submit: "Extract Text",
+      submitBatch: "Extract Text ({count} files)",
+      progressLabel: "Extracting text from PDF",
+    },
     "blur-faces": {
       blurRadius: "Blur Radius",
       blurLight: "Light",
@@ -1246,6 +1277,23 @@ export const en = {
       scrollToZoom: "Scroll to zoom",
       photoGenerated: "Photo generated. Download from the left panel.",
     },
+    "transcribe-audio": {
+      language: "Language",
+      autoDetect: "Auto-detect",
+      outputFormat: "Output Format",
+      plainText: "Plain Text",
+      submit: "Transcribe",
+      submitBatch: "Transcribe ({count} files)",
+      progressLabel: "Transcribing audio",
+    },
+    "auto-subtitles": {
+      language: "Language",
+      autoDetect: "Auto-detect",
+      format: "Subtitle Format",
+      submit: "Generate Subtitles",
+      submitBatch: "Generate Subtitles ({count} files)",
+      progressLabel: "Generating subtitles",
+    },
     "transparency-fixer": {
       description: "Upload a PNG with a fake transparent background and we'll fix it in one click.",
       removeWatermark: "Remove Watermark",
@@ -1257,6 +1305,18 @@ export const en = {
       submit: "Fix Transparency",
       submitBatch: "Fix Transparency ({count} files)",
       progressLabel: "Fixing transparency",
+    },
+    "background-replace": {
+      color: "Background Color",
+      submit: "Replace Background",
+      submitBatch: "Replace Background ({count} files)",
+      progressLabel: "Replacing background",
+    },
+    "blur-background": {
+      intensity: "Blur Intensity",
+      submit: "Blur Background",
+      submitBatch: "Blur Background ({count} files)",
+      progressLabel: "Blurring background",
     },
     "watermark-text": {
       watermarkText: "Watermark Text",

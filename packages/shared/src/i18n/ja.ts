@@ -119,6 +119,10 @@ export const ja: TranslationKeys = {
       name: "OCR / テキスト抽出",
       description: "AIで画像からテキストを高精度に抽出",
     },
+    "ocr-pdf": {
+      name: "PDF OCR",
+      description: "AI搭載のOCRでPDF文書からテキストを抽出",
+    },
     "blur-faces": {
       name: "顔/個人情報ぼかし",
       description: "顔と機密情報を自動検出してぼかし",
@@ -163,9 +167,25 @@ export const ja: TranslationKeys = {
       name: "証明写真",
       description: "顔自動検出付き、政府規格準拠のパスポート、ビザ、身分証写真を作成",
     },
+    "transcribe-audio": {
+      name: "音声文字起こし",
+      description: "AI搭載の文字起こしで音声をテキストに変換",
+    },
+    "auto-subtitles": {
+      name: "自動字幕",
+      description: "動画の音声トラックから字幕ファイルを生成",
+    },
     "transparency-fixer": {
       name: "PNG透過修正",
       description: "偽の透過PNGをワンクリックで修正",
+    },
+    "background-replace": {
+      name: "背景置換",
+      description: "画像の背景を単色に置き換えます",
+    },
+    "blur-background": {
+      name: "背景ぼかし",
+      description: "被写体を鮮明に保ちながら背景をぼかします",
     },
     "watermark-text": {
       name: "テキストウォーターマーク",
@@ -1030,6 +1050,17 @@ export const ja: TranslationKeys = {
       submitBatch: "テキスト抽出（{count}ファイル）",
       progressLabel: "テキストを抽出中",
     },
+    "ocr-pdf": {
+      quality: "品質",
+      language: "言語",
+      autoDetect: "自動検出",
+      pages: "ページ",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "ページ番号または範囲を入力（例: 1-3, 5, 8-10）。最大50ページ。",
+      submit: "テキスト抽出",
+      submitBatch: "テキスト抽出（{count}ファイル）",
+      progressLabel: "PDFからテキストを抽出中",
+    },
     "blur-faces": {
       blurRadius: "ぼかし半径",
       blurLight: "弱",
@@ -1253,6 +1284,23 @@ export const ja: TranslationKeys = {
       scrollToZoom: "スクロールでズーム",
       photoGenerated: "写真が生成されました。左パネルからダウンロードしてください。",
     },
+    "transcribe-audio": {
+      language: "言語",
+      autoDetect: "自動検出",
+      outputFormat: "出力形式",
+      plainText: "プレーンテキスト",
+      submit: "文字起こし",
+      submitBatch: "文字起こし ({count}ファイル)",
+      progressLabel: "音声を文字起こし中",
+    },
+    "auto-subtitles": {
+      language: "言語",
+      autoDetect: "自動検出",
+      format: "字幕形式",
+      submit: "字幕を生成",
+      submitBatch: "字幕を生成 ({count}ファイル)",
+      progressLabel: "字幕を生成中",
+    },
     "transparency-fixer": {
       description: "偽の透過背景のPNGをアップロードすると、ワンクリックで修正します。",
       removeWatermark: "ウォーターマーク除去",
@@ -1264,6 +1312,18 @@ export const ja: TranslationKeys = {
       submit: "透過を修正",
       submitBatch: "透過を修正（{count}ファイル）",
       progressLabel: "透過を修正中",
+    },
+    "background-replace": {
+      color: "背景色",
+      submit: "背景を置換",
+      submitBatch: "背景を置換 ({count} ファイル)",
+      progressLabel: "背景を置換中",
+    },
+    "blur-background": {
+      intensity: "ぼかし強度",
+      submit: "背景をぼかす",
+      submitBatch: "背景をぼかす ({count} ファイル)",
+      progressLabel: "背景をぼかし中",
     },
     "watermark-text": {
       watermarkText: "ウォーターマークテキスト",

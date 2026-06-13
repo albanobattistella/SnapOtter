@@ -8,9 +8,12 @@ import { registerAspectPad } from "./aspect-pad.js";
 import { registerAudioChannels } from "./audio-channels.js";
 import { registerAudioMetadata } from "./audio-metadata.js";
 import { registerAudioSpeed } from "./audio-speed.js";
+import { registerAutoSubtitles } from "./auto-subtitles.js";
+import { registerBackgroundReplace } from "./background-replace.js";
 import { registerBarcodeGenerate } from "./barcode-generate.js";
 import { registerBarcodeRead } from "./barcode-read.js";
 import { registerBeautify } from "./beautify.js";
+import { registerBlurBackground } from "./blur-background.js";
 import { registerBlurFaces } from "./blur-faces.js";
 import { registerBlurPad } from "./blur-pad.js";
 import { registerBookletPdf } from "./booklet-pdf.js";
@@ -87,6 +90,7 @@ import { registerNoiseRemoval } from "./noise-removal.js";
 import { registerNormalizeAudio } from "./normalize-audio.js";
 import { registerNupPdf } from "./nup-pdf.js";
 import { registerOcr } from "./ocr.js";
+import { registerOcrPdf } from "./ocr-pdf.js";
 import { registerOptimizeForWeb } from "./optimize-for-web.js";
 import { registerOrganizePdf } from "./organize-pdf.js";
 import { registerPassportPhoto } from "./passport-photo.js";
@@ -131,6 +135,7 @@ import { registerStripMetadata } from "./strip-metadata.js";
 import { registerSvgToRaster } from "./svg-to-raster.js";
 import { registerTextOverlay } from "./text-overlay.js";
 import { registerToEpub } from "./to-epub.js";
+import { registerTranscribeAudio } from "./transcribe-audio.js";
 import { registerTransparencyFixer } from "./transparency-fixer.js";
 import { registerTrimAudio } from "./trim-audio.js";
 import { registerTrimVideo } from "./trim-video.js";
@@ -346,21 +351,26 @@ export async function registerToolRoutes(app: FastifyInstance): Promise<void> {
     { id: "yaml-json", register: registerYamlJson },
 
     // AI Tools
+    { id: "background-replace", register: registerBackgroundReplace },
+    { id: "blur-background", register: registerBlurBackground },
     { id: "remove-background", register: registerRemoveBackground },
     { id: "upscale", register: registerUpscale },
     { id: "ocr", register: registerOcr },
+    { id: "ocr-pdf", register: registerOcrPdf },
     { id: "blur-faces", register: registerBlurFaces },
     { id: "erase-object", register: registerEraseObject },
     { id: "smart-crop", register: registerSmartCrop },
     { id: "image-enhancement", register: registerImageEnhancement },
     { id: "content-aware-resize", register: registerContentAwareResize },
     { id: "ai-canvas-expand", register: registerAiCanvasExpand },
+    { id: "auto-subtitles", register: registerAutoSubtitles },
     { id: "colorize", register: registerColorize },
     { id: "enhance-faces", register: registerEnhanceFaces },
     { id: "noise-removal", register: registerNoiseRemoval },
     { id: "passport-photo", register: registerPassportPhoto },
     { id: "red-eye-removal", register: registerRedEyeRemoval },
     { id: "restore-photo", register: registerRestorePhoto },
+    { id: "transcribe-audio", register: registerTranscribeAudio },
     { id: "transparency-fixer", register: registerTransparencyFixer },
   ];
 

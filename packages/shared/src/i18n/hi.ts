@@ -140,6 +140,10 @@ export const hi: TranslationKeys = {
       name: "OCR / टेक्स्ट एक्सट्रैक्शन",
       description: "AI-संचालित सटीकता से इमेज से टेक्स्ट निकालें",
     },
+    "ocr-pdf": {
+      name: "PDF OCR",
+      description: "AI-संचालित OCR से PDF दस्तावेजों से टेक्स्ट निकालें",
+    },
     "blur-faces": {
       name: "चेहरा / संवेदनशील जानकारी ब्लर",
       description: "चेहरों और संवेदनशील जानकारी को ऑटो-डिटेक्ट करें और ब्लर करें",
@@ -184,9 +188,25 @@ export const hi: TranslationKeys = {
       name: "पासपोर्ट फोटो",
       description: "ऑटो फेस डिटेक्शन के साथ सरकारी मानकों के अनुरूप पासपोर्ट, वीज़ा और ID फोटो बनाएं",
     },
+    "transcribe-audio": {
+      name: "ऑडियो ट्रांसक्राइब करें",
+      description: "AI-संचालित ट्रांसक्रिप्शन से भाषण को टेक्स्ट में बदलें",
+    },
+    "auto-subtitles": {
+      name: "स्वचालित उपशीर्षक",
+      description: "वीडियो ऑडियो ट्रैक से उपशीर्षक फ़ाइलें बनाएं",
+    },
     "transparency-fixer": {
       name: "PNG ट्रांसपेरेंसी फिक्सर",
       description: "नकली पारदर्शी PNG को एक क्लिक में ठीक करें",
+    },
+    "background-replace": {
+      name: "पृष्ठभूमि बदलें",
+      description: "छवि पृष्ठभूमि को एक ठोस रंग से बदलें",
+    },
+    "blur-background": {
+      name: "पृष्ठभूमि धुंधला",
+      description: "विषय को स्पष्ट रखते हुए पृष्ठभूमि को धुंधला करें",
     },
     "watermark-text": {
       name: "टेक्स्ट वॉटरमार्क",
@@ -1061,6 +1081,17 @@ export const hi: TranslationKeys = {
       submitBatch: "टेक्स्ट निकालें ({count} फाइलें)",
       progressLabel: "टेक्स्ट निकाला जा रहा है",
     },
+    "ocr-pdf": {
+      quality: "क्वालिटी",
+      language: "भाषा",
+      autoDetect: "ऑटो-डिटेक्ट",
+      pages: "पेज",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "पेज नंबर या रेंज दर्ज करें (जैसे 1-3, 5, 8-10)। अधिकतम 50 पेज।",
+      submit: "टेक्स्ट निकालें",
+      submitBatch: "टेक्स्ट निकालें ({count} फाइलें)",
+      progressLabel: "PDF से टेक्स्ट निकाला जा रहा है",
+    },
     "blur-faces": {
       blurRadius: "ब्लर रेडियस",
       blurLight: "हल्का",
@@ -1284,6 +1315,23 @@ export const hi: TranslationKeys = {
       scrollToZoom: "ज़ूम करने के लिए स्क्रॉल करें",
       photoGenerated: "फोटो जनरेट हो गई। बाएं पैनल से डाउनलोड करें।",
     },
+    "transcribe-audio": {
+      language: "भाषा",
+      autoDetect: "स्वतः पहचान",
+      outputFormat: "आउटपुट प्रारूप",
+      plainText: "सादा टेक्स्ट",
+      submit: "ट्रांसक्राइब करें",
+      submitBatch: "ट्रांसक्राइब करें ({count} फ़ाइलें)",
+      progressLabel: "ऑडियो ट्रांसक्राइब हो रहा है",
+    },
+    "auto-subtitles": {
+      language: "भाषा",
+      autoDetect: "स्वतः पहचान",
+      format: "उपशीर्षक प्रारूप",
+      submit: "उपशीर्षक बनाएं",
+      submitBatch: "उपशीर्षक बनाएं ({count} फ़ाइलें)",
+      progressLabel: "उपशीर्षक बन रहे हैं",
+    },
     "transparency-fixer": {
       description: "नकली पारदर्शी बैकग्राउंड वाला PNG अपलोड करें और हम इसे एक क्लिक में ठीक कर देंगे।",
       removeWatermark: "वॉटरमार्क हटाएं",
@@ -1295,6 +1343,18 @@ export const hi: TranslationKeys = {
       submit: "ट्रांसपेरेंसी ठीक करें",
       submitBatch: "ट्रांसपेरेंसी ठीक करें ({count} फाइलें)",
       progressLabel: "ट्रांसपेरेंसी ठीक हो रही है",
+    },
+    "background-replace": {
+      color: "पृष्ठभूमि रंग",
+      submit: "पृष्ठभूमि बदलें",
+      submitBatch: "पृष्ठभूमि बदलें ({count} फ़ाइलें)",
+      progressLabel: "पृष्ठभूमि बदली जा रही है",
+    },
+    "blur-background": {
+      intensity: "धुंधलापन तीव्रता",
+      submit: "पृष्ठभूमि धुंधला करें",
+      submitBatch: "पृष्ठभूमि धुंधला करें ({count} फ़ाइलें)",
+      progressLabel: "पृष्ठभूमि धुंधला हो रही है",
     },
     "watermark-text": {
       watermarkText: "वॉटरमार्क टेक्स्ट",

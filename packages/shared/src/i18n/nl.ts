@@ -143,6 +143,10 @@ export const nl: TranslationKeys = {
       name: "OCR / Tekstherkenning",
       description: "Tekst uit afbeeldingen halen met AI-nauwkeurigheid",
     },
+    "ocr-pdf": {
+      name: "PDF OCR",
+      description: "Tekst uit PDF-documenten extraheren met AI-gestuurde OCR",
+    },
     "blur-faces": {
       name: "Gezichten / PII vervagen",
       description: "Gezichten en gevoelige info automatisch detecteren en vervagen",
@@ -189,9 +193,25 @@ export const nl: TranslationKeys = {
       description:
         "Officieel geldige pas-, visum- en ID-foto's maken met automatische gezichtsdetectie",
     },
+    "transcribe-audio": {
+      name: "Audio transcriberen",
+      description: "Spraak naar tekst omzetten met AI-aangedreven transcriptie",
+    },
+    "auto-subtitles": {
+      name: "Automatische ondertiteling",
+      description: "Ondertitelingsbestanden genereren uit video-audiotracks",
+    },
     "transparency-fixer": {
       name: "PNG-transparantie repareren",
       description: "Nep-transparante PNGs met een klik repareren",
+    },
+    "background-replace": {
+      name: "Achtergrond vervangen",
+      description: "Afbeeldingsachtergrond vervangen door een effen kleur",
+    },
+    "blur-background": {
+      name: "Achtergrond vervagen",
+      description: "Achtergrond vervagen terwijl het onderwerp scherp blijft",
     },
     "watermark-text": {
       name: "Tekst-watermerk",
@@ -1072,6 +1092,17 @@ export const nl: TranslationKeys = {
       submitBatch: "Tekst extraheren ({count} bestanden)",
       progressLabel: "Tekst extraheren",
     },
+    "ocr-pdf": {
+      quality: "Kwaliteit",
+      language: "Taal",
+      autoDetect: "Automatisch detecteren",
+      pages: "Pagina's",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "Voer paginanummers of bereiken in (bijv. 1-3, 5, 8-10). Max 50 pagina's.",
+      submit: "Tekst extraheren",
+      submitBatch: "Tekst extraheren ({count} bestanden)",
+      progressLabel: "Tekst uit PDF extraheren",
+    },
     "blur-faces": {
       blurRadius: "Vervagingsradius",
       blurLight: "Licht",
@@ -1297,6 +1328,23 @@ export const nl: TranslationKeys = {
       scrollToZoom: "Scroll om te zoomen",
       photoGenerated: "Foto gegenereerd. Download via het linkerpaneel.",
     },
+    "transcribe-audio": {
+      language: "Taal",
+      autoDetect: "Automatisch detecteren",
+      outputFormat: "Uitvoerformaat",
+      plainText: "Platte tekst",
+      submit: "Transcriberen",
+      submitBatch: "Transcriberen ({count} bestanden)",
+      progressLabel: "Audio transcriberen",
+    },
+    "auto-subtitles": {
+      language: "Taal",
+      autoDetect: "Automatisch detecteren",
+      format: "Ondertitelingsformaat",
+      submit: "Ondertiteling genereren",
+      submitBatch: "Ondertiteling genereren ({count} bestanden)",
+      progressLabel: "Ondertiteling genereren",
+    },
     "transparency-fixer": {
       description:
         "Upload een PNG met een nep-transparante achtergrond en we repareren het met een klik.",
@@ -1309,6 +1357,18 @@ export const nl: TranslationKeys = {
       submit: "Transparantie repareren",
       submitBatch: "Transparantie repareren ({count} bestanden)",
       progressLabel: "Transparantie repareren",
+    },
+    "background-replace": {
+      color: "Achtergrondkleur",
+      submit: "Achtergrond vervangen",
+      submitBatch: "Achtergrond vervangen ({count} bestanden)",
+      progressLabel: "Achtergrond vervangen",
+    },
+    "blur-background": {
+      intensity: "Vervagingsintensiteit",
+      submit: "Achtergrond vervagen",
+      submitBatch: "Achtergrond vervagen ({count} bestanden)",
+      progressLabel: "Achtergrond vervagen",
     },
     "watermark-text": {
       watermarkText: "Watermerktekst",

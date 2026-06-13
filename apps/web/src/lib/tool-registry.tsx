@@ -269,6 +269,9 @@ const UpscaleSettings = lazy(() =>
 const OcrSettings = lazy(() =>
   import("@/components/tools/ocr-settings").then((m) => ({ default: m.OcrSettings })),
 );
+const OcrPdfSettings = lazy(() =>
+  import("@/components/tools/ocr-pdf-settings").then((m) => ({ default: m.OcrPdfSettings })),
+);
 const BlurFacesSettings = lazy(() =>
   import("@/components/tools/blur-faces-settings").then((m) => ({
     default: m.BlurFacesSettings,
@@ -342,6 +345,26 @@ const MemeGeneratorPreview = lazy(() =>
 const ColorBlindnessSettings = lazy(() =>
   import("@/components/tools/color-blindness-settings").then((m) => ({
     default: m.ColorBlindnessSettings,
+  })),
+);
+const TranscribeAudioSettings = lazy(() =>
+  import("@/components/tools/transcribe-audio-settings").then((m) => ({
+    default: m.TranscribeAudioSettings,
+  })),
+);
+const AutoSubtitlesSettings = lazy(() =>
+  import("@/components/tools/auto-subtitles-settings").then((m) => ({
+    default: m.AutoSubtitlesSettings,
+  })),
+);
+const BackgroundReplaceSettings = lazy(() =>
+  import("@/components/tools/background-replace-settings").then((m) => ({
+    default: m.BackgroundReplaceSettings,
+  })),
+);
+const BlurBackgroundSettings = lazy(() =>
+  import("@/components/tools/blur-background-settings").then((m) => ({
+    default: m.BlurBackgroundSettings,
   })),
 );
 const ConvertVideoSettings = lazy(() =>
@@ -952,6 +975,7 @@ const ENTRY_CONFIG: ReadonlyArray<[string, RegistryEntryConfig]> = [
   ["remove-background", { Settings: RemoveBgSettings }],
   ["upscale", { Settings: UpscaleSettings }],
   ["ocr", { Settings: OcrSettings }],
+  ["ocr-pdf", { accept: ".pdf", Settings: OcrPdfSettings }],
   ["blur-faces", { Settings: BlurFacesSettings }],
   ["enhance-faces", { Settings: EnhanceFacesSettings }],
   ["erase-object", { Settings: EraseObjectSettingsWrapper as never }],
@@ -965,6 +989,10 @@ const ENTRY_CONFIG: ReadonlyArray<[string, RegistryEntryConfig]> = [
   ["transparency-fixer", { Settings: TransparencyFixerSettings }],
   ["content-aware-resize", { Settings: ContentAwareResizeSettings }],
   ["ai-canvas-expand", { Settings: AiCanvasExpandSettings }],
+  ["transcribe-audio", { accept: AUDIO_INPUTS.join(","), Settings: TranscribeAudioSettings }],
+  ["auto-subtitles", { accept: VIDEO_INPUTS.join(","), Settings: AutoSubtitlesSettings }],
+  ["background-replace", { Settings: BackgroundReplaceSettings }],
+  ["blur-background", { Settings: BlurBackgroundSettings }],
 
   // Video tools
   ["convert-video", { accept: VIDEO_INPUTS.join(","), Settings: ConvertVideoSettings }],

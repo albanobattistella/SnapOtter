@@ -142,6 +142,10 @@ export const vi: TranslationKeys = {
       name: "OCR / Trích xuất văn bản",
       description: "Trích xuất văn bản từ hình ảnh với độ chính xác cao nhờ AI",
     },
+    "ocr-pdf": {
+      name: "OCR PDF",
+      description: "Trich xuat van ban tu tai lieu PDF bang OCR ho tro boi AI",
+    },
     "blur-faces": {
       name: "Làm mờ khuôn mặt / Thông tin nhạy cảm",
       description: "Tự động phát hiện và làm mờ khuôn mặt cùng thông tin nhạy cảm",
@@ -188,9 +192,25 @@ export const vi: TranslationKeys = {
       description:
         "Tạo ảnh hộ chiếu, thị thực và giấy tờ tùy thân đạt chuẩn với phát hiện khuôn mặt tự động",
     },
+    "transcribe-audio": {
+      name: "Phien am thanh",
+      description: "Chuyen doi giong noi thanh van ban voi phien am bang AI",
+    },
+    "auto-subtitles": {
+      name: "Phu De Tu Dong",
+      description: "Tao tep phu de tu ban am thanh video",
+    },
     "transparency-fixer": {
       name: "Sửa trong suốt PNG",
       description: "Sửa ảnh PNG giả trong suốt chỉ với một cú nhấp",
+    },
+    "background-replace": {
+      name: "Thay doi nen",
+      description: "Thay the nen hinh anh bang mau don sac",
+    },
+    "blur-background": {
+      name: "Lam mo nen",
+      description: "Lam mo nen trong khi giu cho chu the sac net",
     },
     "watermark-text": {
       name: "Hình mờ văn bản",
@@ -1072,6 +1092,17 @@ export const vi: TranslationKeys = {
       submitBatch: "Trích xuất văn bản ({count} tệp)",
       progressLabel: "Đang trích xuất văn bản",
     },
+    "ocr-pdf": {
+      quality: "Chat luong",
+      language: "Ngon ngu",
+      autoDetect: "Tu dong nhan dien",
+      pages: "Trang",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "Nhap so trang hoac pham vi (vd. 1-3, 5, 8-10). Toi da 50 trang.",
+      submit: "Trich xuat van ban",
+      submitBatch: "Trich xuat van ban ({count} tep)",
+      progressLabel: "Dang trich xuat van ban tu PDF",
+    },
     "blur-faces": {
       blurRadius: "Bán kính làm mờ",
       blurLight: "Nhẹ",
@@ -1296,6 +1327,23 @@ export const vi: TranslationKeys = {
       scrollToZoom: "Cuộn để thu phóng",
       photoGenerated: "Ảnh đã được tạo. Tải xuống từ bảng bên trái.",
     },
+    "transcribe-audio": {
+      language: "Ngon ngu",
+      autoDetect: "Tu dong phat hien",
+      outputFormat: "Dinh dang dau ra",
+      plainText: "Van ban thuan",
+      submit: "Phien am",
+      submitBatch: "Phien am ({count} tep)",
+      progressLabel: "Dang phien am",
+    },
+    "auto-subtitles": {
+      language: "Ngon ngu",
+      autoDetect: "Tu dong phat hien",
+      format: "Dinh dang phu de",
+      submit: "Tao phu de",
+      submitBatch: "Tao phu de ({count} tep)",
+      progressLabel: "Dang tao phu de",
+    },
     "transparency-fixer": {
       description: "Tải lên PNG có nền giả trong suốt và chúng tôi sẽ sửa chỉ với một cú nhấp.",
       removeWatermark: "Xóa hình mờ",
@@ -1307,6 +1355,18 @@ export const vi: TranslationKeys = {
       submit: "Sửa trong suốt",
       submitBatch: "Sửa trong suốt ({count} tệp)",
       progressLabel: "Đang sửa trong suốt",
+    },
+    "background-replace": {
+      color: "Mau nen",
+      submit: "Thay doi nen",
+      submitBatch: "Thay doi nen ({count} tep)",
+      progressLabel: "Dang thay doi nen",
+    },
+    "blur-background": {
+      intensity: "Cuong do lam mo",
+      submit: "Lam mo nen",
+      submitBatch: "Lam mo nen ({count} tep)",
+      progressLabel: "Dang lam mo nen",
     },
     "watermark-text": {
       watermarkText: "Văn bản hình mờ",

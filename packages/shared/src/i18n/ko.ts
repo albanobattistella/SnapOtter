@@ -116,6 +116,10 @@ export const ko: TranslationKeys = {
       name: "OCR / 텍스트 추출",
       description: "AI로 이미지에서 높은 정확도로 텍스트 추출",
     },
+    "ocr-pdf": {
+      name: "PDF OCR",
+      description: "AI 기반 OCR로 PDF 문서에서 텍스트 추출",
+    },
     "blur-faces": {
       name: "얼굴/개인정보 블러",
       description: "얼굴과 민감한 정보를 자동 감지하여 블러 처리",
@@ -160,9 +164,25 @@ export const ko: TranslationKeys = {
       name: "증명사진",
       description: "얼굴 자동 감지로 정부 규격에 맞는 여권, 비자, 신분증 사진 생성",
     },
+    "transcribe-audio": {
+      name: "오디오 전사",
+      description: "AI 기반 전사로 음성을 텍스트로 변환",
+    },
+    "auto-subtitles": {
+      name: "자동 자막",
+      description: "비디오 오디오 트랙에서 자막 파일 생성",
+    },
     "transparency-fixer": {
       name: "PNG 투명도 수정",
       description: "가짜 투명 PNG를 원클릭으로 수정",
+    },
+    "background-replace": {
+      name: "배경 교체",
+      description: "이미지 배경을 단색으로 교체합니다",
+    },
+    "blur-background": {
+      name: "배경 흐리게",
+      description: "피사체는 선명하게 유지하면서 배경을 흐리게 합니다",
     },
     "watermark-text": { name: "텍스트 워터마크", description: "텍스트 워터마크 오버레이 추가" },
     "watermark-image": { name: "이미지 워터마크", description: "로고를 워터마크로 오버레이" },
@@ -1017,6 +1037,17 @@ export const ko: TranslationKeys = {
       submitBatch: "텍스트 추출 ({count}개 파일)",
       progressLabel: "텍스트 추출 중",
     },
+    "ocr-pdf": {
+      quality: "품질",
+      language: "언어",
+      autoDetect: "자동 감지",
+      pages: "페이지",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "페이지 번호 또는 범위를 입력하세요 (예: 1-3, 5, 8-10). 최대 50페이지.",
+      submit: "텍스트 추출",
+      submitBatch: "텍스트 추출 ({count}개 파일)",
+      progressLabel: "PDF에서 텍스트 추출 중",
+    },
     "blur-faces": {
       blurRadius: "블러 반경",
       blurLight: "약하게",
@@ -1239,6 +1270,23 @@ export const ko: TranslationKeys = {
       scrollToZoom: "스크롤하여 확대/축소",
       photoGenerated: "사진이 생성되었습니다. 왼쪽 패널에서 다운로드하세요.",
     },
+    "transcribe-audio": {
+      language: "언어",
+      autoDetect: "자동 감지",
+      outputFormat: "출력 형식",
+      plainText: "일반 텍스트",
+      submit: "전사",
+      submitBatch: "전사 ({count}개 파일)",
+      progressLabel: "오디오 전사 중",
+    },
+    "auto-subtitles": {
+      language: "언어",
+      autoDetect: "자동 감지",
+      format: "자막 형식",
+      submit: "자막 생성",
+      submitBatch: "자막 생성 ({count}개 파일)",
+      progressLabel: "자막 생성 중",
+    },
     "transparency-fixer": {
       description: "가짜 투명 배경의 PNG를 업로드하면 원클릭으로 수정해 드립니다.",
       removeWatermark: "워터마크 제거",
@@ -1250,6 +1298,18 @@ export const ko: TranslationKeys = {
       submit: "투명도 수정",
       submitBatch: "투명도 수정 ({count}개 파일)",
       progressLabel: "투명도 수정 중",
+    },
+    "background-replace": {
+      color: "배경 색상",
+      submit: "배경 교체",
+      submitBatch: "배경 교체 ({count}개 파일)",
+      progressLabel: "배경 교체 중",
+    },
+    "blur-background": {
+      intensity: "흐림 강도",
+      submit: "배경 흐리게",
+      submitBatch: "배경 흐리게 ({count}개 파일)",
+      progressLabel: "배경 흐리게 처리 중",
     },
     "watermark-text": {
       watermarkText: "워터마크 텍스트",

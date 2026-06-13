@@ -116,6 +116,10 @@ export const zhTW: TranslationKeys = {
       name: "OCR / 文字擷取",
       description: "透過AI精準辨識擷取影像中的文字",
     },
+    "ocr-pdf": {
+      name: "PDF OCR",
+      description: "使用AI驅動的OCR從PDF文件中擷取文字",
+    },
     "blur-faces": {
       name: "臉部/隱私模糊",
       description: "自動偵測並模糊臉部和敏感資訊",
@@ -160,9 +164,25 @@ export const zhTW: TranslationKeys = {
       name: "證件照",
       description: "自動偵測臉部並產生符合政府規範的護照、簽證和證件照",
     },
+    "transcribe-audio": {
+      name: "音訊轉文字",
+      description: "使用AI轉錄將語音轉換為文字",
+    },
+    "auto-subtitles": {
+      name: "自動字幕",
+      description: "從影片音軌產生字幕檔案",
+    },
     "transparency-fixer": {
       name: "PNG透明修復",
       description: "一鍵修復偽透明PNG影像",
+    },
+    "background-replace": {
+      name: "替換背景",
+      description: "將圖像背景替換為純色",
+    },
+    "blur-background": {
+      name: "模糊背景",
+      description: "模糊背景同時保持主體清晰",
     },
     "watermark-text": { name: "文字浮水印", description: "加入文字浮水印覆疊" },
     "watermark-image": { name: "影像浮水印", description: "覆疊Logo作為浮水印" },
@@ -1012,6 +1032,17 @@ export const zhTW: TranslationKeys = {
       submitBatch: "擷取文字（{count}個檔案）",
       progressLabel: "正在擷取文字",
     },
+    "ocr-pdf": {
+      quality: "品質",
+      language: "語言",
+      autoDetect: "自動偵測",
+      pages: "頁面",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "輸入頁碼或範圍（例如 1-3, 5, 8-10）。最多50頁。",
+      submit: "擷取文字",
+      submitBatch: "擷取文字（{count}個檔案）",
+      progressLabel: "正在從PDF中擷取文字",
+    },
     "blur-faces": {
       blurRadius: "模糊半徑",
       blurLight: "輕度",
@@ -1229,6 +1260,23 @@ export const zhTW: TranslationKeys = {
       scrollToZoom: "捲動縮放",
       photoGenerated: "照片已產生。在左側面板下載。",
     },
+    "transcribe-audio": {
+      language: "語言",
+      autoDetect: "自動偵測",
+      outputFormat: "輸出格式",
+      plainText: "純文字",
+      submit: "轉錄",
+      submitBatch: "轉錄 ({count} 個檔案)",
+      progressLabel: "正在轉錄音訊",
+    },
+    "auto-subtitles": {
+      language: "語言",
+      autoDetect: "自動偵測",
+      format: "字幕格式",
+      submit: "產生字幕",
+      submitBatch: "產生字幕 ({count} 個檔案)",
+      progressLabel: "正在產生字幕",
+    },
     "transparency-fixer": {
       description: "上傳帶有偽透明背景的PNG，我們將一鍵修復。",
       removeWatermark: "移除浮水印",
@@ -1240,6 +1288,18 @@ export const zhTW: TranslationKeys = {
       submit: "修復透明度",
       submitBatch: "修復透明度（{count}個檔案）",
       progressLabel: "正在修復透明度",
+    },
+    "background-replace": {
+      color: "背景顏色",
+      submit: "替換背景",
+      submitBatch: "替換背景 ({count} 個檔案)",
+      progressLabel: "正在替換背景",
+    },
+    "blur-background": {
+      intensity: "模糊強度",
+      submit: "模糊背景",
+      submitBatch: "模糊背景 ({count} 個檔案)",
+      progressLabel: "正在模糊背景",
     },
     "watermark-text": {
       watermarkText: "浮水印文字",

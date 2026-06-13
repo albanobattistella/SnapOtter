@@ -141,6 +141,10 @@ export const de: TranslationKeys = {
       name: "OCR / Texterkennung",
       description: "Text aus Bildern mit AI-gestuetzter Genauigkeit extrahieren",
     },
+    "ocr-pdf": {
+      name: "PDF-OCR",
+      description: "Text aus PDF-Dokumenten mit KI-gestuetzter OCR extrahieren",
+    },
     "blur-faces": {
       name: "Gesichter / PII weichzeichnen",
       description: "Gesichter und sensible Daten automatisch erkennen und weichzeichnen",
@@ -187,9 +191,25 @@ export const de: TranslationKeys = {
       description:
         "Normgerechte Pass-, Visa- und Ausweisfotos mit automatischer Gesichtserkennung erstellen",
     },
+    "transcribe-audio": {
+      name: "Audio transkribieren",
+      description: "Sprache mit KI-gestuetzter Transkription in Text umwandeln",
+    },
+    "auto-subtitles": {
+      name: "Automatische Untertitel",
+      description: "Untertiteldateien aus Video-Audiospuren generieren",
+    },
     "transparency-fixer": {
       name: "PNG-Transparenzkorrektur",
       description: "Unechte transparente PNGs mit einem Klick reparieren",
+    },
+    "background-replace": {
+      name: "Hintergrund ersetzen",
+      description: "Bildhintergrund durch eine einfarbige Flaeche ersetzen",
+    },
+    "blur-background": {
+      name: "Hintergrund unscharf",
+      description: "Hintergrund unscharf stellen und Motiv scharf halten",
     },
     "watermark-text": {
       name: "Text-Wasserzeichen",
@@ -1074,6 +1094,17 @@ export const de: TranslationKeys = {
       submitBatch: "Text extrahieren ({count} Dateien)",
       progressLabel: "Text wird extrahiert",
     },
+    "ocr-pdf": {
+      quality: "Qualitaet",
+      language: "Sprache",
+      autoDetect: "Automatisch erkennen",
+      pages: "Seiten",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "Seitennummern oder Bereiche eingeben (z.B. 1-3, 5, 8-10). Max. 50 Seiten.",
+      submit: "Text extrahieren",
+      submitBatch: "Text extrahieren ({count} Dateien)",
+      progressLabel: "Text wird aus PDF extrahiert",
+    },
     "blur-faces": {
       blurRadius: "Weichzeichnerradius",
       blurLight: "Leicht",
@@ -1299,6 +1330,23 @@ export const de: TranslationKeys = {
       scrollToZoom: "Scrollen zum Zoomen",
       photoGenerated: "Foto generiert. Laden Sie es im linken Bereich herunter.",
     },
+    "transcribe-audio": {
+      language: "Sprache",
+      autoDetect: "Automatisch erkennen",
+      outputFormat: "Ausgabeformat",
+      plainText: "Klartext",
+      submit: "Transkribieren",
+      submitBatch: "Transkribieren ({count} Dateien)",
+      progressLabel: "Audio wird transkribiert",
+    },
+    "auto-subtitles": {
+      language: "Sprache",
+      autoDetect: "Automatisch erkennen",
+      format: "Untertitelformat",
+      submit: "Untertitel generieren",
+      submitBatch: "Untertitel generieren ({count} Dateien)",
+      progressLabel: "Untertitel werden generiert",
+    },
     "transparency-fixer": {
       description:
         "Laden Sie ein PNG mit unechtem transparentem Hintergrund hoch. Wir reparieren es mit einem Klick.",
@@ -1311,6 +1359,18 @@ export const de: TranslationKeys = {
       submit: "Transparenz reparieren",
       submitBatch: "Transparenz reparieren ({count} Dateien)",
       progressLabel: "Transparenz wird repariert",
+    },
+    "background-replace": {
+      color: "Hintergrundfarbe",
+      submit: "Hintergrund ersetzen",
+      submitBatch: "Hintergrund ersetzen ({count} Dateien)",
+      progressLabel: "Hintergrund wird ersetzt",
+    },
+    "blur-background": {
+      intensity: "Unschaerfe-Intensitaet",
+      submit: "Hintergrund unscharf stellen",
+      submitBatch: "Hintergrund unscharf stellen ({count} Dateien)",
+      progressLabel: "Hintergrund wird unscharf gestellt",
     },
     "watermark-text": {
       watermarkText: "Wasserzeichen-Text",

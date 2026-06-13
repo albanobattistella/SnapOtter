@@ -141,6 +141,10 @@ export const tr: TranslationKeys = {
       name: "OCR / Metin Çıkarma",
       description: "AI destekli doğrulukla görüntülerden metin çıkarın",
     },
+    "ocr-pdf": {
+      name: "PDF OCR",
+      description: "AI destekli OCR ile PDF belgelerinden metin cikarma",
+    },
     "blur-faces": {
       name: "Yüz / Kişisel Bilgi Bulanıklaştırma",
       description: "Yüzleri ve hassas bilgileri otomatik algılayıp bulanıklaştırın",
@@ -188,9 +192,25 @@ export const tr: TranslationKeys = {
       description:
         "Otomatik yüz algılama ile devlet standartlarına uygun pasaport, vize ve kimlik fotoğrafları oluşturun",
     },
+    "transcribe-audio": {
+      name: "Ses Transkripsiyonu",
+      description: "Yapay zeka destekli transkripsiyon ile konusmayi metne donusturun",
+    },
+    "auto-subtitles": {
+      name: "Otomatik Altyazi",
+      description: "Video ses izlerinden altyazi dosyalari olusturun",
+    },
     "transparency-fixer": {
       name: "PNG Saydamlık Düzeltici",
       description: "Sahte saydam PNG dosyalarını tek tıkla düzeltin",
+    },
+    "background-replace": {
+      name: "Arka Plan Degistirme",
+      description: "Gorsel arka planini duz renkle degistirin",
+    },
+    "blur-background": {
+      name: "Arka Plan Bulama",
+      description: "Konuyu net tutarak arka plani bulaniklastirin",
     },
     "watermark-text": {
       name: "Metin Filigranı",
@@ -1074,6 +1094,17 @@ export const tr: TranslationKeys = {
       submitBatch: "Metin Çıkar ({count} dosya)",
       progressLabel: "Metin çıkarılıyor",
     },
+    "ocr-pdf": {
+      quality: "Kalite",
+      language: "Dil",
+      autoDetect: "Otomatik algilama",
+      pages: "Sayfalar",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "Sayfa numaralari veya araliklar girin (orn. 1-3, 5, 8-10). Maks. 50 sayfa.",
+      submit: "Metni cikar",
+      submitBatch: "Metni cikar ({count} dosya)",
+      progressLabel: "PDF'den metin cikariliyor",
+    },
     "blur-faces": {
       blurRadius: "Bulanıklaştırma Yarıçapı",
       blurLight: "Hafif",
@@ -1298,6 +1329,23 @@ export const tr: TranslationKeys = {
       scrollToZoom: "Yakınlaştırmak için kaydırın",
       photoGenerated: "Fotoğraf oluşturuldu. Sol panelden indirin.",
     },
+    "transcribe-audio": {
+      language: "Dil",
+      autoDetect: "Otomatik algilama",
+      outputFormat: "Cikti Formati",
+      plainText: "Duz Metin",
+      submit: "Transkribe Et",
+      submitBatch: "Transkribe Et ({count} dosya)",
+      progressLabel: "Ses transkripsiyonu yapiliyor",
+    },
+    "auto-subtitles": {
+      language: "Dil",
+      autoDetect: "Otomatik algilama",
+      format: "Altyazi Formati",
+      submit: "Altyazi Olustur",
+      submitBatch: "Altyazi Olustur ({count} dosya)",
+      progressLabel: "Altyazi olusturuluyor",
+    },
     "transparency-fixer": {
       description: "Sahte saydam arka planlı bir PNG yükleyin, tek tıkla düzeltelim.",
       removeWatermark: "Filigranı Kaldır",
@@ -1309,6 +1357,18 @@ export const tr: TranslationKeys = {
       submit: "Saydamlığı Düzelt",
       submitBatch: "Saydamlığı Düzelt ({count} dosya)",
       progressLabel: "Saydamlık düzeltiliyor",
+    },
+    "background-replace": {
+      color: "Arka plan rengi",
+      submit: "Arka plani degistir",
+      submitBatch: "Arka plani degistir ({count} dosya)",
+      progressLabel: "Arka plan degistiriliyor",
+    },
+    "blur-background": {
+      intensity: "Bulama yogunlugu",
+      submit: "Arka plani bulaniklastir",
+      submitBatch: "Arka plani bulaniklastir ({count} dosya)",
+      progressLabel: "Arka plan bulaniklastiriliyor",
     },
     "watermark-text": {
       watermarkText: "Filigran Metni",

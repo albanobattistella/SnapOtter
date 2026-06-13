@@ -139,6 +139,10 @@ export const fr: TranslationKeys = {
       name: "OCR / Extraction de texte",
       description: "Extrayez du texte a partir d'images avec une precision alimentee par l'AI",
     },
+    "ocr-pdf": {
+      name: "OCR de PDF",
+      description: "Extrayez du texte de documents PDF avec OCR alimente par l'IA",
+    },
     "blur-faces": {
       name: "Floutage de visages / donnees sensibles",
       description: "Detectez et floutez automatiquement les visages et informations sensibles",
@@ -188,9 +192,25 @@ export const fr: TranslationKeys = {
       description:
         "Creez des photos de passeport, visa et pieces d'identite conformes aux normes officielles avec detection automatique du visage",
     },
+    "transcribe-audio": {
+      name: "Transcrire l'audio",
+      description: "Convertir la parole en texte avec la transcription par IA",
+    },
+    "auto-subtitles": {
+      name: "Sous-titres automatiques",
+      description: "Generer des fichiers de sous-titres a partir des pistes audio video",
+    },
     "transparency-fixer": {
       name: "Correcteur de transparence PNG",
       description: "Corrigez les PNG a fausse transparence en un clic",
+    },
+    "background-replace": {
+      name: "Remplacement du fond",
+      description: "Remplacer le fond par une couleur unie",
+    },
+    "blur-background": {
+      name: "Flou d'arriere-plan",
+      description: "Flouter le fond en gardant le sujet net",
     },
     "watermark-text": {
       name: "Filigrane texte",
@@ -1075,6 +1095,17 @@ export const fr: TranslationKeys = {
       submitBatch: "Extraire le texte ({count} fichiers)",
       progressLabel: "Extraction du texte",
     },
+    "ocr-pdf": {
+      quality: "Qualite",
+      language: "Langue",
+      autoDetect: "Detection automatique",
+      pages: "Pages",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "Entrez des numeros de pages ou des plages (ex. 1-3, 5, 8-10). Max 50 pages.",
+      submit: "Extraire le texte",
+      submitBatch: "Extraire le texte ({count} fichiers)",
+      progressLabel: "Extraction du texte du PDF",
+    },
     "blur-faces": {
       blurRadius: "Rayon du flou",
       blurLight: "Leger",
@@ -1300,6 +1331,23 @@ export const fr: TranslationKeys = {
       scrollToZoom: "Faites defiler pour zoomer",
       photoGenerated: "Photo generee. Telechargez-la depuis le panneau de gauche.",
     },
+    "transcribe-audio": {
+      language: "Langue",
+      autoDetect: "Detection automatique",
+      outputFormat: "Format de sortie",
+      plainText: "Texte brut",
+      submit: "Transcrire",
+      submitBatch: "Transcrire ({count} fichiers)",
+      progressLabel: "Transcription de l'audio",
+    },
+    "auto-subtitles": {
+      language: "Langue",
+      autoDetect: "Detection automatique",
+      format: "Format des sous-titres",
+      submit: "Generer les sous-titres",
+      submitBatch: "Generer les sous-titres ({count} fichiers)",
+      progressLabel: "Generation des sous-titres",
+    },
     "transparency-fixer": {
       description:
         "Importez un PNG avec un faux fond transparent et nous le corrigeons en un clic.",
@@ -1312,6 +1360,18 @@ export const fr: TranslationKeys = {
       submit: "Corriger la transparence",
       submitBatch: "Corriger la transparence ({count} fichiers)",
       progressLabel: "Correction de la transparence",
+    },
+    "background-replace": {
+      color: "Couleur de fond",
+      submit: "Remplacer le fond",
+      submitBatch: "Remplacer le fond ({count} fichiers)",
+      progressLabel: "Remplacement du fond",
+    },
+    "blur-background": {
+      intensity: "Intensite du flou",
+      submit: "Flouter le fond",
+      submitBatch: "Flouter le fond ({count} fichiers)",
+      progressLabel: "Floutage du fond",
     },
     "watermark-text": {
       watermarkText: "Texte du filigrane",

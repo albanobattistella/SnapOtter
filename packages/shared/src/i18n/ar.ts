@@ -140,6 +140,10 @@ export const ar: TranslationKeys = {
       name: "OCR / استخراج النصوص",
       description: "استخراج النصوص من الصور بدقة مدعومة بـ AI",
     },
+    "ocr-pdf": {
+      name: "OCR للمستندات PDF",
+      description: "استخراج النصوص من مستندات PDF باستخدام OCR مدعوم بـ AI",
+    },
     "blur-faces": {
       name: "تمويه الوجوه / المعلومات الحساسة",
       description: "اكتشاف تلقائي وتمويه الوجوه والمعلومات الحساسة",
@@ -185,9 +189,25 @@ export const ar: TranslationKeys = {
       description:
         "إنشاء صور جواز سفر وتأشيرة وهوية متوافقة مع المتطلبات الحكومية مع اكتشاف تلقائي للوجه",
     },
+    "transcribe-audio": {
+      name: "تحويل الصوت إلى نص",
+      description: "تحويل الكلام إلى نص باستخدام النسخ المدعوم بالذكاء الاصطناعي",
+    },
+    "auto-subtitles": {
+      name: "ترجمة تلقائية",
+      description: "إنشاء ملفات ترجمة من المسارات الصوتية للفيديو",
+    },
     "transparency-fixer": {
       name: "إصلاح شفافية PNG",
       description: "إصلاح ملفات PNG ذات الشفافية المزيفة بنقرة واحدة",
+    },
+    "background-replace": {
+      name: "استبدال الخلفية",
+      description: "استبدال خلفية الصورة بلون واحد",
+    },
+    "blur-background": {
+      name: "تمويه الخلفية",
+      description: "تمويه الخلفية مع الحفاظ على وضوح الهدف",
     },
     "watermark-text": {
       name: "علامة مائية نصية",
@@ -1065,6 +1085,17 @@ export const ar: TranslationKeys = {
       submitBatch: "استخراج النص ({count} ملف)",
       progressLabel: "جاري استخراج النص",
     },
+    "ocr-pdf": {
+      quality: "الجودة",
+      language: "اللغة",
+      autoDetect: "اكتشاف تلقائي",
+      pages: "الصفحات",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "ادخل ارقام الصفحات او النطاقات (مثال 1-3, 5, 8-10). الحد الاقصى 50 صفحة.",
+      submit: "استخراج النص",
+      submitBatch: "استخراج النص ({count} ملف)",
+      progressLabel: "جاري استخراج النص من PDF",
+    },
     "blur-faces": {
       blurRadius: "نصف قطر التمويه",
       blurLight: "خفيف",
@@ -1288,6 +1319,23 @@ export const ar: TranslationKeys = {
       scrollToZoom: "مرر للتكبير",
       photoGenerated: "تم إنشاء الصورة. حمّلها من اللوحة اليسرى.",
     },
+    "transcribe-audio": {
+      language: "اللغة",
+      autoDetect: "اكتشاف تلقائي",
+      outputFormat: "صيغة الإخراج",
+      plainText: "نص عادي",
+      submit: "تحويل إلى نص",
+      submitBatch: "تحويل إلى نص ({count} ملف)",
+      progressLabel: "جاري تحويل الصوت إلى نص",
+    },
+    "auto-subtitles": {
+      language: "اللغة",
+      autoDetect: "اكتشاف تلقائي",
+      format: "صيغة الترجمة",
+      submit: "إنشاء ترجمة",
+      submitBatch: "إنشاء ترجمة ({count} ملف)",
+      progressLabel: "جاري إنشاء الترجمة",
+    },
     "transparency-fixer": {
       description: "ارفع ملف PNG بخلفية شفافة مزيفة وسنصلحه بنقرة واحدة.",
       removeWatermark: "إزالة العلامة المائية",
@@ -1299,6 +1347,18 @@ export const ar: TranslationKeys = {
       submit: "إصلاح الشفافية",
       submitBatch: "إصلاح الشفافية ({count} ملف)",
       progressLabel: "جاري إصلاح الشفافية",
+    },
+    "background-replace": {
+      color: "لون الخلفية",
+      submit: "استبدال الخلفية",
+      submitBatch: "استبدال الخلفية ({count} ملفات)",
+      progressLabel: "جاري استبدال الخلفية",
+    },
+    "blur-background": {
+      intensity: "شدة التمويه",
+      submit: "تمويه الخلفية",
+      submitBatch: "تمويه الخلفية ({count} ملفات)",
+      progressLabel: "جاري تمويه الخلفية",
     },
     "watermark-text": {
       watermarkText: "نص العلامة المائية",

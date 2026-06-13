@@ -139,6 +139,10 @@ export const uk: TranslationKeys = {
       name: "OCR / Витягування тексту",
       description: "Витягування тексту із зображень з точністю AI",
     },
+    "ocr-pdf": {
+      name: "OCR PDF",
+      description: "Витягування тексту з PDF-документiв за допомогою OCR на базi ШI",
+    },
     "blur-faces": {
       name: "Розмиття облич / ПД",
       description: "Автоматичне виявлення та розмиття облич і конфіденційних даних",
@@ -186,9 +190,25 @@ export const uk: TranslationKeys = {
       description:
         "Створення фотографій для паспорта, візи та посвідчень з автоматичним виявленням обличчя",
     },
+    "transcribe-audio": {
+      name: "Транскрипцiя аудiо",
+      description: "Перетворення мовлення на текст за допомогою ШI",
+    },
+    "auto-subtitles": {
+      name: "Автоматичнi субтитри",
+      description: "Генерацiя файлiв субтитрiв з аудiодорiжок вiдео",
+    },
     "transparency-fixer": {
       name: "Виправлення прозорості PNG",
       description: "Виправлення хибної прозорості PNG в один клік",
+    },
+    "background-replace": {
+      name: "Заміна фону",
+      description: "Замінити фон зображення суцільним кольором",
+    },
+    "blur-background": {
+      name: "Розмиття фону",
+      description: "Розмити фон зберігаючи різкість об'єкта",
     },
     "watermark-text": {
       name: "Текстовий водяний знак",
@@ -1072,6 +1092,17 @@ export const uk: TranslationKeys = {
       submitBatch: "Витягнути текст ({count} файлів)",
       progressLabel: "Витягування тексту",
     },
+    "ocr-pdf": {
+      quality: "Якiсть",
+      language: "Мова",
+      autoDetect: "Автовизначення",
+      pages: "Сторiнки",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "Введiть номери сторiнок або дiапазони (напр. 1-3, 5, 8-10). Макс. 50 сторiнок.",
+      submit: "Витягнути текст",
+      submitBatch: "Витягнути текст ({count} файлiв)",
+      progressLabel: "Витягування тексту з PDF",
+    },
     "blur-faces": {
       blurRadius: "Радіус розмиття",
       blurLight: "Легке",
@@ -1297,6 +1328,23 @@ export const uk: TranslationKeys = {
       scrollToZoom: "Прокрутіть для масштабування",
       photoGenerated: "Фото створено. Завантажте з лівої панелі.",
     },
+    "transcribe-audio": {
+      language: "Мова",
+      autoDetect: "Автовизначення",
+      outputFormat: "Формат виводу",
+      plainText: "Звичайний текст",
+      submit: "Транскрибувати",
+      submitBatch: "Транскрибувати ({count} файлiв)",
+      progressLabel: "Транскрипцiя аудiо",
+    },
+    "auto-subtitles": {
+      language: "Мова",
+      autoDetect: "Автовизначення",
+      format: "Формат субтитрiв",
+      submit: "Створити субтитри",
+      submitBatch: "Створити субтитри ({count} файлiв)",
+      progressLabel: "Створення субтитрiв",
+    },
     "transparency-fixer": {
       description: "Завантажте PNG з хибною прозорістю, і ми виправимо його в один клік.",
       removeWatermark: "Видалити водяний знак",
@@ -1308,6 +1356,18 @@ export const uk: TranslationKeys = {
       submit: "Виправити прозорість",
       submitBatch: "Виправити прозорість ({count} файлів)",
       progressLabel: "Виправлення прозорості",
+    },
+    "background-replace": {
+      color: "Колір фону",
+      submit: "Замінити фон",
+      submitBatch: "Замінити фон ({count} файлів)",
+      progressLabel: "Заміна фону",
+    },
+    "blur-background": {
+      intensity: "Інтенсивність розмиття",
+      submit: "Розмити фон",
+      submitBatch: "Розмити фон ({count} файлів)",
+      progressLabel: "Розмиття фону",
     },
     "watermark-text": {
       watermarkText: "Текст водяного знаку",

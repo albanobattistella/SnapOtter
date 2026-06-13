@@ -140,6 +140,10 @@ export const ru: TranslationKeys = {
       name: "OCR / Извлечение текста",
       description: "Извлечение текста из изображений с точностью AI",
     },
+    "ocr-pdf": {
+      name: "OCR PDF",
+      description: "Извлечение текста из PDF-документов с помощью OCR на базе ИИ",
+    },
     "blur-faces": {
       name: "Размытие лиц / ПД",
       description: "Автоматическое обнаружение и размытие лиц и конфиденциальной информации",
@@ -187,9 +191,25 @@ export const ru: TranslationKeys = {
       description:
         "Создание фотографий для паспорта, визы и удостоверений с автоматическим обнаружением лица",
     },
+    "transcribe-audio": {
+      name: "Транскрипция аудио",
+      description: "Преобразование речи в текст с помощью ИИ",
+    },
+    "auto-subtitles": {
+      name: "Автоматические субтитры",
+      description: "Генерация файлов субтитров из аудиодорожек видео",
+    },
     "transparency-fixer": {
       name: "Исправление прозрачности PNG",
       description: "Исправление ложной прозрачности PNG в один клик",
+    },
+    "background-replace": {
+      name: "Замена фона",
+      description: "Замена фона изображения сплошным цветом",
+    },
+    "blur-background": {
+      name: "Размытие фона",
+      description: "Размытие фона с сохранением резкости объекта",
     },
     "watermark-text": {
       name: "Текстовый водяной знак",
@@ -1072,6 +1092,17 @@ export const ru: TranslationKeys = {
       submitBatch: "Извлечь текст ({count} файлов)",
       progressLabel: "Извлечение текста",
     },
+    "ocr-pdf": {
+      quality: "Качество",
+      language: "Язык",
+      autoDetect: "Автоопределение",
+      pages: "Страницы",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "Введите номера страниц или диапазоны (напр. 1-3, 5, 8-10). Макс. 50 страниц.",
+      submit: "Извлечь текст",
+      submitBatch: "Извлечь текст ({count} файлов)",
+      progressLabel: "Извлечение текста из PDF",
+    },
     "blur-faces": {
       blurRadius: "Радиус размытия",
       blurLight: "Лёгкое",
@@ -1297,6 +1328,23 @@ export const ru: TranslationKeys = {
       scrollToZoom: "Прокрутите для масштабирования",
       photoGenerated: "Фото создано. Скачайте с левой панели.",
     },
+    "transcribe-audio": {
+      language: "Язык",
+      autoDetect: "Автоопределение",
+      outputFormat: "Формат вывода",
+      plainText: "Простой текст",
+      submit: "Транскрибировать",
+      submitBatch: "Транскрибировать ({count} файлов)",
+      progressLabel: "Транскрипция аудио",
+    },
+    "auto-subtitles": {
+      language: "Язык",
+      autoDetect: "Автоопределение",
+      format: "Формат субтитров",
+      submit: "Создать субтитры",
+      submitBatch: "Создать субтитры ({count} файлов)",
+      progressLabel: "Создание субтитров",
+    },
     "transparency-fixer": {
       description: "Загрузите PNG с ложной прозрачностью, и мы исправим его в один клик.",
       removeWatermark: "Удалить водяной знак",
@@ -1308,6 +1356,18 @@ export const ru: TranslationKeys = {
       submit: "Исправить прозрачность",
       submitBatch: "Исправить прозрачность ({count} файлов)",
       progressLabel: "Исправление прозрачности",
+    },
+    "background-replace": {
+      color: "Цвет фона",
+      submit: "Заменить фон",
+      submitBatch: "Заменить фон ({count} файлов)",
+      progressLabel: "Замена фона",
+    },
+    "blur-background": {
+      intensity: "Интенсивность размытия",
+      submit: "Размыть фон",
+      submitBatch: "Размыть фон ({count} файлов)",
+      progressLabel: "Размытие фона",
     },
     "watermark-text": {
       watermarkText: "Текст водяного знака",

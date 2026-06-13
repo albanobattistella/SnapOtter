@@ -141,6 +141,10 @@ export const sv: TranslationKeys = {
       name: "OCR / Textextraktion",
       description: "Extrahera text fran bilder med AI-precision",
     },
+    "ocr-pdf": {
+      name: "PDF OCR",
+      description: "Extrahera text fran PDF-dokument med AI-driven OCR",
+    },
     "blur-faces": {
       name: "Ansikts- / PII-oskarpning",
       description: "Detektera och gora ansikten och kanslig information oskarpa automatiskt",
@@ -187,9 +191,25 @@ export const sv: TranslationKeys = {
       description:
         "Skapa myndighetsgodkanda pass-, visum- och ID-foton med automatisk ansiktsdetektion",
     },
+    "transcribe-audio": {
+      name: "Transkribera ljud",
+      description: "Omvandla tal till text med AI-driven transkription",
+    },
+    "auto-subtitles": {
+      name: "Automatiska undertexter",
+      description: "Generera undertextfiler fran videoers ljudspar",
+    },
     "transparency-fixer": {
       name: "PNG-transparensfix",
       description: "Fixa falska transparenta PNGs med ett klick",
+    },
+    "background-replace": {
+      name: "Byt bakgrund",
+      description: "Ersatt bildens bakgrund med en enfargad yta",
+    },
+    "blur-background": {
+      name: "Oskarp bakgrund",
+      description: "Gor bakgrunden oskarp och behall motivet skarpt",
     },
     "watermark-text": {
       name: "Textvattenstampel",
@@ -1069,6 +1089,17 @@ export const sv: TranslationKeys = {
       submitBatch: "Extrahera text ({count} filer)",
       progressLabel: "Extraherar text",
     },
+    "ocr-pdf": {
+      quality: "Kvalitet",
+      language: "Sprak",
+      autoDetect: "Automatisk identifiering",
+      pages: "Sidor",
+      pagesPlaceholder: "all, 1-3, 5",
+      pagesHint: "Ange sidnummer eller intervall (t.ex. 1-3, 5, 8-10). Max 50 sidor.",
+      submit: "Extrahera text",
+      submitBatch: "Extrahera text ({count} filer)",
+      progressLabel: "Extraherar text fran PDF",
+    },
     "blur-faces": {
       blurRadius: "Oskarpningsradie",
       blurLight: "Latt",
@@ -1294,6 +1325,23 @@ export const sv: TranslationKeys = {
       scrollToZoom: "Scrolla for att zooma",
       photoGenerated: "Foto genererat. Ladda ner fran vanstra panelen.",
     },
+    "transcribe-audio": {
+      language: "Sprak",
+      autoDetect: "Automatisk identifiering",
+      outputFormat: "Utdataformat",
+      plainText: "Ren text",
+      submit: "Transkribera",
+      submitBatch: "Transkribera ({count} filer)",
+      progressLabel: "Transkriberar ljud",
+    },
+    "auto-subtitles": {
+      language: "Sprak",
+      autoDetect: "Automatisk identifiering",
+      format: "Undertextformat",
+      submit: "Generera undertexter",
+      submitBatch: "Generera undertexter ({count} filer)",
+      progressLabel: "Genererar undertexter",
+    },
     "transparency-fixer": {
       description: "Ladda upp en PNG med falsk transparent bakgrund sa fixar vi det med ett klick.",
       removeWatermark: "Ta bort vattenstampel",
@@ -1305,6 +1353,18 @@ export const sv: TranslationKeys = {
       submit: "Fixa transparens",
       submitBatch: "Fixa transparens ({count} filer)",
       progressLabel: "Fixar transparens",
+    },
+    "background-replace": {
+      color: "Bakgrundsfarg",
+      submit: "Byt bakgrund",
+      submitBatch: "Byt bakgrund ({count} filer)",
+      progressLabel: "Byter bakgrund",
+    },
+    "blur-background": {
+      intensity: "Oskarpa-intensitet",
+      submit: "Gor bakgrunden oskarp",
+      submitBatch: "Gor bakgrunden oskarp ({count} filer)",
+      progressLabel: "Gor bakgrunden oskarp",
     },
     "watermark-text": {
       watermarkText: "Vattenstampeltext",
