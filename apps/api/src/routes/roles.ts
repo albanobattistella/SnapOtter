@@ -160,11 +160,6 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
         if (dup && dup.id !== id) {
           return reply.status(409).send({ error: "Role name already exists", code: "CONFLICT" });
         }
-        // Update users on old role name to new name
-        await db
-          .update(schema.users)
-          .set({ role: body.name })
-          .where(eq(schema.users.role, role.name));
         updates.name = body.name;
       }
       if (body.description !== undefined) {
@@ -181,7 +176,15 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
         updates.permissions = body.permissions;
       }
 
-      await db.update(schema.roles).set(updates).where(eq(schema.roles.id, id));
+      await db.transaction(async (tx) => {
+        if (body.name) {
+          await tx
+            .update(schema.users)
+            .set({ role: body.name })
+            .where(eq(schema.users.role, role.name));
+        }
+        await tx.update(schema.roles).set(updates).where(eq(schema.roles.id, id));
+      });
       await auditLog(request.log, "ROLE_UPDATED", { adminId: user.id, roleId: id });
 
       return reply.send({ ok: true });
@@ -206,12 +209,13 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
           .send({ error: "Cannot delete built-in roles", code: "VALIDATION_ERROR" });
       }
 
-      await db
-        .update(schema.users)
-        .set({ role: "user", updatedAt: new Date() })
-        .where(eq(schema.users.role, role.name));
-
-      await db.delete(schema.roles).where(eq(schema.roles.id, id));
+      await db.transaction(async (tx) => {
+        await tx
+          .update(schema.users)
+          .set({ role: "user", updatedAt: new Date() })
+          .where(eq(schema.users.role, role.name));
+        await tx.delete(schema.roles).where(eq(schema.roles.id, id));
+      });
       await auditLog(request.log, "ROLE_DELETED", {
         adminId: user.id,
         roleId: id,
