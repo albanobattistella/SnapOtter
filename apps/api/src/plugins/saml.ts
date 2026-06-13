@@ -19,7 +19,7 @@ function getSamlInstance(): SAML {
     callbackUrl: env.SAML_CALLBACK_URL || `${env.EXTERNAL_URL}/api/auth/saml/callback`,
     entryPoint: env.SAML_IDP_SSO_URL,
     issuer: env.SAML_ENTITY_ID || `${env.EXTERNAL_URL}/api/auth/saml/metadata`,
-    cert: env.SAML_IDP_CERTIFICATE,
+    idpCert: env.SAML_IDP_CERTIFICATE,
     wantAuthnResponseSigned: true,
     wantAssertionsSigned: true,
   });
