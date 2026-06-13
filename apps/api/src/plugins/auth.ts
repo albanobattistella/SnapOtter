@@ -972,6 +972,7 @@ const PUBLIC_PATHS = [
   "/api/docs",
   "/api/v1/openapi.yaml",
   "/api/v1/meme-templates/",
+  "/api/v1/scim/",
 ];
 
 function isPublicRoute(url: string): boolean {
