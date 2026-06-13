@@ -32,7 +32,7 @@ function archPackagesInclude(bundleId: string, arch: "amd64" | "arm64", pkg: str
 
 describe("Feature manifest structure", () => {
   it("manifest has valid version fields", () => {
-    expect(manifest.manifestVersion).toBe(1);
+    expect(manifest.manifestVersion).toBe(2);
     expect(manifest.pythonVersion).toBeDefined();
     expect(manifest.basePackages).toBeInstanceOf(Array);
   });
@@ -208,6 +208,72 @@ describe("Feature manifest: enablesTools consistency with shared features", () =
       expect(manifestTools, `${id}: manifest enablesTools diverges from features.ts`).toEqual(
         sharedTools,
       );
+    }
+  });
+});
+
+describe("Manifest v2 archive fields", () => {
+  const ARCH_VARIANTS = ["amd64-gpu", "arm64-cpu"] as const;
+
+  it("manifest version is 2", () => {
+    expect(manifest.manifestVersion).toBe(2);
+  });
+
+  it("has bundleRepo field", () => {
+    expect(manifest.bundleRepo).toBe("snapotter/feature-bundles");
+  });
+
+  it("every bundle has archives with both arch variants", () => {
+    for (const [id, bundle] of Object.entries<Record<string, unknown>>(bundles)) {
+      const archives = bundle.archives as Record<string, unknown>;
+      expect(archives, `${id} missing archives`).toBeDefined();
+      for (const arch of ARCH_VARIANTS) {
+        expect(archives[arch], `${id} missing archives["${arch}"]`).toBeDefined();
+      }
+    }
+  });
+
+  it("each archive entry has file, sha256, compressedSize, extractedSize", () => {
+    for (const [id, bundle] of Object.entries<Record<string, unknown>>(bundles)) {
+      const archives = bundle.archives as Record<string, Record<string, unknown>>;
+      for (const arch of ARCH_VARIANTS) {
+        const entry = archives[arch];
+        expect(typeof entry.file, `${id}/${arch} file should be string`).toBe("string");
+        expect(entry.file as string, `${id}/${arch} file should end with .tar.gz`).toMatch(
+          /\.tar\.gz$/,
+        );
+        expect(typeof entry.sha256, `${id}/${arch} sha256 should be string`).toBe("string");
+        expect(entry.sha256 as string, `${id}/${arch} sha256 should be 64 hex chars`).toMatch(
+          /^[0-9a-f]{64}$/,
+        );
+        expect(typeof entry.compressedSize, `${id}/${arch} compressedSize should be number`).toBe(
+          "number",
+        );
+        expect(
+          entry.compressedSize as number,
+          `${id}/${arch} compressedSize should be > 0`,
+        ).toBeGreaterThan(0);
+        expect(typeof entry.extractedSize, `${id}/${arch} extractedSize should be number`).toBe(
+          "number",
+        );
+        expect(
+          entry.extractedSize as number,
+          `${id}/${arch} extractedSize should be > 0`,
+        ).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("archive file paths include version prefix", () => {
+    const version = manifest.imageVersion;
+    for (const [id, bundle] of Object.entries<Record<string, unknown>>(bundles)) {
+      const archives = bundle.archives as Record<string, Record<string, unknown>>;
+      for (const arch of ARCH_VARIANTS) {
+        expect(
+          archives[arch].file as string,
+          `${id}/${arch} file should include v${version}/`,
+        ).toContain(`v${version}/`);
+      }
     }
   });
 });

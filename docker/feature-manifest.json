@@ -1,13 +1,28 @@
 {
-  "manifestVersion": 1,
+  "manifestVersion": 2,
   "imageVersion": "2.0.0",
   "pythonVersion": "3.12",
   "basePackages": ["numpy==1.26.4", "Pillow==12.2.0", "opencv-python-headless==4.10.0.84"],
+  "bundleRepo": "snapotter/feature-bundles",
   "bundles": {
     "background-removal": {
       "name": "Background Removal",
       "description": "Remove image backgrounds with AI",
       "estimatedSize": "4-5 GB",
+      "archives": {
+        "amd64-gpu": {
+          "file": "v2.0.0/background-removal-amd64-gpu.tar.gz",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "compressedSize": 1,
+          "extractedSize": 1
+        },
+        "arm64-cpu": {
+          "file": "v2.0.0/background-removal-arm64-cpu.tar.gz",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "compressedSize": 1,
+          "extractedSize": 1
+        }
+      },
       "packages": {
         "common": ["rembg==2.0.62"],
         "amd64": ["onnxruntime-gpu==1.20.1", "mediapipe>=0.10.21"],
@@ -61,6 +76,20 @@
       "name": "Face Detection",
       "description": "Detect and blur faces, fix red-eye, smart crop",
       "estimatedSize": "200-300 MB",
+      "archives": {
+        "amd64-gpu": {
+          "file": "v2.0.0/face-detection-amd64-gpu.tar.gz",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "compressedSize": 1,
+          "extractedSize": 1
+        },
+        "arm64-cpu": {
+          "file": "v2.0.0/face-detection-arm64-cpu.tar.gz",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "compressedSize": 1,
+          "extractedSize": 1
+        }
+      },
       "packages": {
         "common": [],
         "amd64": ["mediapipe>=0.10.21"],
@@ -88,6 +117,20 @@
       "name": "Object Eraser & Colorize",
       "description": "Erase objects from photos and colorize B&W images",
       "estimatedSize": "1-2 GB",
+      "archives": {
+        "amd64-gpu": {
+          "file": "v2.0.0/object-eraser-colorize-amd64-gpu.tar.gz",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "compressedSize": 1,
+          "extractedSize": 1
+        },
+        "arm64-cpu": {
+          "file": "v2.0.0/object-eraser-colorize-arm64-cpu.tar.gz",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "compressedSize": 1,
+          "extractedSize": 1
+        }
+      },
       "packages": {
         "common": ["huggingface-hub"],
         "amd64": ["onnxruntime-gpu==1.20.1"],
@@ -140,6 +183,20 @@
       "name": "Upscale & Enhance",
       "description": "AI upscaling, face enhancement, and noise removal",
       "estimatedSize": "4-5 GB",
+      "archives": {
+        "amd64-gpu": {
+          "file": "v2.0.0/upscale-enhance-amd64-gpu.tar.gz",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "compressedSize": 1,
+          "extractedSize": 1
+        },
+        "arm64-cpu": {
+          "file": "v2.0.0/upscale-enhance-arm64-cpu.tar.gz",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "compressedSize": 1,
+          "extractedSize": 1
+        }
+      },
       "packages": {
         "common": ["codeformer-pip==0.0.4", "huggingface-hub", "einops", "setuptools<75"],
         "amd64": [
@@ -216,6 +273,20 @@
       "name": "Photo Restoration",
       "description": "Restore old or damaged photos",
       "estimatedSize": "800 MB - 1 GB",
+      "archives": {
+        "amd64-gpu": {
+          "file": "v2.0.0/photo-restoration-amd64-gpu.tar.gz",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "compressedSize": 1,
+          "extractedSize": 1
+        },
+        "arm64-cpu": {
+          "file": "v2.0.0/photo-restoration-arm64-cpu.tar.gz",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "compressedSize": 1,
+          "extractedSize": 1
+        }
+      },
       "packages": {
         "common": ["codeformer-pip==0.0.4", "huggingface-hub", "setuptools<75"],
         "amd64": [
@@ -299,6 +370,20 @@
       "name": "OCR",
       "description": "Extract text from images",
       "estimatedSize": "3-4 GB",
+      "archives": {
+        "amd64-gpu": {
+          "file": "v2.0.0/ocr-amd64-gpu.tar.gz",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "compressedSize": 1,
+          "extractedSize": 1
+        },
+        "arm64-cpu": {
+          "file": "v2.0.0/ocr-arm64-cpu.tar.gz",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "compressedSize": 1,
+          "extractedSize": 1
+        }
+      },
       "packages": {
         "common": ["huggingface-hub"],
         "amd64": [
@@ -357,6 +442,20 @@
       "name": "Transcription",
       "description": "Speech to text for audio and video (subtitles)",
       "estimatedSize": "~600 MB",
+      "archives": {
+        "amd64-gpu": {
+          "file": "v2.0.0/transcription-amd64-gpu.tar.gz",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "compressedSize": 1,
+          "extractedSize": 1
+        },
+        "arm64-cpu": {
+          "file": "v2.0.0/transcription-arm64-cpu.tar.gz",
+          "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+          "compressedSize": 1,
+          "extractedSize": 1
+        }
+      },
       "packages": { "common": ["faster-whisper>=1.0.0"], "amd64": [], "arm64": [] },
       "pipFlags": {},
       "postInstall": [],
