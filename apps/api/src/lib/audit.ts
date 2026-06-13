@@ -8,36 +8,14 @@ export function sanitizeAuditInput(raw: string): string {
   return raw.replace(/[<>&"']/g, "").slice(0, MAX_AUDIT_INPUT_LENGTH) || "(empty)";
 }
 
-type AuditEvent =
-  | "LOGIN_SUCCESS"
-  | "LOGIN_FAILED"
-  | "LOGOUT"
-  | "PASSWORD_CHANGED"
-  | "PASSWORD_RESET"
-  | "USER_CREATED"
-  | "USER_DELETED"
-  | "USER_UPDATED"
-  | "FILE_UPLOADED"
-  | "FILE_DELETED"
-  | "API_KEY_CREATED"
-  | "API_KEY_DELETED"
-  | "ROLE_CREATED"
-  | "ROLE_UPDATED"
-  | "ROLE_DELETED"
-  | "SETTINGS_UPDATED"
-  | "OIDC_LOGIN_SUCCESS"
-  | "OIDC_USER_CREATED"
-  | "OIDC_USER_LINKED"
-  | "OIDC_LOGIN_FAILED";
-
 /**
  * Emit a structured audit log entry for security-relevant events.
  *
- * Dual-writes: structured stdout log (for aggregators) + SQLite row.
+ * Dual-writes: structured stdout log (for aggregators) + DB row.
  */
 export async function auditLog(
   logger: FastifyBaseLogger,
-  event: AuditEvent,
+  event: string,
   details: Record<string, unknown> = {},
   ip: string | null = null,
 ): Promise<void> {
@@ -64,18 +42,25 @@ export async function auditLog(
   }
 }
 
-function deriveTargetType(event: AuditEvent): string | null {
+function deriveTargetType(event: string): string | null {
   if (
     event.startsWith("USER_") ||
     event.startsWith("LOGIN") ||
     event.startsWith("PASSWORD") ||
     event.startsWith("OIDC_") ||
+    event.startsWith("SAML_") ||
+    event.startsWith("SCIM_") ||
+    event.startsWith("MFA_") ||
     event === "LOGOUT"
   )
     return "user";
   if (event.startsWith("API_KEY")) return "api_key";
   if (event.startsWith("FILE")) return "file";
   if (event.startsWith("ROLE")) return "role";
-  if (event === "SETTINGS_UPDATED") return "setting";
+  if (event === "SETTINGS_UPDATED" || event === "IP_ALLOWLIST_UPDATED") return "setting";
+  if (event.startsWith("TOOL_") || event.startsWith("BATCH_") || event.startsWith("PIPELINE_"))
+    return "tool";
+  if (event.startsWith("LEGAL_HOLD")) return "compliance";
+  if (event.startsWith("SIEM_") || event.startsWith("WEBHOOK_")) return "integration";
   return null;
 }
