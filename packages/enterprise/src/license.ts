@@ -13,12 +13,31 @@ export const ENTERPRISE_FEATURES = [
   "audit_export",
   "mfa",
   "per_tool_permissions",
+  "siem_forwarding",
+  "tamper_resistant_audit",
+  "legal_hold",
+  "gdpr_lifecycle",
+  "team_retention_overrides",
+  "sso_enforcement",
+  "ip_allowlist",
+  "config_export_import",
+  "upgrade_management",
+  "admin_alerts",
 ] as const;
 
 export type EnterpriseFeature = (typeof ENTERPRISE_FEATURES)[number];
 
 export const PLAN_FEATURES: Record<string, readonly EnterpriseFeature[]> = {
-  team: ["saml_sso", "s3_storage", "multi_tenancy"],
+  team: [
+    "saml_sso",
+    "s3_storage",
+    "multi_tenancy",
+    "audit_export",
+    "siem_forwarding",
+    "sso_enforcement",
+    "upgrade_management",
+    "admin_alerts",
+  ],
   enterprise: ENTERPRISE_FEATURES,
 };
 

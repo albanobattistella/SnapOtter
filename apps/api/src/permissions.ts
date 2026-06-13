@@ -20,6 +20,9 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "features:manage",
     "system:health",
     "audit:read",
+    "compliance:manage",
+    "webhooks:manage",
+    "security:manage",
   ],
   editor: [
     "tools:use",
