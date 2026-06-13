@@ -1,4 +1,5 @@
 import { CATEGORIES, MODALITIES, type Modality, TOOLS } from "@snapotter/shared";
+import { LayoutGrid } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "@/contexts/i18n-context";
 import { useFuseSearch } from "@/hooks/use-fuse-search";
@@ -10,7 +11,9 @@ import { useSettingsStore } from "@/stores/settings-store";
 import { SearchBar } from "../common/search-bar";
 import { ToolCard } from "../common/tool-card";
 
-type ModalityFilter = "all" | Modality;
+type ModalityFilter = "all" | "document" | Exclude<Modality, "file">;
+
+const TAB_MODALITIES = MODALITIES.filter((m) => m.id !== "file");
 
 export function ToolPanel() {
   const { t } = useTranslation();
@@ -38,6 +41,10 @@ export function ToolPanel() {
 
   const modalityFilteredTools = useMemo(() => {
     if (selectedModality === "all") return visibleTools;
+    if (selectedModality === "document")
+      return visibleTools.filter(
+        (tool) => tool.modality === "document" || tool.modality === "file",
+      );
     return visibleTools.filter((tool) => tool.modality === selectedModality);
   }, [visibleTools, selectedModality]);
 
@@ -46,10 +53,7 @@ export function ToolPanel() {
   const groupedByModality = useMemo(() => {
     const byModality = new Map<string, Map<string, typeof TOOLS>>();
     for (const tool of filteredTools) {
-      // In "all" mode, merge file-modality tools into the document section;
-      // when a specific tab is active, keep the original modality key.
-      const key =
-        selectedModality === "all" && tool.modality === "file" ? "document" : tool.modality;
+      const key = tool.modality === "file" ? "document" : tool.modality;
       const cats = byModality.get(key) ?? new Map<string, typeof TOOLS>();
       const list = cats.get(tool.category) ?? [];
       list.push(tool);
@@ -62,35 +66,37 @@ export function ToolPanel() {
   return (
     <div className="w-72 border-r border-border bg-background overflow-y-auto flex flex-col shrink-0">
       <div className="p-3 sticky top-0 bg-background z-10">
-        {/* Modality filter tabs */}
-        <div className="flex flex-wrap gap-1 mb-2">
+        {/* Modality filter tabs -- icon-only, docs+files merged */}
+        <div className="flex items-center gap-1 mb-2">
           <button
             type="button"
             onClick={() => setSelectedModality("all")}
+            title="All tools"
             className={cn(
-              "shrink-0 px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
+              "p-1.5 rounded-md transition-colors",
               selectedModality === "all"
                 ? "bg-primary/10 text-primary"
                 : "text-muted-foreground hover:text-foreground hover:bg-muted",
             )}
           >
-            All
+            <LayoutGrid className="h-4 w-4" />
           </button>
-          {MODALITIES.map((m) => {
+          {TAB_MODALITIES.map((m) => {
+            const Icon = ICON_MAP[m.icon] as React.ComponentType<{ className?: string }>;
             const isActive = selectedModality === m.id;
-            const short = m.id === "document" ? "Docs" : m.id === "file" ? "Files" : m.name;
             return (
               <button
                 key={m.id}
                 type="button"
-                onClick={() => setSelectedModality(m.id)}
+                onClick={() => setSelectedModality(m.id as ModalityFilter)}
+                title={m.id === "document" ? "Documents & Files" : m.name}
                 className={cn(
-                  "px-2 py-1 rounded-md text-xs font-medium transition-colors",
+                  "p-1.5 rounded-md transition-colors",
                   !isActive && "text-muted-foreground hover:text-foreground hover:bg-muted",
                 )}
                 style={isActive ? { backgroundColor: `${m.color}20`, color: m.color } : undefined}
               >
-                {short}
+                {Icon && <Icon className="h-4 w-4" />}
               </button>
             );
           })}
@@ -99,10 +105,8 @@ export function ToolPanel() {
       </div>
       <div className="px-3 pb-4 flex-1">
         {MODALITIES.filter((m) => {
-          // In "all" mode, file-modality tools are merged into the document
-          // section so skip the standalone file entry. When the file tab is
-          // active, keep it.
-          if (selectedModality === "all" && m.id === "file") return false;
+          // File-modality tools always merge into the document section
+          if (m.id === "file") return false;
           return groupedByModality.has(m.id);
         }).map((modality, idx, arr) => {
           const ModalityIcon = ICON_MAP[modality.icon] as React.ComponentType<{
@@ -127,9 +131,7 @@ export function ToolPanel() {
                   {getModalityName(
                     t,
                     modality.id,
-                    modality.id === "document" && selectedModality === "all"
-                      ? "Documents & Files"
-                      : modality.name,
+                    modality.id === "document" ? "Documents & Files" : modality.name,
                   )}
                 </h2>
               </div>
