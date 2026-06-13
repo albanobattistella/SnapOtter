@@ -10,7 +10,7 @@
  * calling runSystemJob); anything else is a bug.
  */
 import type { Job } from "bullmq";
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, lt, sql } from "drizzle-orm";
 import { env } from "../config.js";
 import { db, schema } from "../db/index.js";
 import { getMaxAgeMs } from "../lib/cleanup.js";
@@ -121,8 +121,35 @@ export function decideExpiry(
 }
 
 async function storageTtlSweep(): Promise<{ removed: number; failed: number }> {
+  // --- Per-job deleteAfter sweep (team retention overrides) ---
+  // Runs regardless of the global TTL; deleteAfter is an absolute deadline.
+  let deleteAfterCleaned = 0;
+  try {
+    const expiredJobs = await db
+      .select({ id: schema.jobs.id })
+      .from(schema.jobs)
+      .where(and(isNotNull(schema.jobs.deleteAfter), lt(schema.jobs.deleteAfter, new Date())));
+
+    for (const job of expiredJobs) {
+      try {
+        await deletePrefix(`uploads/${job.id}`);
+        await deletePrefix(`outputs/${job.id}`);
+        deleteAfterCleaned++;
+      } catch {
+        // Directory may not exist
+      }
+    }
+
+    if (deleteAfterCleaned > 0) {
+      console.log(`Storage TTL: cleaned up ${deleteAfterCleaned} jobs by deleteAfter`);
+    }
+  } catch {
+    // deleteAfter sweep is best-effort
+  }
+
+  // --- Global TTL sweep ---
   const maxAgeMs = await getMaxAgeMs();
-  if (maxAgeMs <= 0) return { removed: 0, failed: 0 };
+  if (maxAgeMs <= 0) return { removed: deleteAfterCleaned, failed: 0 };
 
   const cutoffMs = Date.now() - maxAgeMs;
   const uploadDirs = await listJobDirs("uploads");
@@ -168,7 +195,7 @@ async function storageTtlSweep(): Promise<{ removed: number; failed: number }> {
   if (removed > 0) {
     console.log(`Storage TTL: removed ${removed} expired job dirs`);
   }
-  return { removed, failed: errors.length };
+  return { removed: removed + deleteAfterCleaned, failed: errors.length };
 }
 
 // -- Retention sweep ----------------------------------------------------------

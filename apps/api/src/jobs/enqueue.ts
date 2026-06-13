@@ -6,6 +6,7 @@
  * until the worker produces a result or the sync-wait window expires.
  */
 import { FlowProducer, type Job, QueueEvents } from "bullmq";
+import { eq } from "drizzle-orm";
 import { env } from "../config.js";
 import { db, schema } from "../db/index.js";
 import { createRedisConnection } from "./connection.js";
@@ -76,6 +77,11 @@ export async function enqueueToolJob(data: ToolJobData): Promise<Job<ToolJobData
     settings: (data.dbSettings ?? data.settings) as Record<string, unknown>,
   });
 
+  // Fire-and-forget: compute deleteAfter from team retention override
+  if (data.userId) {
+    void computeDeleteAfter(data.jobId, data.userId).catch(() => {});
+  }
+
   const queue = getQueue(data.pool);
   const job = await queue.add(data.toolId, { ...data, jobId: data.jobId }, { jobId: data.jobId });
   return job;
@@ -107,4 +113,44 @@ export async function waitForJob(
     }
     throw err; // real failure
   }
+}
+
+// ── Per-team retention override ────────────────────────────────
+
+/**
+ * Compute and set `deleteAfter` on a job row based on the owning user's
+ * team retention setting. Only applies when the enterprise
+ * `team_retention_overrides` feature is enabled. Fire-and-forget; failures
+ * never block job creation.
+ */
+async function computeDeleteAfter(jobId: string, userId: string): Promise<void> {
+  let isTeamRetentionEnabled = false;
+  try {
+    const { isFeatureEnabled } = await import("@snapotter/enterprise");
+    isTeamRetentionEnabled = isFeatureEnabled("team_retention_overrides");
+  } catch {}
+
+  if (!isTeamRetentionEnabled) return;
+
+  const userRow = await db
+    .select({ team: schema.users.team })
+    .from(schema.users)
+    .where(eq(schema.users.id, userId))
+    .limit(1);
+
+  if (!userRow.length || !userRow[0].team) return;
+
+  const teamRow = await db
+    .select({ retentionHours: schema.teams.retentionHours })
+    .from(schema.teams)
+    .where(eq(schema.teams.id, userRow[0].team))
+    .limit(1);
+
+  const retentionHours =
+    teamRow.length && teamRow[0].retentionHours !== null
+      ? teamRow[0].retentionHours
+      : env.FILE_MAX_AGE_HOURS;
+
+  const deleteAfter = new Date(Date.now() + retentionHours * 60 * 60 * 1000);
+  await db.update(schema.jobs).set({ deleteAfter }).where(eq(schema.jobs.id, jobId));
 }
