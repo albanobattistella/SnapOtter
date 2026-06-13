@@ -505,11 +505,15 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
     };
 
     // Single recursive CTE to collect all chain members for every valid ID
+    const seedIds = sql.join(
+      validIds.map((id) => sql`${id}`),
+      sql`, `,
+    );
     const cteResult = await db.execute<DeleteChainRow>(sql`
       WITH RECURSIVE
       ancestors(id, parent_id) AS (
         SELECT id, parent_id FROM user_files
-        WHERE id = ANY(${validIds}::uuid[])
+        WHERE id IN (${seedIds})
         UNION ALL
         SELECT uf.id, uf.parent_id FROM user_files uf
         INNER JOIN ancestors a ON uf.id = a.parent_id
