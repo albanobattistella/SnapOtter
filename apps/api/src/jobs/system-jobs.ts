@@ -25,6 +25,7 @@ export const SYSTEM_JOBS = {
   retention: "system:retention",
   siemForward: "system:siem-forward",
   auditArchive: "system:audit-archive",
+  storageReconciliation: "system:storage-reconciliation",
 } as const;
 
 // -- Scheduling ---------------------------------------------------------------
@@ -47,6 +48,10 @@ export async function scheduleSystemJobs(): Promise<void> {
   // Monthly: 2:00 AM on the 1st of each month
   await q.upsertJobScheduler(SYSTEM_JOBS.auditArchive, {
     pattern: "0 2 1 * *",
+  });
+  // Weekly: 3:00 AM Sunday -- reconcile storageUsed counters
+  await q.upsertJobScheduler(SYSTEM_JOBS.storageReconciliation, {
+    pattern: "0 3 * * 0",
   });
 }
 
@@ -71,6 +76,10 @@ export async function runSystemJob(job: Job): Promise<unknown> {
       return runSiemForward();
     case SYSTEM_JOBS.auditArchive:
       return runAuditArchive();
+    case SYSTEM_JOBS.storageReconciliation: {
+      const { storageReconciliationJob } = await import("./storage-reconciliation.js");
+      return storageReconciliationJob();
+    }
     default:
       // batch-finalize runs on the system pool too but is routed by the
       // worker before calling runSystemJob. Anything else is a bug.

@@ -232,6 +232,7 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
 
         // Create DB record
         const id = randomUUID();
+        const fileSize = safeBuffer.length;
         try {
           await db.insert(schema.userFiles).values({
             id,
@@ -239,7 +240,7 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
             originalName: safeName,
             storedName,
             mimeType,
-            size: safeBuffer.length,
+            size: fileSize,
             width: validation.width,
             height: validation.height,
             version: 1,
@@ -248,6 +249,14 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
           });
         } catch {
           return reply.status(409).send({ error: "Failed to save file record" });
+        }
+
+        // Increment the user's pre-computed storage counter
+        if (userId) {
+          await db
+            .update(schema.users)
+            .set({ storageUsed: sql`${schema.users.storageUsed} + ${fileSize}` })
+            .where(eq(schema.users.id, userId));
         }
 
         const [row] = await db.select().from(schema.userFiles).where(eq(schema.userFiles.id, id));
@@ -502,6 +511,8 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
     type DeleteChainRow = {
       id: string;
       stored_name: string;
+      size: number | null;
+      user_id: string | null;
     };
 
     // Single recursive CTE to collect all chain members for every valid ID
@@ -518,15 +529,15 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
         SELECT uf.id, uf.parent_id FROM user_files uf
         INNER JOIN ancestors a ON uf.id = a.parent_id
       ),
-      chain(id, stored_name) AS (
-        SELECT f.id, f.stored_name FROM user_files f
+      chain(id, stored_name, size, user_id) AS (
+        SELECT f.id, f.stored_name, f.size, f.user_id FROM user_files f
         WHERE f.id IN (SELECT id FROM ancestors WHERE parent_id IS NULL)
         UNION ALL
-        SELECT child.id, child.stored_name
+        SELECT child.id, child.stored_name, child.size, child.user_id
         FROM user_files child
         INNER JOIN chain c ON child.parent_id = c.id
       )
-      SELECT DISTINCT id, stored_name FROM chain
+      SELECT DISTINCT id, stored_name, size, user_id FROM chain
     `);
     const chainRows = cteResult.rows;
 
@@ -540,6 +551,22 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
     const chainIds = chainRows.map((r) => r.id);
     if (chainIds.length > 0) {
       await db.delete(schema.userFiles).where(inArray(schema.userFiles.id, chainIds));
+    }
+
+    // Decrement storageUsed per user (group by userId for files:all scenarios)
+    const perUserSizes = new Map<string, number>();
+    for (const row of chainRows) {
+      if (row.user_id && row.size) {
+        perUserSizes.set(row.user_id, (perUserSizes.get(row.user_id) ?? 0) + row.size);
+      }
+    }
+    for (const [uid, totalSize] of perUserSizes) {
+      await db
+        .update(schema.users)
+        .set({
+          storageUsed: sql`GREATEST(0, ${schema.users.storageUsed} - ${totalSize})`,
+        })
+        .where(eq(schema.users.id, uid));
     }
 
     await auditFromRequest(request)("FILE_DELETED", {
@@ -640,6 +667,7 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
 
     // Create DB record
     const id = randomUUID();
+    const fileSize = safeResultBuffer.length;
     try {
       await db.insert(schema.userFiles).values({
         id,
@@ -647,7 +675,7 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
         originalName: resultName,
         storedName,
         mimeType,
-        size: safeResultBuffer.length,
+        size: fileSize,
         width: validation.width,
         height: validation.height,
         version: nextVersion,
@@ -656,6 +684,14 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
       });
     } catch {
       return reply.status(409).send({ error: "Failed to save result record" });
+    }
+
+    // Increment the user's pre-computed storage counter
+    if (userId) {
+      await db
+        .update(schema.users)
+        .set({ storageUsed: sql`${schema.users.storageUsed} + ${fileSize}` })
+        .where(eq(schema.users.id, userId));
     }
 
     const [row] = await db.select().from(schema.userFiles).where(eq(schema.userFiles.id, id));

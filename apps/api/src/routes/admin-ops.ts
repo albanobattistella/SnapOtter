@@ -11,7 +11,7 @@
 import { sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { db } from "../db/index.js";
+import { db, schema } from "../db/index.js";
 import { formatZodErrors } from "../lib/errors.js";
 import { metricsText } from "../lib/metrics.js";
 import { buildSupportBundle } from "../lib/support-bundle.js";
@@ -129,6 +129,16 @@ export async function adminOpsRoutes(app: FastifyInstance): Promise<void> {
       sql`SELECT coalesce(sum(size), 0)::text AS bytes, count(*)::int AS files FROM user_files`,
     );
 
+    // Per-team storage breakdown from pre-computed user counters
+    const teamStorageRows = await db
+      .select({
+        teamName: schema.users.team,
+        totalBytes: sql<string>`coalesce(sum(${schema.users.storageUsed}), 0)::text`,
+        userCount: sql<number>`count(*)::int`,
+      })
+      .from(schema.users)
+      .groupBy(schema.users.team);
+
     const jobsPerDay = (jobsPerDayResult.rows as Array<Record<string, unknown>>).map((r) => ({
       day: String(r.day),
       total: Number(r.total),
@@ -162,6 +172,12 @@ export async function adminOpsRoutes(app: FastifyInstance): Promise<void> {
       libraryFiles: Number(storageRow.files),
     };
 
+    const teamStorage = teamStorageRows.map((r) => ({
+      teamName: r.teamName,
+      totalBytes: r.totalBytes,
+      userCount: r.userCount,
+    }));
+
     return {
       days,
       jobsPerDay,
@@ -169,6 +185,7 @@ export async function adminOpsRoutes(app: FastifyInstance): Promise<void> {
       perUser,
       durations,
       storage,
+      teamStorage,
     };
   });
 }
