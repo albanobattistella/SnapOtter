@@ -63,7 +63,7 @@ export function ToolPanel() {
     <div className="w-72 border-r border-border bg-background overflow-y-auto flex flex-col shrink-0">
       <div className="p-3 sticky top-0 bg-background z-10">
         {/* Modality filter tabs */}
-        <div className="flex gap-1 overflow-x-auto scrollbar-none mb-2 -mx-0.5 px-0.5">
+        <div className="flex flex-wrap gap-1 mb-2">
           <button
             type="button"
             onClick={() => setSelectedModality("all")}
@@ -77,21 +77,20 @@ export function ToolPanel() {
             All
           </button>
           {MODALITIES.map((m) => {
-            const Icon = ICON_MAP[m.icon] as React.ComponentType<{ className?: string }>;
             const isActive = selectedModality === m.id;
+            const short = m.id === "document" ? "Docs" : m.id === "file" ? "Files" : m.name;
             return (
               <button
                 key={m.id}
                 type="button"
                 onClick={() => setSelectedModality(m.id)}
                 className={cn(
-                  "shrink-0 flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors",
+                  "px-2 py-1 rounded-md text-xs font-medium transition-colors",
                   !isActive && "text-muted-foreground hover:text-foreground hover:bg-muted",
                 )}
                 style={isActive ? { backgroundColor: `${m.color}20`, color: m.color } : undefined}
               >
-                {Icon && <Icon className="h-3 w-3" />}
-                <span>{m.name}</span>
+                {short}
               </button>
             );
           })}
