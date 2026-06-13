@@ -90,4 +90,35 @@ export const TOOL_DISPLAY_MODES: Record<string, DisplayMode> = {
   "transparency-fixer": "before-after",
   "content-aware-resize": "side-by-side",
   "ai-canvas-expand": "before-after",
+
+  // Video tools
+  "convert-video": "media-player",
+  "compress-video": "media-player",
+  "trim-video": "media-player",
+  "mute-video": "media-player",
+  "video-to-gif": "side-by-side",
+
+  // Audio tools
+  "convert-audio": "media-player",
+  "trim-audio": "media-player",
+  "extract-audio": "media-player",
+
+  // PDF & Document tools
+  "merge-pdf": "document",
+  "split-pdf": "no-comparison",
+  "compress-pdf": "document",
+  "rotate-pdf": "document",
+  "word-to-pdf": "document",
+
+  // Data tools
+  "csv-excel": "no-comparison",
+  "csv-json": "no-comparison",
+  "json-xml": "no-comparison",
+  "split-csv": "no-comparison",
 };
+
+/**
+ * Tools whose selected files all post in ONE request as repeated "file" parts.
+ * Consumed by use-tool-processor; backend routes declare maxInputs.
+ */
+export const MULTI_FILE_TOOLS: ReadonlySet<string> = new Set(["merge-pdf"]);

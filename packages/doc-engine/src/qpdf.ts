@@ -1,7 +1,8 @@
 import { spawn } from "node:child_process";
 import { resolveQpdf } from "./binaries.js";
 
-function runQpdf(args: string[], timeoutMs = 30_000): Promise<string> {
+/** @internal Shared qpdf CLI runner for doc-engine modules; not part of the public package API. */
+export function runQpdf(args: string[], timeoutMs = 30_000): Promise<string> {
   const bin = resolveQpdf();
   if (!bin) throw new Error("qpdf binary not found (set QPDF_PATH or install qpdf)");
   return new Promise<string>((resolvePromise, reject) => {

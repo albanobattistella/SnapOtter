@@ -16,12 +16,19 @@ import { registerColorize } from "./colorize.js";
 import { registerCompare } from "./compare.js";
 import { registerCompose } from "./compose.js";
 import { registerCompress } from "./compress.js";
+import { registerCompressPdf } from "./compress-pdf.js";
+import { registerCompressVideo } from "./compress-video.js";
 import { registerContentAwareResize } from "./content-aware-resize.js";
 import { registerConvert } from "./convert.js";
+import { registerConvertAudio } from "./convert-audio.js";
+import { registerConvertVideo } from "./convert-video.js";
 import { registerCrop } from "./crop.js";
+import { registerCsvExcel } from "./csv-excel.js";
+import { registerCsvJson } from "./csv-json.js";
 import { registerEditMetadata } from "./edit-metadata.js";
 import { registerEnhanceFaces } from "./enhance-faces.js";
 import { registerEraseObject } from "./erase-object.js";
+import { registerExtractAudio } from "./extract-audio.js";
 import { registerFavicon } from "./favicon.js";
 import { registerFindDuplicates } from "./find-duplicates.js";
 import { registerGifTools } from "./gif-tools.js";
@@ -30,7 +37,10 @@ import { registerImageEnhancement } from "./image-enhancement.js";
 import { registerImageToBase64 } from "./image-to-base64.js";
 import { registerImageToPdf } from "./image-to-pdf.js";
 import { registerInfo } from "./info.js";
+import { registerJsonXml } from "./json-xml.js";
 import { registerMemeGenerator } from "./meme-generator.js";
+import { registerMergePdf } from "./merge-pdf.js";
+import { registerMuteVideo } from "./mute-video.js";
 import { registerNoiseRemoval } from "./noise-removal.js";
 import { registerOcr } from "./ocr.js";
 import { registerOptimizeForWeb } from "./optimize-for-web.js";
@@ -43,18 +53,25 @@ import { registerReplaceColor } from "./replace-color.js";
 import { registerResize } from "./resize.js";
 import { registerRestorePhoto } from "./restore-photo.js";
 import { registerRotate } from "./rotate.js";
+import { registerRotatePdf } from "./rotate-pdf.js";
 import { registerSharpening } from "./sharpening.js";
 import { registerSmartCrop } from "./smart-crop.js";
 import { registerSplit } from "./split.js";
+import { registerSplitCsv } from "./split-csv.js";
+import { registerSplitPdf } from "./split-pdf.js";
 import { registerStitch } from "./stitch.js";
 import { registerStripMetadata } from "./strip-metadata.js";
 import { registerSvgToRaster } from "./svg-to-raster.js";
 import { registerTextOverlay } from "./text-overlay.js";
 import { registerTransparencyFixer } from "./transparency-fixer.js";
+import { registerTrimAudio } from "./trim-audio.js";
+import { registerTrimVideo } from "./trim-video.js";
 import { registerUpscale } from "./upscale.js";
 import { registerVectorize } from "./vectorize.js";
+import { registerVideoToGif } from "./video-to-gif.js";
 import { registerWatermarkImage } from "./watermark-image.js";
 import { registerWatermarkText } from "./watermark-text.js";
+import { registerWordToPdf } from "./word-to-pdf.js";
 
 /**
  * Registry that imports and registers all tool routes.
@@ -138,6 +155,31 @@ export async function registerToolRoutes(app: FastifyInstance): Promise<void> {
     // Adjustments extra
     { id: "replace-color", register: registerReplaceColor },
     { id: "color-blindness", register: registerColorBlindness },
+
+    // Video
+    { id: "convert-video", register: registerConvertVideo },
+    { id: "compress-video", register: registerCompressVideo },
+    { id: "trim-video", register: registerTrimVideo },
+    { id: "mute-video", register: registerMuteVideo },
+    { id: "video-to-gif", register: registerVideoToGif },
+
+    // Audio
+    { id: "convert-audio", register: registerConvertAudio },
+    { id: "trim-audio", register: registerTrimAudio },
+    { id: "extract-audio", register: registerExtractAudio },
+
+    // PDF & Documents
+    { id: "merge-pdf", register: registerMergePdf },
+    { id: "split-pdf", register: registerSplitPdf },
+    { id: "compress-pdf", register: registerCompressPdf },
+    { id: "rotate-pdf", register: registerRotatePdf },
+    { id: "word-to-pdf", register: registerWordToPdf },
+
+    // Data Files
+    { id: "csv-excel", register: registerCsvExcel },
+    { id: "csv-json", register: registerCsvJson },
+    { id: "json-xml", register: registerJsonXml },
+    { id: "split-csv", register: registerSplitCsv },
 
     // AI Tools
     { id: "remove-background", register: registerRemoveBackground },

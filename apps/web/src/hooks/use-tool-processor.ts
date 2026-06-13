@@ -2,6 +2,7 @@ import { PYTHON_SIDECAR_TOOLS, TOOLS } from "@snapotter/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "@/contexts/i18n-context";
 import { formatHeaders, parseApiError } from "@/lib/api";
+import { MULTI_FILE_TOOLS } from "@/lib/tool-display-modes";
 import { generateId } from "@/lib/utils";
 import { useFileStore } from "@/stores/file-store";
 
@@ -343,7 +344,11 @@ export function useToolProcessor(toolId: string) {
       delete cleanSettings._bgImageFile;
 
       const formData = new FormData();
-      formData.append("file", files[capturedIndex] ?? files[0]);
+      if (MULTI_FILE_TOOLS.has(toolId) && files.length > 1) {
+        for (const f of files) formData.append("file", f);
+      } else {
+        formData.append("file", files[capturedIndex] ?? files[0]);
+      }
       formData.append("settings", JSON.stringify(cleanSettings));
       if (bgImageFile) {
         formData.append("backgroundImage", bgImageFile);
