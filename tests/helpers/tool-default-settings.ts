@@ -25,6 +25,10 @@ export const TOOL_SETTINGS_OVERRIDES: Record<string, unknown> = {
   "unlock-pdf": { password: "test123" },
   "watermark-pdf": { text: "CONFIDENTIAL" },
   "redact-pdf": { terms: ["test"] },
+  "crop-video": { width: 32, height: 32 },
+  "rotate-video": { transform: "cw90" },
+  "resize-video": { preset: "720p" },
+  "watermark-video": { text: "CONFIDENTIAL" },
 };
 
 export function defaultSettingsFor(toolId: string): unknown {

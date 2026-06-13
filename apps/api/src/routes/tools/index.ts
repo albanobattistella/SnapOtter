@@ -4,12 +4,16 @@ import type { FastifyInstance } from "fastify";
 import { db, schema } from "../../db/index.js";
 import { registerColorAdjustments } from "./adjust-colors.js";
 import { registerAiCanvasExpand } from "./ai-canvas-expand.js";
+import { registerAspectPad } from "./aspect-pad.js";
 import { registerBarcodeRead } from "./barcode-read.js";
 import { registerBeautify } from "./beautify.js";
 import { registerBlurFaces } from "./blur-faces.js";
+import { registerBlurPad } from "./blur-pad.js";
 import { registerBookletPdf } from "./booklet-pdf.js";
 import { registerBorder } from "./border.js";
 import { registerBulkRename } from "./bulk-rename.js";
+import { registerBurnSubtitles } from "./burn-subtitles.js";
+import { registerChangeFps } from "./change-fps.js";
 import { registerCollage } from "./collage.js";
 import { registerColorBlindness } from "./color-blindness.js";
 import { registerColorPalette } from "./color-palette.js";
@@ -25,16 +29,20 @@ import { registerConvertAudio } from "./convert-audio.js";
 import { registerConvertVideo } from "./convert-video.js";
 import { registerCrop } from "./crop.js";
 import { registerCropPdf } from "./crop-pdf.js";
+import { registerCropVideo } from "./crop-video.js";
 import { registerCsvExcel } from "./csv-excel.js";
 import { registerCsvJson } from "./csv-json.js";
 import { registerEditMetadata } from "./edit-metadata.js";
+import { registerEmbedSubtitles } from "./embed-subtitles.js";
 import { registerEnhanceFaces } from "./enhance-faces.js";
 import { registerEraseObject } from "./erase-object.js";
 import { registerExtractAudio } from "./extract-audio.js";
 import { registerExtractPages } from "./extract-pages.js";
+import { registerExtractSubtitles } from "./extract-subtitles.js";
 import { registerFavicon } from "./favicon.js";
 import { registerFindDuplicates } from "./find-duplicates.js";
 import { registerFlattenPdf } from "./flatten-pdf.js";
+import { registerGifToVideo } from "./gif-to-video.js";
 import { registerGifTools } from "./gif-tools.js";
 import { registerGrayscalePdf } from "./grayscale-pdf.js";
 import { registerHtmlToImage } from "./html-to-image.js";
@@ -42,12 +50,14 @@ import { registerHtmlToPdf } from "./html-to-pdf.js";
 import { registerImageEnhancement } from "./image-enhancement.js";
 import { registerImageToBase64 } from "./image-to-base64.js";
 import { registerImageToPdf } from "./image-to-pdf.js";
+import { registerImagesToVideo } from "./images-to-video.js";
 import { registerInfo } from "./info.js";
 import { registerJsonXml } from "./json-xml.js";
 import { registerLinearizePdf } from "./linearize-pdf.js";
 import { registerMarkdownToPdf } from "./markdown-to-pdf.js";
 import { registerMemeGenerator } from "./meme-generator.js";
 import { registerMergePdf } from "./merge-pdf.js";
+import { registerMergeVideos } from "./merge-videos.js";
 import { registerMuteVideo } from "./mute-video.js";
 import { registerNoiseRemoval } from "./noise-removal.js";
 import { registerNupPdf } from "./nup-pdf.js";
@@ -68,16 +78,21 @@ import { registerRedactPdf } from "./redact-pdf.js";
 import { registerRemoveBackground } from "./remove-background.js";
 import { registerRemovePages } from "./remove-pages.js";
 import { registerRepairPdf } from "./repair-pdf.js";
+import { registerReplaceAudio } from "./replace-audio.js";
 import { registerReplaceColor } from "./replace-color.js";
 import { registerResize } from "./resize.js";
+import { registerResizeVideo } from "./resize-video.js";
 import { registerRestorePhoto } from "./restore-photo.js";
+import { registerReverseVideo } from "./reverse-video.js";
 import { registerRotate } from "./rotate.js";
 import { registerRotatePdf } from "./rotate-pdf.js";
+import { registerRotateVideo } from "./rotate-video.js";
 import { registerSharpening } from "./sharpening.js";
 import { registerSmartCrop } from "./smart-crop.js";
 import { registerSplit } from "./split.js";
 import { registerSplitCsv } from "./split-csv.js";
 import { registerSplitPdf } from "./split-pdf.js";
+import { registerStabilizeVideo } from "./stabilize-video.js";
 import { registerStitch } from "./stitch.js";
 import { registerStripMetadata } from "./strip-metadata.js";
 import { registerSvgToRaster } from "./svg-to-raster.js";
@@ -88,10 +103,17 @@ import { registerTrimVideo } from "./trim-video.js";
 import { registerUnlockPdf } from "./unlock-pdf.js";
 import { registerUpscale } from "./upscale.js";
 import { registerVectorize } from "./vectorize.js";
+import { registerVideoColor } from "./video-color.js";
+import { registerVideoLoudnorm } from "./video-loudnorm.js";
+import { registerVideoMetadata } from "./video-metadata.js";
+import { registerVideoSpeed } from "./video-speed.js";
+import { registerVideoToFrames } from "./video-to-frames.js";
 import { registerVideoToGif } from "./video-to-gif.js";
+import { registerVideoToWebp } from "./video-to-webp.js";
 import { registerWatermarkImage } from "./watermark-image.js";
 import { registerWatermarkPdf } from "./watermark-pdf.js";
 import { registerWatermarkText } from "./watermark-text.js";
+import { registerWatermarkVideo } from "./watermark-video.js";
 import { registerWordToPdf } from "./word-to-pdf.js";
 
 /**
@@ -178,11 +200,33 @@ export async function registerToolRoutes(app: FastifyInstance): Promise<void> {
     { id: "color-blindness", register: registerColorBlindness },
 
     // Video
-    { id: "convert-video", register: registerConvertVideo },
+    { id: "aspect-pad", register: registerAspectPad },
+    { id: "blur-pad", register: registerBlurPad },
+    { id: "burn-subtitles", register: registerBurnSubtitles },
+    { id: "change-fps", register: registerChangeFps },
     { id: "compress-video", register: registerCompressVideo },
-    { id: "trim-video", register: registerTrimVideo },
+    { id: "convert-video", register: registerConvertVideo },
+    { id: "crop-video", register: registerCropVideo },
+    { id: "embed-subtitles", register: registerEmbedSubtitles },
+    { id: "extract-subtitles", register: registerExtractSubtitles },
+    { id: "gif-to-video", register: registerGifToVideo },
+    { id: "images-to-video", register: registerImagesToVideo },
+    { id: "merge-videos", register: registerMergeVideos },
     { id: "mute-video", register: registerMuteVideo },
+    { id: "replace-audio", register: registerReplaceAudio },
+    { id: "resize-video", register: registerResizeVideo },
+    { id: "reverse-video", register: registerReverseVideo },
+    { id: "rotate-video", register: registerRotateVideo },
+    { id: "stabilize-video", register: registerStabilizeVideo },
+    { id: "trim-video", register: registerTrimVideo },
+    { id: "video-color", register: registerVideoColor },
+    { id: "video-loudnorm", register: registerVideoLoudnorm },
+    { id: "video-metadata", register: registerVideoMetadata },
+    { id: "video-speed", register: registerVideoSpeed },
+    { id: "video-to-frames", register: registerVideoToFrames },
     { id: "video-to-gif", register: registerVideoToGif },
+    { id: "video-to-webp", register: registerVideoToWebp },
+    { id: "watermark-video", register: registerWatermarkVideo },
 
     // Audio
     { id: "convert-audio", register: registerConvertAudio },

@@ -5,7 +5,7 @@
  * Adding a new tool means adding one entry here instead of editing a 750-line file.
  */
 
-import { AUDIO_INPUTS, VIDEO_INPUTS } from "@snapotter/shared";
+import { AUDIO_INPUTS, IMAGE_INPUTS, SUBTITLE_INPUTS, VIDEO_INPUTS } from "@snapotter/shared";
 import type React from "react";
 import { lazy } from "react";
 import type { Crop } from "react-image-crop";
@@ -369,6 +369,116 @@ const VideoToGifSettings = lazy(() =>
     default: m.VideoToGifSettings,
   })),
 );
+const ResizeVideoSettings = lazy(() =>
+  import("@/components/tools/resize-video-settings").then((m) => ({
+    default: m.ResizeVideoSettings,
+  })),
+);
+const CropVideoSettings = lazy(() =>
+  import("@/components/tools/crop-video-settings").then((m) => ({
+    default: m.CropVideoSettings,
+  })),
+);
+const RotateVideoSettings = lazy(() =>
+  import("@/components/tools/rotate-video-settings").then((m) => ({
+    default: m.RotateVideoSettings,
+  })),
+);
+const ChangeFpsSettings = lazy(() =>
+  import("@/components/tools/change-fps-settings").then((m) => ({
+    default: m.ChangeFpsSettings,
+  })),
+);
+const VideoColorSettings = lazy(() =>
+  import("@/components/tools/video-color-settings").then((m) => ({
+    default: m.VideoColorSettings,
+  })),
+);
+const VideoSpeedSettings = lazy(() =>
+  import("@/components/tools/video-speed-settings").then((m) => ({
+    default: m.VideoSpeedSettings,
+  })),
+);
+const ReverseVideoSettings = lazy(() =>
+  import("@/components/tools/reverse-video-settings").then((m) => ({
+    default: m.ReverseVideoSettings,
+  })),
+);
+const VideoLoudnormSettings = lazy(() =>
+  import("@/components/tools/video-loudnorm-settings").then((m) => ({
+    default: m.VideoLoudnormSettings,
+  })),
+);
+const AspectPadSettings = lazy(() =>
+  import("@/components/tools/aspect-pad-settings").then((m) => ({
+    default: m.AspectPadSettings,
+  })),
+);
+const BlurPadSettings = lazy(() =>
+  import("@/components/tools/blur-pad-settings").then((m) => ({
+    default: m.BlurPadSettings,
+  })),
+);
+const WatermarkVideoSettings = lazy(() =>
+  import("@/components/tools/watermark-video-settings").then((m) => ({
+    default: m.WatermarkVideoSettings,
+  })),
+);
+const StabilizeVideoSettings = lazy(() =>
+  import("@/components/tools/stabilize-video-settings").then((m) => ({
+    default: m.StabilizeVideoSettings,
+  })),
+);
+const GifToVideoSettings = lazy(() =>
+  import("@/components/tools/gif-to-video-settings").then((m) => ({
+    default: m.GifToVideoSettings,
+  })),
+);
+const VideoToWebpSettings = lazy(() =>
+  import("@/components/tools/video-to-webp-settings").then((m) => ({
+    default: m.VideoToWebpSettings,
+  })),
+);
+const VideoToFramesSettings = lazy(() =>
+  import("@/components/tools/video-to-frames-settings").then((m) => ({
+    default: m.VideoToFramesSettings,
+  })),
+);
+const MergeVideosSettings = lazy(() =>
+  import("@/components/tools/merge-videos-settings").then((m) => ({
+    default: m.MergeVideosSettings,
+  })),
+);
+const ReplaceAudioSettings = lazy(() =>
+  import("@/components/tools/replace-audio-settings").then((m) => ({
+    default: m.ReplaceAudioSettings,
+  })),
+);
+const BurnSubtitlesSettings = lazy(() =>
+  import("@/components/tools/burn-subtitles-settings").then((m) => ({
+    default: m.BurnSubtitlesSettings,
+  })),
+);
+const EmbedSubtitlesSettings = lazy(() =>
+  import("@/components/tools/embed-subtitles-settings").then((m) => ({
+    default: m.EmbedSubtitlesSettings,
+  })),
+);
+const ExtractSubtitlesSettings = lazy(() =>
+  import("@/components/tools/extract-subtitles-settings").then((m) => ({
+    default: m.ExtractSubtitlesSettings,
+  })),
+);
+const ImagesToVideoSettings = lazy(() =>
+  import("@/components/tools/images-to-video-settings").then((m) => ({
+    default: m.ImagesToVideoSettings,
+  })),
+);
+const VideoMetadataSettings = lazy(() =>
+  import("@/components/tools/video-metadata-settings").then((m) => ({
+    default: m.VideoMetadataSettings,
+  })),
+);
 const ConvertAudioSettings = lazy(() =>
   import("@/components/tools/convert-audio-settings").then((m) => ({
     default: m.ConvertAudioSettings,
@@ -653,6 +763,46 @@ const ENTRY_CONFIG: ReadonlyArray<[string, RegistryEntryConfig]> = [
   ["trim-video", { accept: VIDEO_INPUTS.join(","), Settings: TrimVideoSettings }],
   ["mute-video", { accept: VIDEO_INPUTS.join(","), Settings: MuteVideoSettings }],
   ["video-to-gif", { accept: VIDEO_INPUTS.join(","), Settings: VideoToGifSettings }],
+  ["resize-video", { accept: VIDEO_INPUTS.join(","), Settings: ResizeVideoSettings }],
+  ["crop-video", { accept: VIDEO_INPUTS.join(","), Settings: CropVideoSettings }],
+  ["rotate-video", { accept: VIDEO_INPUTS.join(","), Settings: RotateVideoSettings }],
+  ["change-fps", { accept: VIDEO_INPUTS.join(","), Settings: ChangeFpsSettings }],
+  ["video-color", { accept: VIDEO_INPUTS.join(","), Settings: VideoColorSettings }],
+  ["video-speed", { accept: VIDEO_INPUTS.join(","), Settings: VideoSpeedSettings }],
+  ["reverse-video", { accept: VIDEO_INPUTS.join(","), Settings: ReverseVideoSettings }],
+  ["video-loudnorm", { accept: VIDEO_INPUTS.join(","), Settings: VideoLoudnormSettings }],
+  ["aspect-pad", { accept: VIDEO_INPUTS.join(","), Settings: AspectPadSettings }],
+  ["blur-pad", { accept: VIDEO_INPUTS.join(","), Settings: BlurPadSettings }],
+  ["watermark-video", { accept: VIDEO_INPUTS.join(","), Settings: WatermarkVideoSettings }],
+  ["stabilize-video", { accept: VIDEO_INPUTS.join(","), Settings: StabilizeVideoSettings }],
+  ["gif-to-video", { accept: ".gif", Settings: GifToVideoSettings }],
+  ["video-to-webp", { accept: VIDEO_INPUTS.join(","), Settings: VideoToWebpSettings }],
+  ["video-to-frames", { accept: VIDEO_INPUTS.join(","), Settings: VideoToFramesSettings }],
+  ["merge-videos", { accept: VIDEO_INPUTS.join(","), Settings: MergeVideosSettings }],
+  [
+    "replace-audio",
+    {
+      accept: `${VIDEO_INPUTS.join(",")},${AUDIO_INPUTS.join(",")}`,
+      Settings: ReplaceAudioSettings,
+    },
+  ],
+  [
+    "burn-subtitles",
+    {
+      accept: `${VIDEO_INPUTS.join(",")},${SUBTITLE_INPUTS.join(",")}`,
+      Settings: BurnSubtitlesSettings,
+    },
+  ],
+  [
+    "embed-subtitles",
+    {
+      accept: `${VIDEO_INPUTS.join(",")},${SUBTITLE_INPUTS.join(",")}`,
+      Settings: EmbedSubtitlesSettings,
+    },
+  ],
+  ["extract-subtitles", { accept: VIDEO_INPUTS.join(","), Settings: ExtractSubtitlesSettings }],
+  ["images-to-video", { accept: IMAGE_INPUTS.join(","), Settings: ImagesToVideoSettings }],
+  ["video-metadata", { accept: VIDEO_INPUTS.join(","), Settings: VideoMetadataSettings }],
 
   // Audio tools
   ["convert-audio", { accept: AUDIO_INPUTS.join(","), Settings: ConvertAudioSettings }],

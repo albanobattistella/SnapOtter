@@ -97,6 +97,28 @@ export const TOOL_DISPLAY_MODES: Record<string, DisplayMode> = {
   "trim-video": "media-player",
   "mute-video": "media-player",
   "video-to-gif": "side-by-side",
+  "resize-video": "media-player",
+  "crop-video": "media-player",
+  "rotate-video": "media-player",
+  "change-fps": "media-player",
+  "video-color": "media-player",
+  "video-speed": "media-player",
+  "reverse-video": "media-player",
+  "video-loudnorm": "media-player",
+  "aspect-pad": "media-player",
+  "blur-pad": "media-player",
+  "watermark-video": "media-player",
+  "stabilize-video": "media-player",
+  "gif-to-video": "media-player",
+  "video-to-webp": "side-by-side",
+  "video-to-frames": "no-comparison",
+  "merge-videos": "media-player",
+  "replace-audio": "media-player",
+  "burn-subtitles": "media-player",
+  "embed-subtitles": "media-player",
+  "extract-subtitles": "no-comparison",
+  "images-to-video": "media-player",
+  "video-metadata": "no-comparison",
 
   // Audio tools
   "convert-audio": "media-player",
@@ -142,4 +164,11 @@ export const TOOL_DISPLAY_MODES: Record<string, DisplayMode> = {
  * Tools whose selected files all post in ONE request as repeated "file" parts.
  * Consumed by use-tool-processor; backend routes declare maxInputs.
  */
-export const MULTI_FILE_TOOLS: ReadonlySet<string> = new Set(["merge-pdf"]);
+export const MULTI_FILE_TOOLS: ReadonlySet<string> = new Set([
+  "merge-pdf",
+  "merge-videos",
+  "replace-audio",
+  "burn-subtitles",
+  "embed-subtitles",
+  "images-to-video",
+]);
