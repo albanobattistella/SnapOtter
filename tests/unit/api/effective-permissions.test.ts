@@ -192,8 +192,8 @@ describe("hasEffectivePermission", () => {
 
 describe("getPermissions", () => {
   describe("exact counts for built-in roles", () => {
-    it("admin has exactly 14 permissions", async () => {
-      expect(await getPermissions("admin")).toHaveLength(14);
+    it("admin has exactly 17 permissions", async () => {
+      expect(await getPermissions("admin")).toHaveLength(17);
     });
 
     it("editor has exactly 7 permissions", async () => {
