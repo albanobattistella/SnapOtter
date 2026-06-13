@@ -49,6 +49,12 @@ export const tr: TranslationKeys = {
     format: "Biçim ve Dönüştürme",
     ai: "AI Araçları",
   },
+  modalities: {
+    image: "Image",
+    video: "Video",
+    audio: "Audio",
+    documentsAndFiles: "Documents & Files",
+  },
   tools: {
     resize: {
       name: "Boyutlandır",
@@ -277,6 +283,14 @@ export const tr: TranslationKeys = {
       description: "Birden fazla aracı bir iş akışında zincirleyin",
     },
     processing: { canceled: "Processing canceled" },
+    mediaPlayer: {
+      unsupported: "Your browser does not support this media format.",
+    },
+    documentView: {
+      loadFailed: "Failed to load document.",
+      previousPage: "Previous page",
+      nextPage: "Next page",
+    },
   },
   toolSettings: {
     compress: {

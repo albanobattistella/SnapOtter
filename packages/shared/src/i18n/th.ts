@@ -49,6 +49,12 @@ export const th: TranslationKeys = {
     format: "รูปแบบและการแปลง",
     ai: "เครื่องมือ AI",
   },
+  modalities: {
+    image: "Image",
+    video: "Video",
+    audio: "Audio",
+    documentsAndFiles: "Documents & Files",
+  },
   tools: {
     resize: {
       name: "ปรับขนาด",
@@ -269,6 +275,14 @@ export const th: TranslationKeys = {
       description: "เชื่อมต่อหลายเครื่องมือเป็นขั้นตอนทำงาน",
     },
     processing: { canceled: "Processing canceled" },
+    mediaPlayer: {
+      unsupported: "Your browser does not support this media format.",
+    },
+    documentView: {
+      loadFailed: "Failed to load document.",
+      previousPage: "Previous page",
+      nextPage: "Next page",
+    },
   },
   toolSettings: {
     compress: {

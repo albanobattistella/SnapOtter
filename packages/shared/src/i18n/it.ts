@@ -49,6 +49,12 @@ export const it: TranslationKeys = {
     format: "Formato e conversione",
     ai: "Strumenti IA",
   },
+  modalities: {
+    image: "Image",
+    video: "Video",
+    audio: "Audio",
+    documentsAndFiles: "Documents & Files",
+  },
   tools: {
     resize: {
       name: "Ridimensiona",
@@ -275,6 +281,14 @@ export const it: TranslationKeys = {
       description: "Concatena piu strumenti in un flusso di lavoro",
     },
     processing: { canceled: "Processing canceled" },
+    mediaPlayer: {
+      unsupported: "Your browser does not support this media format.",
+    },
+    documentView: {
+      loadFailed: "Failed to load document.",
+      previousPage: "Previous page",
+      nextPage: "Next page",
+    },
   },
   toolSettings: {
     compress: {

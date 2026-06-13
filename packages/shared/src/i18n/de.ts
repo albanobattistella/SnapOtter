@@ -49,6 +49,12 @@ export const de: TranslationKeys = {
     format: "Format & Konvertierung",
     ai: "AI-Werkzeuge",
   },
+  modalities: {
+    image: "Image",
+    video: "Video",
+    audio: "Audio",
+    documentsAndFiles: "Documents & Files",
+  },
   tools: {
     resize: {
       name: "Groesse aendern",
@@ -276,6 +282,14 @@ export const de: TranslationKeys = {
       description: "Mehrere Werkzeuge zu einem Workflow verketten",
     },
     processing: { canceled: "Processing canceled" },
+    mediaPlayer: {
+      unsupported: "Your browser does not support this media format.",
+    },
+    documentView: {
+      loadFailed: "Failed to load document.",
+      previousPage: "Previous page",
+      nextPage: "Next page",
+    },
   },
   toolSettings: {
     compress: {

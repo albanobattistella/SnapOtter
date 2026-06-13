@@ -49,6 +49,12 @@ export const ko: TranslationKeys = {
     format: "포맷 및 변환",
     ai: "AI 도구",
   },
+  modalities: {
+    image: "Image",
+    video: "Video",
+    audio: "Audio",
+    documentsAndFiles: "Documents & Files",
+  },
   tools: {
     resize: {
       name: "리사이즈",
@@ -223,6 +229,14 @@ export const ko: TranslationKeys = {
     },
     pipeline: { name: "Pipeline 빌더", description: "여러 도구를 워크플로로 연결" },
     processing: { canceled: "Processing canceled" },
+    mediaPlayer: {
+      unsupported: "Your browser does not support this media format.",
+    },
+    documentView: {
+      loadFailed: "Failed to load document.",
+      previousPage: "Previous page",
+      nextPage: "Next page",
+    },
   },
   toolSettings: {
     compress: {

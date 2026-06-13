@@ -49,6 +49,12 @@ export const vi: TranslationKeys = {
     format: "Định dạng & Chuyển đổi",
     ai: "Công cụ AI",
   },
+  modalities: {
+    image: "Image",
+    video: "Video",
+    audio: "Audio",
+    documentsAndFiles: "Documents & Files",
+  },
   tools: {
     resize: {
       name: "Thay đổi kích thước",
@@ -277,6 +283,14 @@ export const vi: TranslationKeys = {
       description: "Kết nối nhiều công cụ thành một quy trình làm việc",
     },
     processing: { canceled: "Processing canceled" },
+    mediaPlayer: {
+      unsupported: "Your browser does not support this media format.",
+    },
+    documentView: {
+      loadFailed: "Failed to load document.",
+      previousPage: "Previous page",
+      nextPage: "Next page",
+    },
   },
   toolSettings: {
     compress: {

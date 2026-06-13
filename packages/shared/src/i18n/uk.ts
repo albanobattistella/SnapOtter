@@ -49,6 +49,12 @@ export const uk: TranslationKeys = {
     format: "Формат і конвертація",
     ai: "AI-інструменти",
   },
+  modalities: {
+    image: "Image",
+    video: "Video",
+    audio: "Audio",
+    documentsAndFiles: "Documents & Files",
+  },
   tools: {
     resize: {
       name: "Зміна розміру",
@@ -276,6 +282,14 @@ export const uk: TranslationKeys = {
       description: "Об'єднання кількох інструментів у робочий процес",
     },
     processing: { canceled: "Processing canceled" },
+    mediaPlayer: {
+      unsupported: "Your browser does not support this media format.",
+    },
+    documentView: {
+      loadFailed: "Failed to load document.",
+      previousPage: "Previous page",
+      nextPage: "Next page",
+    },
   },
   toolSettings: {
     compress: {

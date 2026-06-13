@@ -20,7 +20,7 @@ import { captureException, initAnalytics, shutdownAnalytics } from "./lib/analyt
 import { shouldRunStartupCleanup } from "./lib/cleanup.js";
 import { buildCsp } from "./lib/csp.js";
 import { ensureAiDirs, recoverInterruptedInstalls } from "./lib/feature-status.js";
-import { shutdownWorkerPool } from "./lib/worker-pool.js";
+
 import { requirePermission } from "./permissions.js";
 import {
   authMiddleware,
@@ -507,16 +507,10 @@ async function shutdown(signal: string) {
   }
 
   try {
-    await shutdownWorkerPool();
-    console.log("Worker pool shut down");
-  } catch (err) {
-    console.error("Error shutting down worker pool:", err);
-  }
-
-  try {
-    const { shutdownDispatcher } = await import("@snapotter/ai");
+    const { shutdownDispatcher, shutdownDocsDispatcher } = await import("@snapotter/ai");
     shutdownDispatcher();
-    console.log("Python dispatcher shut down");
+    await shutdownDocsDispatcher();
+    console.log("Python dispatchers shut down");
   } catch {
     // AI package may not be available
   }

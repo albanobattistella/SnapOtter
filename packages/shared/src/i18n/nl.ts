@@ -49,6 +49,12 @@ export const nl: TranslationKeys = {
     format: "Formaat & Conversie",
     ai: "AI-tools",
   },
+  modalities: {
+    image: "Image",
+    video: "Video",
+    audio: "Audio",
+    documentsAndFiles: "Documents & Files",
+  },
   tools: {
     resize: {
       name: "Formaat wijzigen",
@@ -276,6 +282,14 @@ export const nl: TranslationKeys = {
       description: "Meerdere tools koppelen tot een workflow",
     },
     processing: { canceled: "Processing canceled" },
+    mediaPlayer: {
+      unsupported: "Your browser does not support this media format.",
+    },
+    documentView: {
+      loadFailed: "Failed to load document.",
+      previousPage: "Previous page",
+      nextPage: "Next page",
+    },
   },
   toolSettings: {
     compress: {

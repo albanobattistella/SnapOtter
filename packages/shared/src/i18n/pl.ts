@@ -49,6 +49,12 @@ export const pl: TranslationKeys = {
     format: "Format i konwersja",
     ai: "Narzędzia AI",
   },
+  modalities: {
+    image: "Image",
+    video: "Video",
+    audio: "Audio",
+    documentsAndFiles: "Documents & Files",
+  },
   tools: {
     resize: {
       name: "Zmiana rozmiaru",
@@ -277,6 +283,14 @@ export const pl: TranslationKeys = {
       description: "Łączenie wielu narzędzi w przepływ pracy",
     },
     processing: { canceled: "Processing canceled" },
+    mediaPlayer: {
+      unsupported: "Your browser does not support this media format.",
+    },
+    documentView: {
+      loadFailed: "Failed to load document.",
+      previousPage: "Previous page",
+      nextPage: "Next page",
+    },
   },
   toolSettings: {
     compress: {
