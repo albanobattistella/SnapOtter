@@ -49,6 +49,18 @@ describe.skipIf(!hasPython)("SSRF pre-scan regexes (doc_html_pdf.py)", () => {
     it("does NOT match relative paths", () => {
       expect(testRegex('<a href="page2.xhtml">', "_REMOTE_REF_RE")).toBe(false);
     });
+
+    it("matches srcset attribute", () => {
+      expect(testRegex('<img srcset="https://h/x.png 2x">', "_REMOTE_REF_RE")).toBe(true);
+    });
+
+    it("matches poster attribute", () => {
+      expect(testRegex('<video poster="https://h/thumb.jpg">', "_REMOTE_REF_RE")).toBe(true);
+    });
+
+    it("matches formaction attribute", () => {
+      expect(testRegex('<button formaction="https://h/submit">', "_REMOTE_REF_RE")).toBe(true);
+    });
   });
 
   describe("_REMOTE_CSS_URL_RE", () => {
@@ -62,6 +74,18 @@ describe.skipIf(!hasPython)("SSRF pre-scan regexes (doc_html_pdf.py)", () => {
 
     it("does NOT match data: CSS url()", () => {
       expect(testRegex("url(data:image/png;base64,AA==)", "_REMOTE_CSS_URL_RE")).toBe(false);
+    });
+
+    it("matches @import with double-quoted URL", () => {
+      expect(testRegex('@import "https://h/style.css";', "_REMOTE_CSS_URL_RE")).toBe(true);
+    });
+
+    it("matches @import with single-quoted URL", () => {
+      expect(testRegex("@import 'https://h/style.css';", "_REMOTE_CSS_URL_RE")).toBe(true);
+    });
+
+    it("matches @import with bare URL", () => {
+      expect(testRegex("@import https://h/style.css;", "_REMOTE_CSS_URL_RE")).toBe(true);
     });
   });
 });
