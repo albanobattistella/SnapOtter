@@ -1,0 +1,163 @@
+name: AI Bundles
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to build bundles for (e.g., 2.0.0)"
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      version:
+        type: string
+        required: true
+
+concurrency:
+  group: ai-bundles-${{ inputs.version }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  build:
+    name: ${{ matrix.bundle }} (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - bundle: background-removal
+            arch: amd64-gpu
+            runner: ubuntu-latest
+          - bundle: background-removal
+            arch: arm64-cpu
+            runner: ubuntu-24.04-arm
+          - bundle: face-detection
+            arch: amd64-gpu
+            runner: ubuntu-latest
+          - bundle: face-detection
+            arch: arm64-cpu
+            runner: ubuntu-24.04-arm
+          - bundle: object-eraser-colorize
+            arch: amd64-gpu
+            runner: ubuntu-latest
+          - bundle: object-eraser-colorize
+            arch: arm64-cpu
+            runner: ubuntu-24.04-arm
+          - bundle: upscale-enhance
+            arch: amd64-gpu
+            runner: ubuntu-latest
+          - bundle: upscale-enhance
+            arch: arm64-cpu
+            runner: ubuntu-24.04-arm
+          - bundle: photo-restoration
+            arch: amd64-gpu
+            runner: ubuntu-latest
+          - bundle: photo-restoration
+            arch: arm64-cpu
+            runner: ubuntu-24.04-arm
+          - bundle: ocr
+            arch: amd64-gpu
+            runner: ubuntu-latest
+          - bundle: ocr
+            arch: arm64-cpu
+            runner: ubuntu-24.04-arm
+          - bundle: transcription
+            arch: amd64-gpu
+            runner: ubuntu-latest
+          - bundle: transcription
+            arch: arm64-cpu
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /usr/local/share/boost /opt/hostedtoolcache/CodeQL
+          sudo docker system prune -af
+          df -h /
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: v${{ inputs.version }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_TOKEN }}
+
+      - name: Build bundle inside Docker image
+        env:
+          BUNDLE: ${{ matrix.bundle }}
+          ARCH: ${{ matrix.arch }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          mkdir -p /tmp/bundles
+          docker run --rm \
+            -v "$PWD/docker/build-bundle.sh:/build-bundle.sh:ro" \
+            -v "/tmp/bundles:/output" \
+            "ghcr.io/snapotter-hq/snapotter:${VERSION}" \
+            bash /build-bundle.sh "${BUNDLE}" "${ARCH}" /output
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ matrix.bundle }}-${{ matrix.arch }}
+          path: /tmp/bundles/
+          retention-days: 1
+
+  publish:
+    name: Publish to HuggingFace
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: /tmp/artifacts
+
+      - name: Install huggingface-hub
+        run: pip install huggingface-hub
+
+      - name: Organize and upload to HuggingFace
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          mkdir -p "/tmp/upload/v${VERSION}"
+
+          find /tmp/artifacts -name '*.tar.gz' -exec cp {} "/tmp/upload/v${VERSION}/" \;
+          find /tmp/artifacts -name '*.sha256' -exec cp {} "/tmp/upload/v${VERSION}/" \;
+
+          cd "/tmp/upload/v${VERSION}"
+          echo '{"version":"'"${VERSION}"'","archives":[' > manifest.json
+          first=true
+          for archive in *.tar.gz; do
+            [ -f "$archive" ] || continue
+            sha=$(sha256sum "$archive" | cut -d' ' -f1)
+            size=$(stat --format=%s "$archive")
+            if [ "$first" = true ]; then
+              first=false
+            else
+              echo ',' >> manifest.json
+            fi
+            printf '{"file":"%s","sha256":"%s","size":%s}' "$archive" "$sha" "$size" >> manifest.json
+          done
+          echo ']}' >> manifest.json
+
+          huggingface-cli upload snapotter/feature-bundles \
+            "/tmp/upload/v${VERSION}" "v${VERSION}" \
+            --repo-type model --token "${HF_TOKEN}"
+
+          echo "Published: https://huggingface.co/snapotter/feature-bundles/tree/main/v${VERSION}"
