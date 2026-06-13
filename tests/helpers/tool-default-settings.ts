@@ -30,6 +30,10 @@ export const TOOL_SETTINGS_OVERRIDES: Record<string, unknown> = {
   "resize-video": { preset: "720p" },
   "watermark-video": { text: "CONFIDENTIAL" },
   "audio-channels": { mode: "mono-to-stereo" },
+  "convert-document": { format: "odt" },
+  "epub-convert": { format: "html" },
+  "convert-presentation": { format: "odp" },
+  "convert-spreadsheet": { format: "ods" },
 };
 
 export function defaultSettingsFor(toolId: string): unknown {

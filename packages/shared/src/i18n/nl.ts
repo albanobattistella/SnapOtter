@@ -473,6 +473,23 @@ export const nl: TranslationKeys = {
       name: "Rotate PDF",
       description: "Rotate pages in a PDF",
     },
+    "convert-document": {
+      name: "Convert Document",
+      description: "Convert between Word, OpenDocument, RTF, and plain text formats",
+    },
+    "convert-presentation": {
+      name: "Convert Presentation",
+      description: "Convert between PowerPoint and OpenDocument presentation formats",
+    },
+    "convert-spreadsheet": {
+      name: "Convert Spreadsheet",
+      description:
+        "Convert between Excel, OpenDocument, and CSV formats. Multi-sheet workbooks export the first sheet to CSV.",
+    },
+    "excel-to-pdf": {
+      name: "Excel to PDF",
+      description: "Convert spreadsheets to PDF. Wide sheets may paginate across multiple pages.",
+    },
     "word-to-pdf": {
       name: "Word to PDF",
       description: "Convert Word documents to PDF",
@@ -553,14 +570,36 @@ export const nl: TranslationKeys = {
       name: "PDF Metadata",
       description: "Read and write PDF document metadata",
     },
+    "powerpoint-to-pdf": {
+      name: "PowerPoint to PDF",
+      description: "Convert presentations to PDF",
+    },
     "html-to-pdf": {
       name: "HTML to PDF",
       description: "Convert an HTML file to PDF. Remote resources are disabled for privacy.",
+    },
+    "markdown-to-docx": {
+      name: "Markdown to Word",
+      description: "Convert a Markdown file to a Word document (DOCX)",
+    },
+    "markdown-to-html": {
+      name: "Markdown to HTML",
+      description:
+        "Convert a Markdown file to a standalone HTML page. Remote images in the source are left as-is in the output.",
     },
     "markdown-to-pdf": {
       name: "Markdown to PDF",
       description:
         "Convert a Markdown file to a styled PDF. Remote resources are disabled for privacy.",
+    },
+    "epub-convert": {
+      name: "Convert EPUB",
+      description:
+        "Convert an EPUB to PDF, DOCX, HTML, or Markdown. Remote resources inside the book are not fetched.",
+    },
+    "to-epub": {
+      name: "Convert to EPUB",
+      description: "Convert Word, Markdown, HTML, or plain text files to EPUB",
     },
     "csv-excel": {
       name: "CSV to Excel",
@@ -577,6 +616,27 @@ export const nl: TranslationKeys = {
     "split-csv": {
       name: "Split CSV",
       description: "Split a CSV into smaller files by row count",
+    },
+    "merge-csvs": {
+      name: "Merge CSVs",
+      description: "Combine multiple CSV or TSV files with matching columns into one",
+    },
+    "yaml-json": {
+      name: "YAML / JSON",
+      description: "Convert between YAML and JSON, both directions",
+    },
+    "xml-to-csv": {
+      name: "XML to CSV",
+      description: "Extract repeating elements from XML into a CSV table",
+    },
+    "create-zip": {
+      name: "Create ZIP",
+      description: "Bundle multiple files into a single ZIP archive",
+    },
+    "extract-zip": {
+      name: "Extract ZIP",
+      description:
+        "Safely extract files from a ZIP archive with bomb protection. Single-file archives return the file directly.",
     },
     pipeline: {
       name: "Pipeline-builder",
@@ -1919,6 +1979,35 @@ export const nl: TranslationKeys = {
       submitBatch: "Rotate ({count} files)",
       progressLabel: "Rotating",
     },
+    "convert-document": {
+      format: "Output format",
+      submit: "Convert",
+      submitBatch: "Convert ({count} files)",
+      progressLabel: "Converting",
+    },
+    "convert-presentation": {
+      format: "Output format",
+      submit: "Convert",
+      submitBatch: "Convert ({count} files)",
+      progressLabel: "Converting",
+    },
+    "convert-spreadsheet": {
+      format: "Output format",
+      hint: "Multi-sheet workbooks export the first sheet to CSV.",
+      submit: "Convert",
+      submitBatch: "Convert ({count} files)",
+      progressLabel: "Converting",
+    },
+    "excel-to-pdf": {
+      submit: "Convert to PDF",
+      submitBatch: "Convert ({count} files)",
+      progressLabel: "Converting",
+    },
+    "powerpoint-to-pdf": {
+      submit: "Convert to PDF",
+      submitBatch: "Convert ({count} files)",
+      progressLabel: "Converting",
+    },
     "word-to-pdf": {
       submit: "Convert to PDF",
       submitBatch: "Convert ({count} files)",
@@ -2053,10 +2142,33 @@ export const nl: TranslationKeys = {
       submitBatch: "Convert to PDF ({count} files)",
       progressLabel: "Converting",
     },
+    "markdown-to-docx": {
+      submit: "Convert to DOCX",
+      submitBatch: "Convert ({count} files)",
+      progressLabel: "Converting",
+    },
+    "markdown-to-html": {
+      hint: "Remote images in the source are left as-is in the output.",
+      submit: "Convert to HTML",
+      submitBatch: "Convert ({count} files)",
+      progressLabel: "Converting",
+    },
     "markdown-to-pdf": {
       hint: "Remote resources are disabled for privacy.",
       submit: "Convert to PDF",
       submitBatch: "Convert to PDF ({count} files)",
+      progressLabel: "Converting",
+    },
+    "epub-convert": {
+      format: "Output format",
+      hint: "Remote resources inside the book are not fetched.",
+      submit: "Convert",
+      submitBatch: "Convert ({count} files)",
+      progressLabel: "Converting",
+    },
+    "to-epub": {
+      submit: "Convert to EPUB",
+      submitBatch: "Convert ({count} files)",
       progressLabel: "Converting",
     },
     "csv-excel": {
@@ -2083,6 +2195,31 @@ export const nl: TranslationKeys = {
       submit: "Split",
       submitBatch: "Split ({count} files)",
       progressLabel: "Splitting",
+    },
+    "merge-csvs": {
+      submit: "Merge",
+      submitBatch: "Merge ({count} files)",
+      progressLabel: "Merging",
+    },
+    "yaml-json": {
+      submit: "Convert",
+      submitBatch: "Convert ({count} files)",
+      progressLabel: "Converting",
+    },
+    "xml-to-csv": {
+      submit: "Convert",
+      submitBatch: "Convert ({count} files)",
+      progressLabel: "Converting",
+    },
+    "create-zip": {
+      submit: "Create ZIP",
+      submitBatch: "Create ZIP ({count} files)",
+      progressLabel: "Zipping",
+    },
+    "extract-zip": {
+      submit: "Extract",
+      submitBatch: "Extract ({count} files)",
+      progressLabel: "Extracting",
     },
   },
   urlImport: {

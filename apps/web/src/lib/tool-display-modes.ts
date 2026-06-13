@@ -140,6 +140,10 @@ export const TOOL_DISPLAY_MODES: Record<string, DisplayMode> = {
   "waveform-image": "no-comparison",
 
   // PDF & Document tools
+  "convert-document": "no-comparison",
+  "convert-presentation": "no-comparison",
+  "convert-spreadsheet": "no-comparison",
+  "excel-to-pdf": "document",
   "merge-pdf": "document",
   "split-pdf": "no-comparison",
   "compress-pdf": "document",
@@ -164,14 +168,24 @@ export const TOOL_DISPLAY_MODES: Record<string, DisplayMode> = {
   "pdf-to-text": "no-comparison",
   "pdf-to-word": "no-comparison",
   "pdf-metadata": "no-comparison",
+  "powerpoint-to-pdf": "document",
   "html-to-pdf": "document",
+  "markdown-to-docx": "no-comparison",
+  "markdown-to-html": "no-comparison",
   "markdown-to-pdf": "document",
+  "epub-convert": "no-comparison",
+  "to-epub": "no-comparison",
 
   // Data tools
   "csv-excel": "no-comparison",
   "csv-json": "no-comparison",
   "json-xml": "no-comparison",
   "split-csv": "no-comparison",
+  "merge-csvs": "no-comparison",
+  "yaml-json": "no-comparison",
+  "xml-to-csv": "no-comparison",
+  "create-zip": "no-comparison",
+  "extract-zip": "no-comparison",
 };
 
 /**
@@ -179,7 +193,9 @@ export const TOOL_DISPLAY_MODES: Record<string, DisplayMode> = {
  * Consumed by use-tool-processor; backend routes declare maxInputs.
  */
 export const MULTI_FILE_TOOLS: ReadonlySet<string> = new Set([
+  "create-zip",
   "merge-audio",
+  "merge-csvs",
   "merge-pdf",
   "merge-videos",
   "replace-audio",

@@ -29,7 +29,11 @@ import { registerCompressVideo } from "./compress-video.js";
 import { registerContentAwareResize } from "./content-aware-resize.js";
 import { registerConvert } from "./convert.js";
 import { registerConvertAudio } from "./convert-audio.js";
+import { registerConvertDocument } from "./convert-document.js";
+import { registerConvertPresentation } from "./convert-presentation.js";
+import { registerConvertSpreadsheet } from "./convert-spreadsheet.js";
 import { registerConvertVideo } from "./convert-video.js";
+import { registerCreateZip } from "./create-zip.js";
 import { registerCrop } from "./crop.js";
 import { registerCropPdf } from "./crop-pdf.js";
 import { registerCropVideo } from "./crop-video.js";
@@ -38,10 +42,13 @@ import { registerCsvJson } from "./csv-json.js";
 import { registerEditMetadata } from "./edit-metadata.js";
 import { registerEmbedSubtitles } from "./embed-subtitles.js";
 import { registerEnhanceFaces } from "./enhance-faces.js";
+import { registerEpubConvert } from "./epub-convert.js";
 import { registerEraseObject } from "./erase-object.js";
+import { registerExcelToPdf } from "./excel-to-pdf.js";
 import { registerExtractAudio } from "./extract-audio.js";
 import { registerExtractPages } from "./extract-pages.js";
 import { registerExtractSubtitles } from "./extract-subtitles.js";
+import { registerExtractZip } from "./extract-zip.js";
 import { registerFadeAudio } from "./fade-audio.js";
 import { registerFavicon } from "./favicon.js";
 import { registerFindDuplicates } from "./find-duplicates.js";
@@ -58,9 +65,12 @@ import { registerImagesToVideo } from "./images-to-video.js";
 import { registerInfo } from "./info.js";
 import { registerJsonXml } from "./json-xml.js";
 import { registerLinearizePdf } from "./linearize-pdf.js";
+import { registerMarkdownToDocx } from "./markdown-to-docx.js";
+import { registerMarkdownToHtml } from "./markdown-to-html.js";
 import { registerMarkdownToPdf } from "./markdown-to-pdf.js";
 import { registerMemeGenerator } from "./meme-generator.js";
 import { registerMergeAudio } from "./merge-audio.js";
+import { registerMergeCsvs } from "./merge-csvs.js";
 import { registerMergePdf } from "./merge-pdf.js";
 import { registerMergeVideos } from "./merge-videos.js";
 import { registerMuteVideo } from "./mute-video.js";
@@ -79,6 +89,7 @@ import { registerPdfToText } from "./pdf-to-text.js";
 import { registerPdfToWord } from "./pdf-to-word.js";
 import { registerPdfaConvert } from "./pdfa-convert.js";
 import { registerPitchShift } from "./pitch-shift.js";
+import { registerPowerpointToPdf } from "./powerpoint-to-pdf.js";
 import { registerProtectPdf } from "./protect-pdf.js";
 import { registerQrGenerate } from "./qr-generate.js";
 import { registerRedEyeRemoval } from "./red-eye-removal.js";
@@ -109,6 +120,7 @@ import { registerStitch } from "./stitch.js";
 import { registerStripMetadata } from "./strip-metadata.js";
 import { registerSvgToRaster } from "./svg-to-raster.js";
 import { registerTextOverlay } from "./text-overlay.js";
+import { registerToEpub } from "./to-epub.js";
 import { registerTransparencyFixer } from "./transparency-fixer.js";
 import { registerTrimAudio } from "./trim-audio.js";
 import { registerTrimVideo } from "./trim-video.js";
@@ -129,6 +141,8 @@ import { registerWatermarkText } from "./watermark-text.js";
 import { registerWatermarkVideo } from "./watermark-video.js";
 import { registerWaveformImage } from "./waveform-image.js";
 import { registerWordToPdf } from "./word-to-pdf.js";
+import { registerXmlToCsv } from "./xml-to-csv.js";
+import { registerYamlJson } from "./yaml-json.js";
 
 /**
  * Registry that imports and registers all tool routes.
@@ -262,6 +276,11 @@ export async function registerToolRoutes(app: FastifyInstance): Promise<void> {
     { id: "waveform-image", register: registerWaveformImage },
 
     // PDF & Documents
+    { id: "convert-document", register: registerConvertDocument },
+    { id: "convert-presentation", register: registerConvertPresentation },
+    { id: "convert-spreadsheet", register: registerConvertSpreadsheet },
+    { id: "epub-convert", register: registerEpubConvert },
+    { id: "excel-to-pdf", register: registerExcelToPdf },
     { id: "merge-pdf", register: registerMergePdf },
     { id: "split-pdf", register: registerSplitPdf },
     { id: "compress-pdf", register: registerCompressPdf },
@@ -286,14 +305,23 @@ export async function registerToolRoutes(app: FastifyInstance): Promise<void> {
     { id: "pdf-to-text", register: registerPdfToText },
     { id: "pdf-to-word", register: registerPdfToWord },
     { id: "pdf-metadata", register: registerPdfMetadata },
+    { id: "powerpoint-to-pdf", register: registerPowerpointToPdf },
     { id: "html-to-pdf", register: registerHtmlToPdf },
+    { id: "markdown-to-docx", register: registerMarkdownToDocx },
+    { id: "markdown-to-html", register: registerMarkdownToHtml },
     { id: "markdown-to-pdf", register: registerMarkdownToPdf },
+    { id: "to-epub", register: registerToEpub },
 
     // Data Files
+    { id: "create-zip", register: registerCreateZip },
     { id: "csv-excel", register: registerCsvExcel },
     { id: "csv-json", register: registerCsvJson },
+    { id: "extract-zip", register: registerExtractZip },
     { id: "json-xml", register: registerJsonXml },
+    { id: "merge-csvs", register: registerMergeCsvs },
     { id: "split-csv", register: registerSplitCsv },
+    { id: "xml-to-csv", register: registerXmlToCsv },
+    { id: "yaml-json", register: registerYamlJson },
 
     // AI Tools
     { id: "remove-background", register: registerRemoveBackground },
