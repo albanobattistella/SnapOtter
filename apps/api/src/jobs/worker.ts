@@ -387,10 +387,11 @@ async function processPipelineStep(job: Job<ToolJobData>): Promise<ToolJobResult
 
     if (!prevRow || prevRow.status === "failed" || !prevRow.outputRefs?.[0]) {
       // Previous step failed -- propagate the error without processing.
-      const prevError =
+      const prevError = stripInternalPaths(
         prevRow?.status === "failed"
           ? ((prevRow.error as { message?: string } | null)?.message ?? "Processing failed")
-          : "Previous step has no output";
+          : "Previous step has no output",
+      );
       await db
         .update(schema.jobs)
         .set({ status: "failed", completedAt: new Date(), error: { message: prevError } })
@@ -426,7 +427,7 @@ async function processPipelineStep(job: Job<ToolJobData>): Promise<ToolJobResult
     // Step failed -- return failure marker. processToolJob already
     // updated the DB row to "failed" and emitted a terminal event
     // on the step's own progress channel.
-    const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorMsg = stripInternalPaths(err instanceof Error ? err.message : String(err));
     return {
       outputRefs: [],
       filename: data.filename,
@@ -494,7 +495,7 @@ async function processPipelineFinalize(job: Job<ToolJobData>): Promise<ToolJobRe
 
   // ── Failure path ────────────────────────────────────────────
   if (failedAtStep !== null) {
-    const errorMsg = `Step ${failedAtStep + 1}: ${failError}`;
+    const errorMsg = stripInternalPaths(`Step ${failedAtStep + 1}: ${failError}`);
 
     await db
       .update(schema.jobs)
@@ -596,7 +597,7 @@ async function processBatchChild(job: Job<ToolJobData>): Promise<ToolJobResult> 
     await recordChildOutcome(job.data.parentId!, job.data.totalFiles!, job.data.filename);
     return result;
   } catch (err) {
-    const error = err instanceof Error ? err.message : String(err);
+    const error = stripInternalPaths(err instanceof Error ? err.message : String(err));
     await recordChildOutcome(job.data.parentId!, job.data.totalFiles!, job.data.filename, error);
     // Return a completed job with a failure marker so the parent runs.
     return {
@@ -647,7 +648,7 @@ async function processBatchFinalize(job: Job<ToolJobData>): Promise<ToolJobResul
     } else {
       const errorMsg = (row.error as { message?: string } | null)?.message ?? "Processing failed";
       const inputFilename = row.inputRefs?.[0]?.split("/").pop() ?? `file-${i}`;
-      manifest.push({ index: i, filename: inputFilename, error: errorMsg });
+      manifest.push({ index: i, filename: inputFilename, error: stripInternalPaths(errorMsg) });
     }
   }
 

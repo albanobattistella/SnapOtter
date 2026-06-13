@@ -12,6 +12,7 @@
  *                    "failed" only when every file failed
  */
 
+import { stripInternalPaths } from "../lib/errors.js";
 import { updateJobProgress } from "../routes/progress.js";
 import { sharedRedis } from "./connection.js";
 import { bullPrefix } from "./types.js";
@@ -37,7 +38,8 @@ export async function recordChildOutcome(
   const base = `${bullPrefix()}:batch:${parentId}`;
   const done = await r.incr(`${base}:${error ? "failed" : "done"}`);
   const other = Number((await r.get(`${base}:${error ? "done" : "failed"}`)) ?? 0);
-  if (error) await r.rpush(`${base}:errors`, JSON.stringify({ filename, error }));
+  if (error)
+    await r.rpush(`${base}:errors`, JSON.stringify({ filename, error: stripInternalPaths(error) }));
   await r.expire(`${base}:done`, 3600);
   await r.expire(`${base}:failed`, 3600);
   await r.expire(`${base}:errors`, 3600);
