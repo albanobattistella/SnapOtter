@@ -1,5 +1,5 @@
-import type { CategoryInfo, Tool } from "@snapotter/shared";
-import { ANALYTICS_EVENTS, CATEGORIES, TOOLS } from "@snapotter/shared";
+import type { CategoryInfo, Modality, Tool } from "@snapotter/shared";
+import { ANALYTICS_EVENTS, CATEGORIES, MODALITIES, TOOLS } from "@snapotter/shared";
 import {
   AudioLines,
   Eye,
@@ -23,7 +23,7 @@ import { useMobile } from "@/hooks/use-mobile";
 import { track } from "@/lib/analytics";
 import { apiGet } from "@/lib/api";
 import { ICON_MAP } from "@/lib/icon-map";
-import { getCategoryName, getToolDescription, getToolName } from "@/lib/tool-i18n";
+import { getCategoryName, getModalityName, getToolDescription, getToolName } from "@/lib/tool-i18n";
 import { cn } from "@/lib/utils";
 import { useFeaturesStore } from "@/stores/features-store";
 
@@ -99,6 +99,25 @@ export function FullscreenGridPage() {
   }, [filteredTools]);
 
   const activeCategories = CATEGORIES.filter((cat) => groupedTools.has(cat.id));
+
+  /** Map each modality to its list of active categories (for "All" tab grouping). */
+  const modalitySections = useMemo(() => {
+    if (modalityTab !== "all") return null;
+    const catToModality = new Map<string, Modality>();
+    for (const tool of filteredTools) {
+      const key = tool.modality === "file" ? ("document" as Modality) : tool.modality;
+      if (!catToModality.has(tool.category)) {
+        catToModality.set(tool.category, key);
+      }
+    }
+    const sections: { modality: (typeof MODALITIES)[number]; categories: CategoryInfo[] }[] = [];
+    for (const mod of MODALITIES) {
+      if (mod.id === "file") continue;
+      const cats = activeCategories.filter((c) => catToModality.get(c.id) === mod.id);
+      if (cats.length > 0) sections.push({ modality: mod, categories: cats });
+    }
+    return sections;
+  }, [modalityTab, filteredTools, activeCategories]);
 
   return (
     <div className={cn("min-h-screen bg-background text-foreground", isMobile && "pb-20")}>
@@ -190,16 +209,103 @@ export function FullscreenGridPage() {
             <p className="text-lg font-medium">{t.fullscreenGrid.noToolsFound}</p>
             <p className="text-sm mt-1">{t.fullscreenGrid.tryDifferent}</p>
           </div>
+        ) : modalitySections ? (
+          /* "All" tab: render with modality section headers */
+          <div className="space-y-10">
+            {modalitySections.map((section) => {
+              const SectionIcon = ICON_MAP[section.modality.icon] as React.ComponentType<{
+                className?: string;
+              }>;
+              return (
+                <section key={section.modality.id}>
+                  <div
+                    className="flex items-center gap-3 mb-5 pb-3 border-b-2"
+                    style={{ borderColor: section.modality.color }}
+                  >
+                    {SectionIcon && (
+                      <div
+                        className="p-2 rounded-lg"
+                        style={{
+                          backgroundColor: `${section.modality.color}15`,
+                          color: section.modality.color,
+                        }}
+                      >
+                        <SectionIcon className="h-5 w-5" />
+                      </div>
+                    )}
+                    <h2 className="text-lg font-semibold text-foreground">
+                      {getModalityName(
+                        t,
+                        section.modality.id,
+                        section.modality.id === "document"
+                          ? "Documents & Files"
+                          : section.modality.name,
+                      )}
+                    </h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {section.categories.map((category) => (
+                      <CategoryCard
+                        key={category.id}
+                        category={category}
+                        tools={groupedTools.get(category.id) || []}
+                        showDetails={showDetails}
+                        accentColor={section.modality.color}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {activeCategories.map((category) => (
-              <CategoryCard
-                key={category.id}
-                category={category}
-                tools={groupedTools.get(category.id) || []}
-                showDetails={showDetails}
-              />
-            ))}
+          /* Specific modality tab selected */
+          <div>
+            {(() => {
+              const activeMod = MODALITIES.find((m) => m.id === modalityTab);
+              const ModIcon = activeMod
+                ? (ICON_MAP[activeMod.icon] as React.ComponentType<{ className?: string }>)
+                : null;
+              return activeMod ? (
+                <div
+                  className="flex items-center gap-3 mb-6 pb-3 border-b-2"
+                  style={{ borderColor: activeMod.color }}
+                >
+                  {ModIcon && (
+                    <div
+                      className="p-2 rounded-lg"
+                      style={{
+                        backgroundColor: `${activeMod.color}15`,
+                        color: activeMod.color,
+                      }}
+                    >
+                      <ModIcon className="h-5 w-5" />
+                    </div>
+                  )}
+                  <h2 className="text-lg font-semibold text-foreground">
+                    {getModalityName(
+                      t,
+                      activeMod.id,
+                      activeMod.id === "document" ? "Documents & Files" : activeMod.name,
+                    )}
+                  </h2>
+                </div>
+              ) : null;
+            })()}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              {activeCategories.map((category) => {
+                const activeMod = MODALITIES.find((m) => m.id === modalityTab);
+                return (
+                  <CategoryCard
+                    key={category.id}
+                    category={category}
+                    tools={groupedTools.get(category.id) || []}
+                    showDetails={showDetails}
+                    accentColor={activeMod?.color}
+                  />
+                );
+              })}
+            </div>
           </div>
         )}
       </main>
@@ -212,17 +318,22 @@ function CategoryCard({
   category,
   tools,
   showDetails,
+  accentColor,
 }: {
   category: CategoryInfo;
   tools: Tool[];
   showDetails: boolean;
+  accentColor?: string;
 }) {
   const { t } = useTranslation();
   const CategoryIcon =
     (ICON_MAP[category.icon] as React.ComponentType<{ className?: string }>) ?? LayoutGrid;
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+    <div
+      className="rounded-xl border border-border bg-card overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+      style={accentColor ? { borderLeftWidth: 3, borderLeftColor: accentColor } : undefined}
+    >
       {/* Header */}
       <div
         className="px-4 py-3 flex items-center gap-3"

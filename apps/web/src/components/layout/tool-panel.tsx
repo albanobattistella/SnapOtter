@@ -54,17 +54,26 @@ export function ToolPanel() {
       </div>
       <div className="px-3 pb-4 flex-1">
         {MODALITIES.filter((m) => m.id !== "file" && groupedByModality.has(m.id)).map(
-          (modality) => {
+          (modality, idx, arr) => {
             const ModalityIcon = ICON_MAP[modality.icon] as React.ComponentType<{
               className?: string;
             }>;
             const categoryMap = groupedByModality.get(modality.id);
             if (!categoryMap) return null;
+            const isLast = idx === arr.length - 1;
             return (
-              <div key={modality.id} className="mb-5">
-                <div className="flex items-center gap-1.5 mb-2">
-                  {ModalityIcon && <ModalityIcon className="h-4 w-4 text-foreground/70 shrink-0" />}
-                  <h2 className="text-xs font-bold uppercase text-foreground/70 tracking-wider">
+              <div key={modality.id} className={isLast ? "" : "mb-2"}>
+                {idx > 0 && <hr className="border-border mb-4" />}
+                <div
+                  className="flex items-center gap-2 mt-4 mb-3 pl-2.5 border-l-[3px] rounded-sm"
+                  style={{ borderColor: modality.color }}
+                >
+                  {ModalityIcon && (
+                    <span className="shrink-0" style={{ color: modality.color }}>
+                      <ModalityIcon className="h-4.5 w-4.5" />
+                    </span>
+                  )}
+                  <h2 className="text-sm font-semibold text-foreground tracking-wide">
                     {getModalityName(
                       t,
                       modality.id,
@@ -73,8 +82,8 @@ export function ToolPanel() {
                   </h2>
                 </div>
                 {CATEGORIES.filter((cat) => categoryMap.has(cat.id)).map((category) => (
-                  <div key={category.id} className="mb-4">
-                    <h3 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider mb-2">
+                  <div key={category.id} className="mb-3">
+                    <h3 className="text-xs font-medium text-muted-foreground tracking-wider mb-1.5 pl-1">
                       {getCategoryName(t, category.id, category.name)}
                     </h3>
                     <div className="space-y-0.5">
