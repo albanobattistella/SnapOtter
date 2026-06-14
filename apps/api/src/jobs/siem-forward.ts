@@ -18,6 +18,7 @@ import { asc, eq, gte } from "drizzle-orm";
 import { env } from "../config.js";
 import { db, schema } from "../db/index.js";
 import { decrypt, isEncrypted } from "../lib/encryption.js";
+import { upsertSetting } from "../lib/settings-helpers.js";
 import { deliverWebhook } from "../lib/webhook-delivery.js";
 import { readSiemConfig } from "../routes/enterprise/siem.js";
 
@@ -32,19 +33,6 @@ async function readSettingValue(key: string): Promise<string | null> {
     .from(schema.settings)
     .where(eq(schema.settings.key, key));
   return row?.value ?? null;
-}
-
-async function upsertSetting(key: string, value: string): Promise<void> {
-  const [existing] = await db.select().from(schema.settings).where(eq(schema.settings.key, key));
-
-  if (existing) {
-    await db
-      .update(schema.settings)
-      .set({ value, updatedAt: new Date() })
-      .where(eq(schema.settings.key, key));
-  } else {
-    await db.insert(schema.settings).values({ key, value });
-  }
 }
 
 export async function runSiemForward(): Promise<{ forwarded: number } | void> {

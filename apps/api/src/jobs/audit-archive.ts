@@ -27,6 +27,7 @@ import { eq, lt } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import { env } from "../config.js";
 import { db, schema } from "../db/index.js";
+import { upsertSetting } from "../lib/settings-helpers.js";
 
 type ArchivalState = "PENDING" | "EXPORTING" | "EXPORTED" | "PURGING" | "COMPLETE";
 
@@ -40,7 +41,7 @@ interface ArchivalRun {
   checksum: string;
 }
 
-// -- Settings helpers (same pattern as siem-forward.ts) ------------------------
+// -- Settings helpers ----------------------------------------------------------
 
 async function readSettingValue(key: string): Promise<string | null> {
   const [row] = await db
@@ -48,19 +49,6 @@ async function readSettingValue(key: string): Promise<string | null> {
     .from(schema.settings)
     .where(eq(schema.settings.key, key));
   return row?.value ?? null;
-}
-
-async function upsertSetting(key: string, value: string): Promise<void> {
-  const [existing] = await db.select().from(schema.settings).where(eq(schema.settings.key, key));
-
-  if (existing) {
-    await db
-      .update(schema.settings)
-      .set({ value, updatedAt: new Date() })
-      .where(eq(schema.settings.key, key));
-  } else {
-    await db.insert(schema.settings).values({ key, value });
-  }
 }
 
 async function deleteSetting(key: string): Promise<void> {

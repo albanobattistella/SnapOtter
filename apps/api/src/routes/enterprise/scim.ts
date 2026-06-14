@@ -4,7 +4,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { db, schema } from "../../db/index.js";
 import { sharedRedis } from "../../jobs/connection.js";
 import { auditLog } from "../../lib/audit.js";
-import { getSettingString } from "../../lib/settings-helpers.js";
+import { getSettingString, upsertSetting } from "../../lib/settings-helpers.js";
 import { requirePermission } from "../../permissions.js";
 import { hashPassword, verifyPassword } from "../../plugins/auth.js";
 
@@ -178,18 +178,6 @@ function scimListResponse(
 }
 
 // ── Route Registration ───────────────────────────────────────────
-
-async function upsertSetting(key: string, value: string): Promise<void> {
-  const [existing] = await db.select().from(schema.settings).where(eq(schema.settings.key, key));
-  if (existing) {
-    await db
-      .update(schema.settings)
-      .set({ value, updatedAt: new Date() })
-      .where(eq(schema.settings.key, key));
-  } else {
-    await db.insert(schema.settings).values({ key, value });
-  }
-}
 
 export async function registerScimRoutes(app: FastifyInstance): Promise<void> {
   // ── Token Management Endpoints ────────────────────────────────

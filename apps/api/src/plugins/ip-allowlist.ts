@@ -140,7 +140,17 @@ export async function registerIpAllowlist(app: FastifyInstance): Promise<void> {
   const sub = redis.duplicate();
   await sub.subscribe(ALLOWLIST_CHANNEL);
   sub.on("message", async () => {
-    await refreshAllowlist();
+    refreshAllowlist().catch(() => {});
+  });
+
+  // Clean up subscriber on shutdown
+  app.addHook("onClose", async () => {
+    try {
+      await sub.unsubscribe();
+      await sub.quit();
+    } catch {
+      // Best-effort cleanup
+    }
   });
 
   // Hook -- runs before auth, before routes

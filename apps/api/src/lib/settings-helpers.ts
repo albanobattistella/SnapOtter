@@ -2,6 +2,20 @@ import { eq } from "drizzle-orm";
 import { db, schema } from "../db/index.js";
 
 /**
+ * Atomically insert or update a setting using Postgres ON CONFLICT DO UPDATE.
+ * Eliminates the TOCTOU race in the old SELECT-then-INSERT/UPDATE pattern.
+ */
+export async function upsertSetting(key: string, value: string): Promise<void> {
+  await db
+    .insert(schema.settings)
+    .values({ key, value })
+    .onConflictDoUpdate({
+      target: schema.settings.key,
+      set: { value, updatedAt: new Date() },
+    });
+}
+
+/**
  * Read a numeric setting from the DB `settings` table.
  * Returns `defaultValue` when the key is missing, non-numeric, or on DB error.
  */
