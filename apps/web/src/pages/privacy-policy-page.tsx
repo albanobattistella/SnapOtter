@@ -92,7 +92,7 @@ export function PrivacyPolicyPage() {
             <h2 className="text-lg font-semibold text-foreground mb-2">Data Storage</h2>
             <p>
               If authentication is enabled, the application stores user accounts (usernames and
-              hashed passwords) in a local SQLite database on the host machine. If you use the Files
+              hashed passwords) in a PostgreSQL database on the host machine. If you use the Files
               feature, uploaded files are stored on the server's filesystem. All stored data remains
               entirely under the control of the instance operator.
             </p>
