@@ -250,16 +250,12 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
 
         if (buffer.length === 0) continue;
 
-        // Validate image
-        const validation = await validateImageBuffer(buffer, part.filename);
-        if (!validation.valid) {
-          return reply.status(400).send({
-            error: `Invalid file "${part.filename}": ${validation.reason}`,
-          });
-        }
+        // Try image validation; non-image files skip validation and use MIME from extension
+        const validation = await validateImageBuffer(buffer, part.filename).catch(() => null);
+        const isValidImage = validation?.valid === true;
 
         // Sanitize SVG uploads to prevent XXE, SSRF, and script injection
-        const safeBuffer = isSvgBuffer(buffer) ? sanitizeSvg(buffer) : buffer;
+        const safeBuffer = isValidImage && isSvgBuffer(buffer) ? sanitizeSvg(buffer) : buffer;
 
         // Re-check quota with actual file size before persisting
         try {
@@ -270,7 +266,9 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
         }
 
         const safeName = sanitizeFilename(part.filename ?? "upload");
-        const mimeType = formatToMime(validation.format);
+        const mimeType = isValidImage
+          ? formatToMime(validation.format)
+          : part.mimetype || "application/octet-stream";
 
         // Persist to disk
         const storedName = await saveFile(safeBuffer, safeName);
@@ -286,8 +284,8 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
             storedName,
             mimeType,
             size: fileSize,
-            width: validation.width,
-            height: validation.height,
+            width: isValidImage ? validation.width : null,
+            height: isValidImage ? validation.height : null,
             version: 1,
             parentId: null,
             toolChain: null,
