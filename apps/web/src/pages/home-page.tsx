@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ToolCard } from "@/components/common/tool-card.js";
 import { AppLayout } from "@/components/layout/app-layout.js";
-import { Footer } from "@/components/layout/footer.js";
 import { useTranslation } from "@/contexts/i18n-context";
 import { useFuseSearch } from "@/hooks/use-fuse-search.js";
 import { usePageTitle } from "@/hooks/use-page-title.js";
@@ -24,8 +23,7 @@ export function HomePage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<string>("all");
   const [search, setSearch] = useState("");
-  const { fetch: fetchSettings, disabledTools, experimentalEnabled, loaded } =
-    useSettingsStore();
+  const { fetch: fetchSettings, disabledTools, experimentalEnabled, loaded } = useSettingsStore();
   const recentToolIds = useRecentTools();
 
   usePageTitle();
@@ -119,8 +117,6 @@ export function HomePage() {
             <ToolGrid recentTools={recentTools} groupedTools={groupedTools} />
           )}
         </div>
-
-        <Footer />
       </div>
     </AppLayout>
   );

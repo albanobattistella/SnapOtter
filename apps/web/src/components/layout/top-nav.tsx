@@ -2,14 +2,19 @@ import {
   ChevronLeft,
   ChevronRight,
   FolderOpen,
+  Globe,
   HelpCircle,
   LayoutGrid,
+  Moon,
+  Sun,
   Workflow,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "@/contexts/i18n-context";
 import { useAuth } from "@/hooks/use-auth";
 import { useMobile } from "@/hooks/use-mobile";
+import { useTheme } from "@/hooks/use-theme";
 import { cn } from "@/lib/utils";
 import { ImageEditIcon } from "../common/image-edit-icon";
 import { OtterLogo } from "../common/otter-logo";
@@ -195,8 +200,11 @@ export function TopNav({
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Right: help + avatar */}
-      <div className="flex items-center gap-1">
+      {/* Right: theme + language + help + avatar */}
+      <div className="flex items-center gap-0.5">
+        {!isMobile && <ThemeToggle isDark={isDark} />}
+        {!isMobile && <LanguageSelector isDark={isDark} />}
+
         <button
           type="button"
           onClick={onHelpClick}
@@ -216,5 +224,97 @@ export function TopNav({
         )}
       </div>
     </header>
+  );
+}
+
+function ThemeToggle({ isDark }: { isDark: boolean }) {
+  const { resolvedTheme, toggleTheme } = useTheme();
+  return (
+    <button
+      type="button"
+      onClick={toggleTheme}
+      className={cn(
+        "p-1.5 rounded-md transition-colors",
+        isDark
+          ? "text-[#aaa] hover:text-[#e0e0e0] hover:bg-[#333]"
+          : "text-muted-foreground hover:text-foreground hover:bg-muted",
+      )}
+      title="Toggle theme"
+    >
+      {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </button>
+  );
+}
+
+function LanguageSelector({ isDark }: { isDark: boolean }) {
+  const { locale, setLocale, supportedLocales } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    if (open) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  const current = supportedLocales.find((l) => l.code === locale);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          "flex items-center gap-1 px-2 py-1.5 rounded-md text-xs transition-colors",
+          isDark
+            ? "text-[#aaa] hover:text-[#e0e0e0] hover:bg-[#333]"
+            : "text-muted-foreground hover:text-foreground hover:bg-muted",
+        )}
+        title="Language"
+      >
+        <Globe className="h-3.5 w-3.5" />
+        {current?.nativeName ?? "English"}
+      </button>
+      {open && (
+        <div
+          className={cn(
+            "absolute top-full mt-1 end-0 w-48 max-h-72 overflow-y-auto rounded-lg border shadow-lg z-50",
+            isDark ? "bg-[#2a2a2a] border-[#444]" : "bg-card border-border",
+          )}
+        >
+          {supportedLocales.map((l) => (
+            <button
+              key={l.code}
+              type="button"
+              onClick={() => {
+                setLocale(l.code);
+                setOpen(false);
+              }}
+              className={cn(
+                "w-full text-start px-3 py-1.5 text-sm transition-colors flex items-center justify-between",
+                isDark ? "hover:bg-[#333] text-[#e0e0e0]" : "hover:bg-muted text-foreground",
+              )}
+            >
+              <span className={l.code === locale ? "font-medium" : ""}>{l.nativeName}</span>
+              {l.code === locale && (
+                <svg
+                  className="h-3.5 w-3.5 text-primary"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
