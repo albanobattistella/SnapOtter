@@ -1,14 +1,16 @@
 /**
  * Admin operations routes -- runtime log level, Prometheus metrics,
- * diagnostic support bundle, and usage dashboard.
+ * diagnostic support bundle, usage dashboard, and backup status tracking.
  *
- * GET  /api/v1/admin/log-level       -- read current pino log level
- * POST /api/v1/admin/log-level       -- change level at runtime
- * GET  /api/v1/metrics               -- Prometheus scrape endpoint
- * GET  /api/v1/admin/support-bundle  -- download redacted diagnostic zip
- * GET  /api/v1/admin/usage           -- local usage dashboard data
+ * GET  /api/v1/admin/log-level        -- read current pino log level
+ * POST /api/v1/admin/log-level        -- change level at runtime
+ * GET  /api/v1/metrics                -- Prometheus scrape endpoint
+ * GET  /api/v1/admin/support-bundle   -- download redacted diagnostic zip
+ * GET  /api/v1/admin/usage            -- local usage dashboard data
+ * POST /api/v1/admin/backup-status    -- record backup completion
+ * GET  /api/v1/admin/backup-status    -- read last backup info + staleness
  */
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { db, schema } from "../db/index.js";
@@ -187,5 +189,94 @@ export async function adminOpsRoutes(app: FastifyInstance): Promise<void> {
       storage,
       teamStorage,
     };
+  });
+
+  // ---------------------------------------------------------------------------
+  // Backup status tracking
+  // ---------------------------------------------------------------------------
+
+  const backupStatusSchema = z.object({
+    type: z.string().min(1),
+    sizeBytes: z.number().optional(),
+    notes: z.string().optional(),
+  });
+
+  const BACKUP_KEY = "backup_last_completed";
+
+  // POST /api/v1/admin/backup-status -- record backup completion
+  app.post("/api/v1/admin/backup-status", async (request: FastifyRequest, reply: FastifyReply) => {
+    const admin = await requirePermission("system:health")(request, reply);
+    if (!admin) return;
+
+    const parsed = backupStatusSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: "Invalid backup status",
+        code: "VALIDATION_ERROR",
+        details: formatZodErrors(parsed.error.issues),
+      });
+    }
+
+    const timestamp = new Date().toISOString();
+    const payload = JSON.stringify({
+      timestamp,
+      type: parsed.data.type,
+      sizeBytes: parsed.data.sizeBytes ?? null,
+      notes: parsed.data.notes ?? "",
+    });
+
+    const [existing] = await db
+      .select()
+      .from(schema.settings)
+      .where(eq(schema.settings.key, BACKUP_KEY));
+
+    if (existing) {
+      await db
+        .update(schema.settings)
+        .set({ value: payload, updatedAt: new Date() })
+        .where(eq(schema.settings.key, BACKUP_KEY));
+    } else {
+      await db.insert(schema.settings).values({ key: BACKUP_KEY, value: payload });
+    }
+
+    return { success: true, timestamp };
+  });
+
+  // GET /api/v1/admin/backup-status -- read last backup info + staleness
+  app.get("/api/v1/admin/backup-status", async (request: FastifyRequest, reply: FastifyReply) => {
+    const admin = await requirePermission("system:health")(request, reply);
+    if (!admin) return;
+
+    const result = await db
+      .select({ value: schema.settings.value })
+      .from(schema.settings)
+      .where(eq(schema.settings.key, BACKUP_KEY))
+      .limit(1);
+
+    if (result.length === 0) {
+      return { lastBackup: null, status: "critical", ageHours: null };
+    }
+
+    let lastBackup: Record<string, unknown>;
+    try {
+      lastBackup = JSON.parse(result[0].value);
+    } catch {
+      return { lastBackup: null, status: "critical", ageHours: null };
+    }
+
+    const ts = new Date(lastBackup.timestamp as string);
+    const ageMs = Date.now() - ts.getTime();
+    const ageHours = Math.round((ageMs / 3_600_000) * 10) / 10;
+
+    let status: "ok" | "warning" | "critical";
+    if (ageHours < 24) {
+      status = "ok";
+    } else if (ageHours < 48) {
+      status = "warning";
+    } else {
+      status = "critical";
+    }
+
+    return { lastBackup, status, ageHours };
   });
 }
