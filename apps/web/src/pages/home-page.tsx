@@ -117,7 +117,7 @@ export function HomePage() {
 
   return (
     <AppLayout>
-      <div className="flex-1 overflow-y-auto">
+      <div>
         <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6">
           {/* Search bar */}
           <HomeSearchBar
