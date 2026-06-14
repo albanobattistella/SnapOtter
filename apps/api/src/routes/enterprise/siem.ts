@@ -35,9 +35,9 @@ export async function registerSiemRoutes(app: FastifyInstance): Promise<void> {
         // Enterprise package not available
       }
       if (!featureEnabled) {
-        return reply
-          .status(403)
-          .send({ error: "SIEM forwarding requires an enterprise license with the siem_forwarding feature" });
+        return reply.status(403).send({
+          error: "SIEM forwarding requires an enterprise license with the siem_forwarding feature",
+        });
       }
 
       const [row] = await db
@@ -65,10 +65,7 @@ export async function registerSiemRoutes(app: FastifyInstance): Promise<void> {
   // PUT /api/v1/enterprise/siem/config
   app.put(
     "/api/v1/enterprise/siem/config",
-    async (
-      request: FastifyRequest<{ Body: unknown }>,
-      reply: FastifyReply,
-    ) => {
+    async (request: FastifyRequest<{ Body: unknown }>, reply: FastifyReply) => {
       const user = await requirePermission("webhooks:manage")(request, reply);
       if (!user) return;
 
@@ -81,14 +78,16 @@ export async function registerSiemRoutes(app: FastifyInstance): Promise<void> {
         // Enterprise package not available
       }
       if (!featureEnabled) {
-        return reply
-          .status(403)
-          .send({ error: "SIEM forwarding requires an enterprise license with the siem_forwarding feature" });
+        return reply.status(403).send({
+          error: "SIEM forwarding requires an enterprise license with the siem_forwarding feature",
+        });
       }
 
       const parsed = configSchema.safeParse(request.body);
       if (!parsed.success) {
-        return reply.status(400).send({ error: "Invalid SIEM config", details: parsed.error.issues });
+        return reply
+          .status(400)
+          .send({ error: "Invalid SIEM config", details: parsed.error.issues });
       }
 
       const config = { ...parsed.data };

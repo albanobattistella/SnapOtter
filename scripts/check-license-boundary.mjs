@@ -23,7 +23,8 @@ const ENTERPRISE_DIR = join(ROOT, "packages/enterprise");
 // Catches static `from "..."`, side-effect `import "..."`, and dynamic `import("...")`
 // forms. The bare package entry "@snapotter/enterprise" (no trailing slash) stays
 // allowed; only reaching INTO the package is a violation.
-const INTERNAL_IMPORT = /(from|import)\s*[\s(]\s*["'](@snapotter\/enterprise\/|[./]*packages\/enterprise\/)/;
+const INTERNAL_IMPORT =
+  /(from|import)\s*[\s(]\s*["'](@snapotter\/enterprise\/|[./]*packages\/enterprise\/)/;
 const APP_IMPORT = /(from|import)\s*[\s(]\s*["'][^"']*apps\/(api|web)\//;
 
 const violations = [];

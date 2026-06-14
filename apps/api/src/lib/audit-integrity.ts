@@ -16,11 +16,7 @@ export function computeHmac(data: Record<string, unknown>, key: Buffer): string 
   return createHmac("sha256", key).update(canonicalize(data)).digest("hex");
 }
 
-export function verifyHmac(
-  data: Record<string, unknown>,
-  hmac: string,
-  key: Buffer,
-): boolean {
+export function verifyHmac(data: Record<string, unknown>, hmac: string, key: Buffer): boolean {
   const computed = computeHmac(data, key);
   return computed === hmac;
 }

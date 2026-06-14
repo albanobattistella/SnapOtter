@@ -86,7 +86,11 @@ export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(409).send({ error: "Failed to create API key" });
     }
 
-    await auditFromRequest(request)("API_KEY_CREATED", { userId: user.id, keyId: id, keyName: name });
+    await auditFromRequest(request)("API_KEY_CREATED", {
+      userId: user.id,
+      keyId: id,
+      keyName: name,
+    });
 
     // Return the raw key ONCE — it cannot be retrieved again
     return reply.status(201).send({

@@ -100,10 +100,7 @@ export async function auditLog(
           requestId,
         };
         const integrity = computeHmac(rowData, hmacKey);
-        await db
-          .update(schema.auditLog)
-          .set({ integrity })
-          .where(eq(schema.auditLog.id, id));
+        await db.update(schema.auditLog).set({ integrity }).where(eq(schema.auditLog.id, id));
       }
     } catch {
       logger.warn({ event }, "Failed to compute audit HMAC");

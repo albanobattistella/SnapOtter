@@ -50,7 +50,12 @@ export async function deliverWebhook(
       lastError = `HTTP ${response.status}`;
       // Don't retry 4xx errors (client errors = won't succeed on retry)
       if (response.status >= 400 && response.status < 500) {
-        return { success: false, statusCode: response.status, error: lastError, attempts: attempt + 1 };
+        return {
+          success: false,
+          statusCode: response.status,
+          error: lastError,
+          attempts: attempt + 1,
+        };
       }
     } catch (err) {
       lastError = err instanceof Error ? err.message : String(err);

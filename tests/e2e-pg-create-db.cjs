@@ -16,8 +16,7 @@ const apiRequire = createRequire(join(process.cwd(), "apps/api/package.json"));
 const pg = apiRequire("pg");
 
 const baseUrl =
-  process.env.E2E_PG_BASE_URL ||
-  "postgres://snapotter:snapotter@localhost:5432/snapotter";
+  process.env.E2E_PG_BASE_URL || "postgres://snapotter:snapotter@localhost:5432/snapotter";
 const dbName = process.argv[2];
 
 if (!dbName) {

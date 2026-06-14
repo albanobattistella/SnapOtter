@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("webhook delivery", () => {
   beforeEach(() => {
@@ -15,11 +15,9 @@ describe("webhook delivery", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const { deliverWebhook } = await import("../../../apps/api/src/lib/webhook-delivery.js");
-    const result = await deliverWebhook(
-      "https://siem.example.com/input",
-      "Bearer test-token",
-      [{ event: "LOGIN_SUCCESS", timestamp: "2026-01-01T00:00:00Z" }],
-    );
+    const result = await deliverWebhook("https://siem.example.com/input", "Bearer test-token", [
+      { event: "LOGIN_SUCCESS", timestamp: "2026-01-01T00:00:00Z" },
+    ]);
 
     expect(result.success).toBe(true);
     expect(result.attempts).toBe(1);

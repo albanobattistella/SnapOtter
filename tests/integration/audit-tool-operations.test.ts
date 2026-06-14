@@ -39,9 +39,7 @@ async function setSetting(key: string, value: string): Promise<void> {
   expect(res.statusCode).toBe(200);
 }
 
-async function fetchAuditLog(
-  action: string,
-): Promise<{ entries: any[]; total: number }> {
+async function fetchAuditLog(action: string): Promise<{ entries: any[]; total: number }> {
   const res = await testApp.app.inject({
     method: "GET",
     url: `/api/v1/audit-log?action=${action}`,

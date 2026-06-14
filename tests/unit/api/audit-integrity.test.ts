@@ -1,5 +1,9 @@
-import { describe, it, expect } from "vitest";
-import { canonicalize, computeHmac, verifyHmac } from "../../../apps/api/src/lib/audit-integrity.js";
+import { describe, expect, it } from "vitest";
+import {
+  canonicalize,
+  computeHmac,
+  verifyHmac,
+} from "../../../apps/api/src/lib/audit-integrity.js";
 
 describe("audit integrity", () => {
   const testKey = Buffer.from("a".repeat(64), "hex");

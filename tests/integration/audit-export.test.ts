@@ -1,7 +1,7 @@
+import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db, schema } from "../../apps/api/src/db/index.js";
 import { buildTestApp, loginAsAdmin, type TestApp } from "./test-server.js";
-import { eq } from "drizzle-orm";
 
 let testApp: TestApp;
 let adminToken: string;

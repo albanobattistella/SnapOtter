@@ -9,10 +9,10 @@
 import { eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { env } from "../config.js";
 import { db, schema } from "../db/index.js";
 import { auditFromRequest } from "../lib/audit.js";
-import { env } from "../config.js";
-import { encrypt, decrypt, isEncrypted } from "../lib/encryption.js";
+import { decrypt, encrypt, isEncrypted } from "../lib/encryption.js";
 import { requirePermission } from "../permissions.js";
 import { requireAuth } from "../plugins/auth.js";
 
@@ -37,8 +37,11 @@ async function decryptIfNeeded(value: string): Promise<string> {
   if (!isEncrypted(value)) return value;
   if (!env.DATA_ENCRYPTION_KEY) return value;
   return (
-    (await decrypt(value, env.DATA_ENCRYPTION_KEY, env.DATA_ENCRYPTION_KEY_PREVIOUS || undefined)) ??
-    value
+    (await decrypt(
+      value,
+      env.DATA_ENCRYPTION_KEY,
+      env.DATA_ENCRYPTION_KEY_PREVIOUS || undefined,
+    )) ?? value
   );
 }
 

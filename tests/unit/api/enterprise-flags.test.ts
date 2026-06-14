@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { ENTERPRISE_FEATURES, PLAN_FEATURES } from "@snapotter/enterprise";
+import { describe, expect, it } from "vitest";
 
 describe("enterprise feature flags", () => {
   it("includes all Phase 1 flags", () => {

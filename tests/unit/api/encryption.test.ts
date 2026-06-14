@@ -1,9 +1,9 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  encrypt,
   decrypt,
-  isEncrypted,
   deriveAuditHmacKey,
+  encrypt,
+  isEncrypted,
 } from "../../../apps/api/src/lib/encryption.js";
 
 describe("encryption", () => {

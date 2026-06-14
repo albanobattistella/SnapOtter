@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 describe("enterprise mock", () => {
   beforeEach(() => {
@@ -6,9 +6,7 @@ describe("enterprise mock", () => {
   });
 
   it("mocks feature enabled", async () => {
-    const { mockEnterpriseFeatures } = await import(
-      "../../helpers/enterprise-mock.js"
-    );
+    const { mockEnterpriseFeatures } = await import("../../helpers/enterprise-mock.js");
     mockEnterpriseFeatures(["audit_export", "siem_forwarding"]);
     const { isFeatureEnabled } = await import("@snapotter/enterprise");
     expect(isFeatureEnabled("audit_export")).toBe(true);
@@ -17,18 +15,14 @@ describe("enterprise mock", () => {
   });
 
   it("mocks no enterprise", async () => {
-    const { mockNoEnterprise } = await import(
-      "../../helpers/enterprise-mock.js"
-    );
+    const { mockNoEnterprise } = await import("../../helpers/enterprise-mock.js");
     mockNoEnterprise();
     const { isFeatureEnabled } = await import("@snapotter/enterprise");
     expect(isFeatureEnabled("audit_export")).toBe(false);
   });
 
   it("returns license payload with correct shape", async () => {
-    const { mockEnterpriseFeatures } = await import(
-      "../../helpers/enterprise-mock.js"
-    );
+    const { mockEnterpriseFeatures } = await import("../../helpers/enterprise-mock.js");
     mockEnterpriseFeatures(["s3_storage", "mfa"]);
     const { getActiveLicense } = await import("@snapotter/enterprise");
     const license = getActiveLicense();
@@ -41,9 +35,7 @@ describe("enterprise mock", () => {
   });
 
   it("returns null license when no enterprise", async () => {
-    const { mockNoEnterprise } = await import(
-      "../../helpers/enterprise-mock.js"
-    );
+    const { mockNoEnterprise } = await import("../../helpers/enterprise-mock.js");
     mockNoEnterprise();
     const { getActiveLicense } = await import("@snapotter/enterprise");
     expect(getActiveLicense()).toBeNull();

@@ -19,7 +19,10 @@ mkdirSync(outDir, { recursive: true });
 
 // --- 1. truncated.jpg: a real JPEG cut off at 40% ---------------------------
 const realJpeg = readFileSync(join(root, "tests", "fixtures", "sample-photo.jpg"));
-writeFileSync(join(outDir, "truncated.jpg"), realJpeg.subarray(0, Math.floor(realJpeg.length * 0.4)));
+writeFileSync(
+  join(outDir, "truncated.jpg"),
+  realJpeg.subarray(0, Math.floor(realJpeg.length * 0.4)),
+);
 
 // --- 2. zero-byte.png --------------------------------------------------------
 writeFileSync(join(outDir, "zero-byte.png"), Buffer.alloc(0));
