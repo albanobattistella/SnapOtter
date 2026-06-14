@@ -1,0 +1,242 @@
+import {
+  ChevronLeft,
+  ChevronRight,
+  FolderOpen,
+  HelpCircle,
+  LayoutGrid,
+  Workflow,
+} from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "@/contexts/i18n-context";
+import { useAuth } from "@/hooks/use-auth";
+import { useMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
+import { ImageEditIcon } from "../common/image-edit-icon";
+import { OtterLogo } from "../common/otter-logo";
+import { AvatarDropdown } from "./avatar-dropdown.js";
+
+interface TopNavProps {
+  variant?: "light" | "dark";
+  breadcrumb?: { modality?: string; toolName?: string };
+  onHelpClick: () => void;
+  onSettingsClick: () => void;
+}
+
+interface NavLinkItem {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+function useNavLinks(): NavLinkItem[] {
+  const { t } = useTranslation();
+  return [
+    { label: t.sidebar.tools, href: "/", icon: LayoutGrid },
+    { label: t.sidebar.automate, href: "/automate", icon: Workflow },
+    { label: t.sidebar.editor, href: "/editor", icon: ImageEditIcon },
+    { label: t.sidebar.files, href: "/files", icon: FolderOpen },
+  ];
+}
+
+function isLinkActive(pathname: string, href: string): boolean {
+  if (href === "/") return pathname === "/";
+  return pathname.startsWith(href);
+}
+
+export function TopNav({
+  variant = "light",
+  breadcrumb,
+  onHelpClick,
+  onSettingsClick,
+}: TopNavProps) {
+  const location = useLocation();
+  const isMobile = useMobile();
+  const { authEnabled } = useAuth();
+  const { t } = useTranslation();
+  const navLinks = useNavLinks();
+
+  const isDark = variant === "dark";
+
+  // Mobile layout
+  if (isMobile) {
+    return (
+      <header
+        className={cn(
+          "flex items-center h-12 px-4 border-b shrink-0",
+          isDark ? "bg-[#222] border-[#333]" : "bg-white border-border",
+        )}
+      >
+        {breadcrumb ? (
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Link
+              to="/"
+              className={cn(
+                "shrink-0",
+                isDark
+                  ? "text-[#aaa] hover:text-[#e0e0e0]"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Link>
+            <span className={cn("text-sm truncate", isDark ? "text-[#e0e0e0]" : "text-foreground")}>
+              {breadcrumb.modality && (
+                <span className={isDark ? "text-[#aaa]" : "text-muted-foreground"}>
+                  {breadcrumb.modality}
+                  {" / "}
+                </span>
+              )}
+              <span className="font-medium">{breadcrumb.toolName}</span>
+            </span>
+          </div>
+        ) : (
+          <Link to="/" className="shrink-0">
+            <OtterLogo className="h-7 w-7" />
+          </Link>
+        )}
+
+        <div className="flex-1" />
+
+        <button
+          type="button"
+          onClick={onHelpClick}
+          className={cn(
+            "p-1.5 rounded-md transition-colors",
+            isDark
+              ? "text-[#aaa] hover:text-[#e0e0e0] hover:bg-[#333]"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted",
+          )}
+          aria-label={t.sidebar.help}
+        >
+          <HelpCircle className="h-4 w-4" />
+        </button>
+      </header>
+    );
+  }
+
+  // Desktop layout
+  return (
+    <header
+      className={cn(
+        "flex items-center h-12 px-4 border-b shrink-0",
+        isDark ? "bg-[#222] border-[#333]" : "bg-white border-border",
+      )}
+    >
+      {/* Left: Logo */}
+      <Link to="/" className="shrink-0 me-4">
+        <OtterLogo className="h-7 w-7" />
+      </Link>
+
+      {/* Center-left: Breadcrumb or nav links */}
+      {breadcrumb ? (
+        <nav className="flex items-center gap-1 text-sm min-w-0" aria-label={t.a11y.navigationMenu}>
+          <Link
+            to="/"
+            className={cn(
+              "hover:underline shrink-0",
+              isDark
+                ? "text-[#aaa] hover:text-[#e0e0e0]"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t.sidebar.tools}
+          </Link>
+          {breadcrumb.modality && (
+            <>
+              <ChevronRight
+                className={cn(
+                  "h-3.5 w-3.5 shrink-0",
+                  isDark ? "text-[#666]" : "text-muted-foreground/50",
+                )}
+              />
+              <span className={cn("shrink-0", isDark ? "text-[#aaa]" : "text-muted-foreground")}>
+                {breadcrumb.modality}
+              </span>
+            </>
+          )}
+          <ChevronRight
+            className={cn(
+              "h-3.5 w-3.5 shrink-0",
+              isDark ? "text-[#666]" : "text-muted-foreground/50",
+            )}
+          />
+          <span
+            className={cn("font-medium truncate", isDark ? "text-[#e0e0e0]" : "text-foreground")}
+          >
+            {breadcrumb.toolName}
+          </span>
+        </nav>
+      ) : (
+        <nav className="flex items-center gap-1" aria-label={t.a11y.navigationMenu}>
+          {navLinks.map((link) => {
+            const active = isLinkActive(location.pathname, link.href);
+            return (
+              <Link
+                key={link.href}
+                to={link.href}
+                className={cn(
+                  "px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+                  active
+                    ? isDark
+                      ? "bg-[#333] text-[#e0e0e0]"
+                      : "bg-muted text-foreground"
+                    : isDark
+                      ? "text-[#aaa] hover:text-[#e0e0e0] hover:bg-[#333]"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                )}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+      )}
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Right: Contextual nav links (when breadcrumb) + help + avatar */}
+      <div className="flex items-center gap-1">
+        {breadcrumb && (
+          <>
+            {navLinks
+              .filter((link) => link.href !== "/")
+              .map((link) => (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className={cn(
+                    "px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
+                    isDark
+                      ? "text-[#aaa] hover:text-[#e0e0e0] hover:bg-[#333]"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted",
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            <div className={cn("w-px h-5 mx-1", isDark ? "bg-[#444]" : "bg-border")} />
+          </>
+        )}
+
+        <button
+          type="button"
+          onClick={onHelpClick}
+          className={cn(
+            "p-1.5 rounded-md transition-colors",
+            isDark
+              ? "text-[#aaa] hover:text-[#e0e0e0] hover:bg-[#333]"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted",
+          )}
+          aria-label={t.sidebar.help}
+        >
+          <HelpCircle className="h-4 w-4" />
+        </button>
+
+        {!isMobile && authEnabled && (
+          <AvatarDropdown onSettingsClick={onSettingsClick} variant={variant} />
+        )}
+      </div>
+    </header>
+  );
+}
