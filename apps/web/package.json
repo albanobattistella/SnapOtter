@@ -38,6 +38,7 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^2.6.0",
     "use-image": "^1",
+    "wavesurfer.js": "^7.12.8",
     "zundo": "^2",
     "zustand": "^5.0.14"
   },

@@ -54,6 +54,9 @@ import { useSplitStore } from "@/stores/split-store";
 const MediaPlayerView = lazy(() =>
   import("@/components/tools/media-player-view").then((m) => ({ default: m.MediaPlayerView })),
 );
+const WaveformPlayer = lazy(() =>
+  import("@/components/common/waveform-player").then((m) => ({ default: m.WaveformPlayer })),
+);
 const DocumentView = lazy(() =>
   import("@/components/tools/document-view").then((m) => ({ default: m.DocumentView })),
 );
@@ -626,8 +629,18 @@ export function ToolPage() {
       );
     }
 
-    // Media player: native <video>/<audio> element
+    // Media player: waveform for audio, native <video> for video
     if (displayMode === "media-player" && hasFile) {
+      if (tool?.modality === "audio") {
+        const audioSrc = processedUrl ?? originalBlobUrl;
+        if (audioSrc) {
+          return (
+            <Suspense fallback={<div className="text-sm text-muted-foreground">Loading...</div>}>
+              <WaveformPlayer src={audioSrc} />
+            </Suspense>
+          );
+        }
+      }
       return (
         <Suspense fallback={<div className="text-sm text-muted-foreground">Loading...</div>}>
           <MediaPlayerView />
