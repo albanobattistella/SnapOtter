@@ -27,6 +27,7 @@ export const SYSTEM_JOBS = {
   auditArchive: "system:audit-archive",
   storageReconciliation: "system:storage-reconciliation",
   gdprExport: "system:gdpr-export",
+  alertEvaluator: "system:alert-evaluator",
 } as const;
 
 // -- Scheduling ---------------------------------------------------------------
@@ -54,6 +55,8 @@ export async function scheduleSystemJobs(): Promise<void> {
   await q.upsertJobScheduler(SYSTEM_JOBS.storageReconciliation, {
     pattern: "0 3 * * 0",
   });
+  // Alert evaluator: every 60 seconds
+  await q.upsertJobScheduler(SYSTEM_JOBS.alertEvaluator, { every: 60_000 });
 }
 
 /** Enqueue a one-shot system job (e.g. startup cleanup trigger). */
@@ -95,6 +98,10 @@ export async function runSystemJob(job: Job): Promise<unknown> {
         })
         .where(eq(schema.jobs.id, exportData.jobId));
       return { outputRef };
+    }
+    case SYSTEM_JOBS.alertEvaluator: {
+      const { evaluateAlerts } = await import("./alert-evaluator.js");
+      return evaluateAlerts();
     }
     default:
       // batch-finalize runs on the system pool too but is routed by the
