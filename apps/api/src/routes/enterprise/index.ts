@@ -5,6 +5,7 @@ import { registerIpAllowlistRoutes } from "./ip-allowlist.js";
 import { registerLegalHoldRoutes } from "./legal-hold.js";
 import { registerScimRoutes } from "./scim.js";
 import { registerSiemRoutes } from "./siem.js";
+import { registerUpgradeRoutes } from "./upgrade.js";
 
 export async function registerEnterpriseRoutes(app: FastifyInstance) {
   await registerAuditExport(app);
@@ -13,4 +14,5 @@ export async function registerEnterpriseRoutes(app: FastifyInstance) {
   await registerLegalHoldRoutes(app);
   await registerScimRoutes(app);
   await registerSiemRoutes(app);
+  await registerUpgradeRoutes(app);
 }
