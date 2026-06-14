@@ -194,9 +194,19 @@ export function ReviewPanel({
           type="button"
           onClick={handleSaveToFiles}
           disabled={saveStatus === "saving" || saveStatus === "saved"}
-          className="w-full py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+          className={`w-full py-2 rounded-lg border text-sm flex items-center justify-center gap-2 transition-all ${
+            saveStatus === "saved"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400"
+              : "border-border text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50"
+          }`}
         >
-          <FolderPlus className="h-4 w-4" />
+          {saveStatus === "saved" ? (
+            <CheckCircle2 className="h-4 w-4" />
+          ) : saveStatus === "saving" ? (
+            <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <FolderPlus className="h-4 w-4" />
+          )}
           {saveStatus === "saving"
             ? t.common.saving
             : saveStatus === "saved"
