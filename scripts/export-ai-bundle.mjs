@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { randomUUID } from "node:crypto";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 /**
  * Export an installed AI feature bundle as a gzipped tar archive for offline
  * transfer to air-gapped SnapOtter installations.
@@ -18,11 +20,9 @@
  * createRequire, same pattern as tests/global-setup.ts).
  */
 import { createRequire } from "node:module";
-import { dirname, join, resolve } from "node:path";
-import { existsSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
-import { randomUUID } from "node:crypto";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const apiRequire = createRequire(join(__dirname, "../apps/api/package.json"));
@@ -136,7 +136,9 @@ if (modelEntries.length === 0) {
   process.stderr.write("Warning: no model files found; archive will only contain bundle.json\n");
 }
 
-process.stderr.write(`Exporting bundle "${bundleId}" v${version} (${modelEntries.length} model files)...\n`);
+process.stderr.write(
+  `Exporting bundle "${bundleId}" v${version} (${modelEntries.length} model files)...\n`,
+);
 
 // ── Create the archive ─────────────────────────────────────────────────
 

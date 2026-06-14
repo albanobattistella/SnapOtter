@@ -20,6 +20,9 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "features:manage",
     "system:health",
     "audit:read",
+    "compliance:manage",
+    "webhooks:manage",
+    "security:manage",
   ],
   editor: [
     "tools:use",
@@ -81,6 +84,48 @@ export function requirePermission(
     }
     return user;
   };
+}
+
+export async function hasToolAccess(role: string, toolId: string): Promise<boolean> {
+  // Built-in roles have no tool restrictions
+  if (role in ROLE_PERMISSIONS) return true;
+
+  try {
+    const [roleRow] = await db
+      .select({ toolPermissions: schema.roles.toolPermissions })
+      .from(schema.roles)
+      .where(eq(schema.roles.name, role))
+      .limit(1);
+
+    // Role not found or no toolPermissions configured -- allow all
+    if (!roleRow?.toolPermissions) return true;
+
+    const tp = roleRow.toolPermissions;
+
+    if (tp.mode === "category") {
+      const { TOOLS } = await import("@snapotter/shared");
+      const tool = TOOLS.find((t) => t.id === toolId);
+      if (!tool) return false;
+      return tp.allowed.includes(tool.modality ?? tool.category);
+    }
+
+    if (tp.mode === "tool") {
+      // Per-tool mode requires enterprise license
+      let isEnterprise = false;
+      try {
+        const { isFeatureEnabled } = await import("@snapotter/enterprise");
+        isEnterprise = isFeatureEnabled("per_tool_permissions");
+      } catch {}
+
+      if (!isEnterprise) return true; // Graceful degradation -- no enterprise = allow all
+      return tp.allowed.includes(toolId);
+    }
+
+    return true; // Unknown mode = allow
+  } catch {
+    // DB not yet available during early startup
+    return true;
+  }
 }
 
 export async function requireOwnershipOrPermission(

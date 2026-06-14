@@ -58,10 +58,7 @@ const envSchema = z
     LIBREOFFICE_TIMEOUT_S: z.coerce.number().default(120),
     SESSION_DURATION_HOURS: z.coerce.number().default(168),
     LOGIN_ATTEMPT_LIMIT: z.coerce.number().default(30),
-    TRUST_PROXY: z
-      .enum(["true", "false"])
-      .default("false")
-      .transform((v) => v === "true"),
+    TRUST_PROXY: z.string().default("false"),
     OIDC_ENABLED: z
       .enum(["true", "false"])
       .default("false")
@@ -82,6 +79,26 @@ const envSchema = z
     OIDC_PROVIDER_NAME: z.string().default(""),
     OIDC_CLOCK_TOLERANCE: z.coerce.number().min(0).max(300).default(30),
     OIDC_USERNAME_CLAIM: z.string().default("preferred_username"),
+    SAML_ENABLED: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((v) => v === "true"),
+    SAML_ENTITY_ID: z.string().default(""),
+    SAML_CALLBACK_URL: z.string().default(""),
+    SAML_IDP_SSO_URL: z.string().default(""),
+    SAML_IDP_CERTIFICATE: z.string().default(""),
+    SAML_AUTO_CREATE_USERS: z
+      .enum(["true", "false"])
+      .default("true")
+      .transform((v) => v === "true"),
+    SAML_AUTO_LINK_USERS: z
+      .enum(["true", "false"])
+      .default("false")
+      .transform((v) => v === "true"),
+    SAML_DEFAULT_ROLE: z.string().default("user"),
+    SAML_PROVIDER_NAME: z.string().default(""),
+    SAML_USERNAME_ATTRIBUTE: z.string().default(""),
+    SAML_EMAIL_ATTRIBUTE: z.string().default("email"),
     EXTERNAL_URL: z.string().default(""),
     COOKIE_SECRET: z.string().default(""),
     REDIS_URL: z.string().default("redis://localhost:6379"),
@@ -100,6 +117,8 @@ const envSchema = z
     POSTHOG_API_KEY: z.string().default(""),
     POSTHOG_HOST: z.string().default("https://us.i.posthog.com"),
     SENTRY_DSN: z.string().default(""),
+    DATA_ENCRYPTION_KEY: z.string().default(""),
+    DATA_ENCRYPTION_KEY_PREVIOUS: z.string().default(""),
   })
   .superRefine((data, ctx) => {
     if (data.STORAGE_MODE === "s3") {
@@ -152,6 +171,47 @@ const envSchema = z
           code: z.ZodIssueCode.custom,
           message: "EXTERNAL_URL is required when OIDC_ENABLED=true",
           path: ["EXTERNAL_URL"],
+        });
+      }
+    }
+    if (data.SAML_ENABLED) {
+      if (!data.SAML_IDP_SSO_URL) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "SAML_IDP_SSO_URL is required when SAML_ENABLED=true",
+          path: ["SAML_IDP_SSO_URL"],
+        });
+      }
+      if (!data.SAML_IDP_CERTIFICATE) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "SAML_IDP_CERTIFICATE is required when SAML_ENABLED=true",
+          path: ["SAML_IDP_CERTIFICATE"],
+        });
+      }
+      if (!data.EXTERNAL_URL) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "EXTERNAL_URL is required when SAML_ENABLED=true",
+          path: ["EXTERNAL_URL"],
+        });
+      }
+    }
+    if (data.DATA_ENCRYPTION_KEY) {
+      if (!/^[0-9a-fA-F]{64}$/.test(data.DATA_ENCRYPTION_KEY)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["DATA_ENCRYPTION_KEY"],
+          message: "DATA_ENCRYPTION_KEY must be a 64-character hex string (32 bytes)",
+        });
+      }
+    }
+    if (data.DATA_ENCRYPTION_KEY_PREVIOUS) {
+      if (!/^[0-9a-fA-F]{64}$/.test(data.DATA_ENCRYPTION_KEY_PREVIOUS)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["DATA_ENCRYPTION_KEY_PREVIOUS"],
+          message: "DATA_ENCRYPTION_KEY_PREVIOUS must be a 64-character hex string (32 bytes)",
         });
       }
     }

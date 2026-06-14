@@ -9,8 +9,10 @@
 import { eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import { env } from "../config.js";
 import { db, schema } from "../db/index.js";
-import { auditLog } from "../lib/audit.js";
+import { auditFromRequest } from "../lib/audit.js";
+import { decrypt, encrypt, isEncrypted } from "../lib/encryption.js";
 import { requirePermission } from "../permissions.js";
 import { requireAuth } from "../plugins/auth.js";
 
@@ -18,7 +20,30 @@ const settingsBodySchema = z.record(z.string().min(1), z.unknown());
 
 const HTML_TAG_PATTERN = /<[a-z/!?][^>]*>/i;
 
-const SENSITIVE_KEYS = new Set(["cookie_secret", "instance_id"]);
+const SENSITIVE_KEYS = new Set([
+  "cookie_secret",
+  "instance_id",
+  "oidc_client_secret",
+  "saml_idp_certificate",
+  "siem_webhook_auth",
+]);
+
+async function encryptIfSensitive(key: string, value: string): Promise<string> {
+  if (!env.DATA_ENCRYPTION_KEY || !SENSITIVE_KEYS.has(key)) return value;
+  return encrypt(value, env.DATA_ENCRYPTION_KEY);
+}
+
+async function decryptIfNeeded(value: string): Promise<string> {
+  if (!isEncrypted(value)) return value;
+  if (!env.DATA_ENCRYPTION_KEY) return value;
+  return (
+    (await decrypt(
+      value,
+      env.DATA_ENCRYPTION_KEY,
+      env.DATA_ENCRYPTION_KEY_PREVIOUS || undefined,
+    )) ?? value
+  );
+}
 
 export async function settingsRoutes(app: FastifyInstance): Promise<void> {
   // GET /api/v1/settings — Get all settings as a key-value object
@@ -32,7 +57,7 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
     const settings: Record<string, string> = {};
     for (const row of rows) {
       if (!isAdmin && SENSITIVE_KEYS.has(row.key)) continue;
-      settings[row.key] = row.value;
+      settings[row.key] = await decryptIfNeeded(row.value);
     }
 
     return reply.send({ settings });
@@ -74,6 +99,8 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
     const now = new Date();
 
     for (const { key, strValue } of entries) {
+      const storedValue = await encryptIfSensitive(key, strValue);
+
       // Upsert: insert or update on conflict
       const [existing] = await db
         .select()
@@ -83,15 +110,15 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
       if (existing) {
         await db
           .update(schema.settings)
-          .set({ value: strValue, updatedAt: now })
+          .set({ value: storedValue, updatedAt: now })
           .where(eq(schema.settings.key, key));
       } else {
-        await db.insert(schema.settings).values({ key, value: strValue });
+        await db.insert(schema.settings).values({ key, value: storedValue });
       }
     }
 
     if (entries.length > 0) {
-      await auditLog(request.log, "SETTINGS_UPDATED", {
+      await auditFromRequest(request)("SETTINGS_UPDATED", {
         adminId: admin.id,
         username: admin.username,
         keys: entries.map((e) => e.key),
@@ -125,7 +152,7 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
 
       return reply.send({
         key: row.key,
-        value: row.value,
+        value: await decryptIfNeeded(row.value),
         updatedAt: row.updatedAt.toISOString(),
       });
     },

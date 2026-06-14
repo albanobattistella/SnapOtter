@@ -10,7 +10,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { db, schema } from "../db/index.js";
-import { auditLog } from "../lib/audit.js";
+import { auditFromRequest } from "../lib/audit.js";
 import { getPermissions, hasEffectivePermission } from "../permissions.js";
 import { computeKeyPrefix, hashPassword, requireAuth } from "../plugins/auth.js";
 
@@ -86,7 +86,11 @@ export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(409).send({ error: "Failed to create API key" });
     }
 
-    await auditLog(request.log, "API_KEY_CREATED", { userId: user.id, keyId: id, keyName: name });
+    await auditFromRequest(request)("API_KEY_CREATED", {
+      userId: user.id,
+      keyId: id,
+      keyName: name,
+    });
 
     // Return the raw key ONCE — it cannot be retrieved again
     return reply.status(201).send({
@@ -155,7 +159,7 @@ export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
 
       await db.delete(schema.apiKeys).where(eq(schema.apiKeys.id, id));
 
-      await auditLog(request.log, "API_KEY_DELETED", { userId: user.id, keyId: id });
+      await auditFromRequest(request)("API_KEY_DELETED", { userId: user.id, keyId: id });
 
       return reply.send({ ok: true });
     },

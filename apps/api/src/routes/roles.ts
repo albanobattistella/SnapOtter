@@ -4,7 +4,7 @@ import { eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { db, schema } from "../db/index.js";
-import { auditLog } from "../lib/audit.js";
+import { auditFromRequest } from "../lib/audit.js";
 import { requirePermission } from "../permissions.js";
 
 const ALL_PERMISSIONS: Permission[] = [
@@ -38,16 +38,26 @@ const roleNameField = z
       ),
   );
 
+const toolPermissionsSchema = z
+  .object({
+    mode: z.enum(["category", "tool"]),
+    allowed: z.array(z.string()),
+  })
+  .nullable()
+  .optional();
+
 const createRoleSchema = z.object({
   name: roleNameField,
   description: z.string().max(500).optional(),
   permissions: z.array(z.string()).min(1, "At least one permission is required"),
+  toolPermissions: toolPermissionsSchema,
 });
 
 const updateRoleSchema = z.object({
   name: roleNameField.optional(),
   description: z.string().max(500).optional(),
   permissions: z.array(z.string()).optional(),
+  toolPermissions: toolPermissionsSchema,
 });
 
 export async function rolesRoutes(app: FastifyInstance): Promise<void> {
@@ -72,6 +82,7 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
         name: r.name,
         description: r.description,
         permissions: r.permissions,
+        toolPermissions: r.toolPermissions ?? null,
         isBuiltin: r.isBuiltin,
         userCount: countMap.get(r.name) ?? 0,
         createdAt: r.createdAt.toISOString(),
@@ -92,7 +103,7 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
         code: "VALIDATION_ERROR",
       });
     }
-    const { name, description, permissions } = parsed.data;
+    const { name, description, permissions, toolPermissions } = parsed.data;
 
     const invalid = permissions.filter((p) => !ALL_PERMISSIONS.includes(p as Permission));
     if (invalid.length > 0) {
@@ -112,17 +123,23 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
       name,
       description: description?.trim() ?? "",
       permissions,
+      toolPermissions: toolPermissions ?? null,
       isBuiltin: false,
       createdBy: user.id,
     });
 
-    await auditLog(request.log, "ROLE_CREATED", { adminId: user.id, roleId: id, roleName: name });
+    await auditFromRequest(request)("ROLE_CREATED", {
+      adminId: user.id,
+      roleId: id,
+      roleName: name,
+    });
 
     return reply.status(201).send({
       id,
       name,
       description: description?.trim() ?? "",
       permissions,
+      toolPermissions: toolPermissions ?? null,
       isBuiltin: false,
     });
   });
@@ -175,6 +192,9 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
         }
         updates.permissions = body.permissions;
       }
+      if (body.toolPermissions !== undefined) {
+        updates.toolPermissions = body.toolPermissions ?? null;
+      }
 
       await db.transaction(async (tx) => {
         if (body.name) {
@@ -185,7 +205,7 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
         }
         await tx.update(schema.roles).set(updates).where(eq(schema.roles.id, id));
       });
-      await auditLog(request.log, "ROLE_UPDATED", { adminId: user.id, roleId: id });
+      await auditFromRequest(request)("ROLE_UPDATED", { adminId: user.id, roleId: id });
 
       return reply.send({ ok: true });
     },
@@ -216,7 +236,7 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
           .where(eq(schema.users.role, role.name));
         await tx.delete(schema.roles).where(eq(schema.roles.id, id));
       });
-      await auditLog(request.log, "ROLE_DELETED", {
+      await auditFromRequest(request)("ROLE_DELETED", {
         adminId: user.id,
         roleId: id,
         roleName: role.name,

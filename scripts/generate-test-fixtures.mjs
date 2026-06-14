@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { spawnSync } from "node:child_process";
+import { mkdirSync, writeFileSync } from "node:fs";
 /**
  * Generates the tiny media/document fixtures committed under tests/fixtures/.
  * Requires ffmpeg on PATH (or FFMPEG_PATH) and qpdf (or QPDF_PATH).
@@ -6,9 +8,7 @@
  *   node scripts/generate-test-fixtures.mjs
  */
 import { createRequire } from "node:module";
-import { spawnSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -38,17 +38,52 @@ function run(args) {
 }
 
 // 1s 64x64 mp4 with video + audio (h264 + aac; needed by extract-audio + mute-video)
-run(["-f", "lavfi", "-i", "testsrc=duration=1:size=64x64:rate=8",
-  "-f", "lavfi", "-i", "sine=frequency=440:duration=1",
-  "-c:v", "libx264", "-preset", "ultrafast", "-pix_fmt", "yuv420p",
-  "-c:a", "aac", "-b:a", "32k", "-shortest",
-  join(mediaDir, "tiny.mp4")]);
+run([
+  "-f",
+  "lavfi",
+  "-i",
+  "testsrc=duration=1:size=64x64:rate=8",
+  "-f",
+  "lavfi",
+  "-i",
+  "sine=frequency=440:duration=1",
+  "-c:v",
+  "libx264",
+  "-preset",
+  "ultrafast",
+  "-pix_fmt",
+  "yuv420p",
+  "-c:a",
+  "aac",
+  "-b:a",
+  "32k",
+  "-shortest",
+  join(mediaDir, "tiny.mp4"),
+]);
 // 1s sine mp3
-run(["-f", "lavfi", "-i", "sine=frequency=440:duration=1", "-c:a", "libmp3lame", "-b:a", "32k",
-  join(mediaDir, "tiny.mp3")]);
+run([
+  "-f",
+  "lavfi",
+  "-i",
+  "sine=frequency=440:duration=1",
+  "-c:a",
+  "libmp3lame",
+  "-b:a",
+  "32k",
+  join(mediaDir, "tiny.mp3"),
+]);
 // 1s sine wav
-run(["-f", "lavfi", "-i", "sine=frequency=440:duration=1", "-c:a", "pcm_s16le", "-ar", "8000",
-  join(mediaDir, "tiny.wav")]);
+run([
+  "-f",
+  "lavfi",
+  "-i",
+  "sine=frequency=440:duration=1",
+  "-c:a",
+  "pcm_s16le",
+  "-ar",
+  "8000",
+  join(mediaDir, "tiny.wav"),
+]);
 
 // Minimal OOXML/EPUB containers via archiver (resolved from apps/api).
 const apiRequire = createRequire(join(root, "apps/api/package.json"));
@@ -108,7 +143,11 @@ await writeZip(join(docsDir, "tiny.xlsx"), {
 // EPUB requires the mimetype entry FIRST and STORED (uncompressed).
 await writeZip(
   join(docsDir, "tiny.epub"),
-  { "META-INF/container.xml": epubContainer, "OEBPS/content.opf": epubOpf, "OEBPS/chapter.xhtml": epubChapter },
+  {
+    "META-INF/container.xml": epubContainer,
+    "OEBPS/content.opf": epubOpf,
+    "OEBPS/chapter.xhtml": epubChapter,
+  },
   { name: "mimetype", content: "application/epub+zip" },
 );
 

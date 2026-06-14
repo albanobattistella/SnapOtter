@@ -3,15 +3,18 @@ import { mkdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { extname, join } from "node:path";
 import { ANALYTICS_EVENTS, getBundleForTool, TOOL_BUNDLE_MAP, TOOLS } from "@snapotter/shared";
+import { and, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { z } from "zod";
 import { env } from "../config.js";
+import { db, schema } from "../db/index.js";
 import { enqueueToolJob, waitForJob } from "../jobs/enqueue.js";
 import { trackEvent } from "../lib/analytics.js";
 import { formatZodErrors, stripInternalPaths } from "../lib/errors.js";
 import { isToolInstalled } from "../lib/feature-status.js";
 import { getObjectBuffer, putObject } from "../lib/object-storage.js";
 import { resolveToolPool, shouldSkipSyncWindow } from "../lib/pool.js";
+import { getSettingNumber } from "../lib/settings-helpers.js";
 import { type ReceivedUpload, receiveUpload } from "../lib/upload-stream.js";
 import { InputValidationError } from "../modality/contract.js";
 import { inputHandlerFor } from "../modality/input-handler.js";
@@ -201,6 +204,15 @@ export function createToolRoute<T>(app: FastifyInstance, config: ToolRouteConfig
     `/api/v1/tools/${config.toolId}`,
     { config: { rateLimit: { max: 60, timeWindow: "1 minute" } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
+      // Check per-tool access before processing uploads
+      const authUser = getAuthUser(request);
+      if (authUser) {
+        const { hasToolAccess } = await import("../permissions.js");
+        if (!(await hasToolAccess(authUser.role, config.toolId))) {
+          return reply.status(403).send({ error: "You don't have permission to use this tool" });
+        }
+      }
+
       const jobId = randomUUID();
       const maxInputs = config.maxInputs ?? 1;
       let filename = "image";
@@ -432,6 +444,29 @@ export function createToolRoute<T>(app: FastifyInstance, config: ToolRouteConfig
           });
         }
 
+        // Check per-user concurrent job limit before enqueuing
+        const userId = getAuthUser(request)?.id ?? null;
+        const maxConcurrent = await getSettingNumber("maxConcurrentJobsPerUser", 0);
+        if (maxConcurrent > 0 && userId) {
+          const activeJobs = await db
+            .select({ count: sql<number>`count(*)::int` })
+            .from(schema.jobs)
+            .where(
+              and(
+                sql`${schema.jobs.userId} = ${userId}`,
+                inArray(schema.jobs.status, ["queued", "processing"]),
+              ),
+            );
+
+          if (activeJobs[0].count >= maxConcurrent) {
+            return reply.status(429).send({
+              error: "Too many concurrent jobs. Please wait for existing jobs to complete.",
+              activeJobs: activeJobs[0].count,
+              limit: maxConcurrent,
+            });
+          }
+        }
+
         const startTime = Date.now();
         const pool = resolveToolPool(config.toolId);
 
@@ -442,7 +477,7 @@ export function createToolRoute<T>(app: FastifyInstance, config: ToolRouteConfig
         await enqueueToolJob({
           jobId,
           toolId: config.toolId,
-          userId: getAuthUser(request)?.id ?? null,
+          userId,
           pool,
           inputRefs,
           filename,
@@ -468,6 +503,26 @@ export function createToolRoute<T>(app: FastifyInstance, config: ToolRouteConfig
               category: TOOLS.find((t) => t.id === config.toolId)?.category ?? "unknown",
               is_ai_tool: getBundleForTool(config.toolId) !== null,
             });
+
+            // Fire-and-forget: audit log must never block the response
+            import("../lib/audit.js")
+              .then(({ isToolAuditEnabled, auditFromRequest }) =>
+                isToolAuditEnabled().then((enabled) => {
+                  if (!enabled) return;
+                  const user = getAuthUser(request);
+                  return auditFromRequest(request)("TOOL_EXECUTED", {
+                    userId: user?.id,
+                    username: user?.username,
+                    toolId: config.toolId,
+                    inputFileCount: received.length,
+                    totalInputSize: received.reduce((sum, r) => sum + r.size, 0),
+                    outputFormat: (settings as Record<string, unknown>)?.format ?? null,
+                    status: "success",
+                    durationMs: Date.now() - startTime,
+                  });
+                }),
+              )
+              .catch(() => {});
 
             return reply.send({
               jobId,

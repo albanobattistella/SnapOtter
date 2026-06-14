@@ -1,11 +1,11 @@
-import { randomUUID } from "node:crypto";
 import type {} from "@fastify/cookie";
-import { eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import * as oidc from "openid-client";
 import { env } from "../config.js";
 import { db, schema } from "../db/index.js";
-import { auditLog, sanitizeAuditInput } from "../lib/audit.js";
+import { auditFromRequest, sanitizeAuditInput } from "../lib/audit.js";
+import { resolveExternalUser, sanitizeUsername } from "../lib/external-auth-resolver.js";
+import { authAttempts } from "../lib/metrics.js";
 import { createSessionToken } from "./auth.js";
 
 // ── Types ─────────────────────────────────────────────────────────
@@ -83,45 +83,6 @@ function deriveUsername(claims: Record<string, unknown>): string {
 
   // 5. Subject (always present)
   return claims.sub as string;
-}
-
-function sanitizeUsername(raw: string): string {
-  let sanitized = raw
-    .toLowerCase()
-    .replace(/[^a-z0-9_.-]/g, "_")
-    .replace(/_{2,}/g, "_")
-    .replace(/^[_.-]+|[_.-]+$/g, "");
-
-  // Enforce 3-50 char limit (truncate to 46 to leave room for collision suffix)
-  if (sanitized.length > 46) {
-    sanitized = sanitized.slice(0, 46);
-  }
-  if (sanitized.length < 3) {
-    sanitized = sanitized.padEnd(3, "_");
-  }
-
-  return sanitized;
-}
-
-async function findUniqueUsername(base: string): Promise<string> {
-  const [existing] = await db
-    .select({ username: schema.users.username })
-    .from(schema.users)
-    .where(eq(schema.users.username, base));
-
-  if (!existing) return base;
-
-  for (let i = 2; i <= 1000; i++) {
-    const candidate = `${base}_${i}`;
-    const [taken] = await db
-      .select({ username: schema.users.username })
-      .from(schema.users)
-      .where(eq(schema.users.username, candidate));
-    if (!taken) return candidate;
-  }
-
-  // Extremely unlikely fallback
-  return `${base}_${Date.now()}`;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -221,13 +182,16 @@ export async function oidcRoutes(app: FastifyInstance): Promise<void> {
       return redirectToLogin(reply, "oidc_session_expired");
     }
 
+    const audit = auditFromRequest(request);
+
     // Check for error response from the IdP
     if (query.error) {
       request.log.warn(
         { error: query.error, description: query.error_description },
         "OIDC IdP returned error",
       );
-      await auditLog(request.log, "OIDC_LOGIN_FAILED", {
+      authAttempts.inc({ method: "oidc", result: "failure" });
+      await audit("OIDC_LOGIN_FAILED", {
         reason: sanitizeAuditInput(String(query.error)),
       });
       return redirectToLogin(reply, "oidc_auth_failed");
@@ -257,7 +221,8 @@ export async function oidcRoutes(app: FastifyInstance): Promise<void> {
       });
     } catch (err) {
       request.log.error({ err }, "OIDC token exchange failed");
-      await auditLog(request.log, "OIDC_LOGIN_FAILED", { reason: "token_exchange_failed" });
+      authAttempts.inc({ method: "oidc", result: "failure" });
+      await audit("OIDC_LOGIN_FAILED", { reason: "token_exchange_failed" });
       return redirectToLogin(reply, "oidc_auth_failed");
     }
 
@@ -265,7 +230,8 @@ export async function oidcRoutes(app: FastifyInstance): Promise<void> {
     const claims = tokenResponse.claims();
     if (!claims) {
       request.log.error("OIDC callback: no ID token claims");
-      await auditLog(request.log, "OIDC_LOGIN_FAILED", { reason: "no_id_token" });
+      authAttempts.inc({ method: "oidc", result: "failure" });
+      await audit("OIDC_LOGIN_FAILED", { reason: "no_id_token" });
       return redirectToLogin(reply, "oidc_auth_failed");
     }
 
@@ -273,106 +239,33 @@ export async function oidcRoutes(app: FastifyInstance): Promise<void> {
     const email = typeof claims.email === "string" ? claims.email : undefined;
     const emailVerified = claims.email_verified === true;
     const rawUsername = deriveUsername(claims as Record<string, unknown>);
-    const username = sanitizeUsername(rawUsername);
+    const derivedUsername = sanitizeUsername(rawUsername);
     const idToken = tokenResponse.id_token ?? null;
 
-    // 4. User resolution
-    let userId: string | null = null;
+    // 4. User resolution (delegated to shared resolver)
+    const result = await resolveExternalUser({
+      provider: "oidc",
+      externalId: sub,
+      email,
+      emailVerified,
+      username: derivedUsername,
+      autoCreate: env.OIDC_AUTO_CREATE_USERS,
+      autoLink: env.OIDC_AUTO_LINK_USERS,
+      defaultRole: env.OIDC_DEFAULT_ROLE,
+      logger: request.log,
+      ip: request.ip,
+      requestId: request.id,
+    });
 
-    // 4a. Find by externalId (OIDC subject)
-    const [existingByExtId] = await db
-      .select()
-      .from(schema.users)
-      .where(eq(schema.users.externalId, sub))
-      .limit(1);
-
-    if (existingByExtId) {
-      userId = existingByExtId.id;
-      // Update email if changed
-      if (email && email !== existingByExtId.email) {
-        await db
-          .update(schema.users)
-          .set({ email, updatedAt: new Date() })
-          .where(eq(schema.users.id, existingByExtId.id));
+    if (result.action === "denied" || !result.user) {
+      authAttempts.inc({ method: "oidc", result: "failure" });
+      if (result.deniedReason === "user_limit_reached") {
+        return redirectToLogin(reply, "oidc_user_limit_reached");
       }
-    }
-
-    // 4b. Auto-link: match by email
-    if (!userId && env.OIDC_AUTO_LINK_USERS && email && emailVerified) {
-      const [existingByEmail] = await db
-        .select()
-        .from(schema.users)
-        .where(eq(schema.users.email, email))
-        .limit(1);
-
-      if (existingByEmail) {
-        await db
-          .update(schema.users)
-          .set({
-            externalId: sub,
-            updatedAt: new Date(),
-          })
-          .where(eq(schema.users.id, existingByEmail.id));
-        userId = existingByEmail.id;
-        await auditLog(request.log, "OIDC_USER_LINKED", {
-          userId: existingByEmail.id,
-          username: existingByEmail.username,
-          email,
-        });
-      }
-    }
-
-    // 4c. Auto-create
-    if (!userId && env.OIDC_AUTO_CREATE_USERS) {
-      // Check user limit
-      if (env.MAX_USERS > 0) {
-        const [countResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.users);
-        if (countResult && countResult.count >= env.MAX_USERS) {
-          request.log.warn("OIDC auto-create blocked: user limit reached");
-          return redirectToLogin(reply, "oidc_user_limit_reached");
-        }
-      }
-
-      const uniqueUsername = await findUniqueUsername(username);
-      const newUserId = randomUUID();
-
-      // Look up the default team
-      const [defaultTeam] = await db
-        .select()
-        .from(schema.teams)
-        .where(eq(schema.teams.name, "Default"));
-      const teamId = defaultTeam?.id ?? "default-team-00000000";
-
-      await db.insert(schema.users).values({
-        id: newUserId,
-        username: uniqueUsername,
-        passwordHash: null,
-        role: env.OIDC_DEFAULT_ROLE,
-        team: teamId,
-        mustChangePassword: false,
-        authProvider: "oidc",
-        externalId: sub,
-        email: email ?? null,
-      });
-
-      userId = newUserId;
-      await auditLog(request.log, "OIDC_USER_CREATED", {
-        userId: newUserId,
-        username: uniqueUsername,
-        email,
-        role: env.OIDC_DEFAULT_ROLE,
-      });
-    }
-
-    // 4d. No user found and no auto-create
-    if (!userId) {
-      request.log.warn({ sub, email }, "OIDC user not authorized");
-      await auditLog(request.log, "OIDC_LOGIN_FAILED", {
-        reason: "user_not_authorized",
-        sub: sanitizeAuditInput(String(sub)),
-      });
       return redirectToLogin(reply, "oidc_user_not_authorized");
     }
+
+    const resolvedUser = result.user;
 
     // 5. Create session
     const token = createSessionToken();
@@ -380,17 +273,15 @@ export async function oidcRoutes(app: FastifyInstance): Promise<void> {
 
     await db.insert(schema.sessions).values({
       id: token,
-      userId,
+      userId: resolvedUser.id,
       expiresAt,
       idToken,
     });
 
-    // Fetch the user for audit logging
-    const [user] = await db.select().from(schema.users).where(eq(schema.users.id, userId));
-
-    await auditLog(request.log, "OIDC_LOGIN_SUCCESS", {
-      userId,
-      username: user?.username ?? username,
+    authAttempts.inc({ method: "oidc", result: "success" });
+    await audit("OIDC_LOGIN_SUCCESS", {
+      userId: resolvedUser.id,
+      username: resolvedUser.username,
     });
 
     // 6. Set session cookie

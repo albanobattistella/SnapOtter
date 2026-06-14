@@ -7,6 +7,7 @@ interface AuthState {
   authEnabled: boolean;
   isAuthenticated: boolean;
   mustChangePassword: boolean;
+  mfaRequired: boolean;
   role: string | null;
   permissions: string[];
   analyticsEnabled: boolean | null;
@@ -14,6 +15,9 @@ interface AuthState {
   analyticsConsentRemindAt: number | null;
   oidcEnabled: boolean;
   oidcProviderName: string | null;
+  samlEnabled: boolean;
+  samlProviderName: string | null;
+  ssoEnforced: boolean;
   loginMethod: string | null;
   hasLocalPassword: boolean;
 }
@@ -41,6 +45,7 @@ export function useAuth() {
     authEnabled: false,
     isAuthenticated: false,
     mustChangePassword: false,
+    mfaRequired: false,
     role: null,
     permissions: [],
     analyticsEnabled: null,
@@ -48,6 +53,9 @@ export function useAuth() {
     analyticsConsentRemindAt: null,
     oidcEnabled: false,
     oidcProviderName: null,
+    samlEnabled: false,
+    samlProviderName: null,
+    ssoEnforced: false,
     loginMethod: null,
     hasLocalPassword: false,
   });
@@ -67,6 +75,7 @@ export function useAuth() {
               authEnabled: false,
               isAuthenticated: true,
               mustChangePassword: false,
+              mfaRequired: false,
               role: "admin",
               permissions: ANON_ADMIN_PERMISSIONS,
               analyticsEnabled: null,
@@ -74,6 +83,9 @@ export function useAuth() {
               analyticsConsentRemindAt: null,
               oidcEnabled: false,
               oidcProviderName: null,
+              samlEnabled: false,
+              samlProviderName: null,
+              ssoEnforced: false,
               loginMethod: null,
               hasLocalPassword: false,
             });
@@ -95,6 +107,7 @@ export function useAuth() {
               authEnabled: true,
               isAuthenticated: true,
               mustChangePassword: mustChange,
+              mfaRequired: session.user?.mfaRequired === true,
               role: session.user?.role ?? null,
               permissions: session.user?.permissions ?? [],
               analyticsEnabled: session.user?.analyticsEnabled ?? null,
@@ -102,6 +115,9 @@ export function useAuth() {
               analyticsConsentRemindAt: session.user?.analyticsConsentRemindAt ?? null,
               oidcEnabled: config.oidcEnabled ?? false,
               oidcProviderName: config.oidcProviderName ?? null,
+              samlEnabled: config.samlEnabled ?? false,
+              samlProviderName: config.samlProviderName ?? null,
+              ssoEnforced: config.ssoEnforced ?? false,
               loginMethod: session.user?.loginMethod ?? null,
               hasLocalPassword: session.user?.hasLocalPassword ?? false,
             });
@@ -113,6 +129,7 @@ export function useAuth() {
               authEnabled: true,
               isAuthenticated: false,
               mustChangePassword: false,
+              mfaRequired: false,
               role: null,
               permissions: [],
               analyticsEnabled: null,
@@ -120,6 +137,9 @@ export function useAuth() {
               analyticsConsentRemindAt: null,
               oidcEnabled: config.oidcEnabled ?? false,
               oidcProviderName: config.oidcProviderName ?? null,
+              samlEnabled: config.samlEnabled ?? false,
+              samlProviderName: config.samlProviderName ?? null,
+              ssoEnforced: config.ssoEnforced ?? false,
               loginMethod: null,
               hasLocalPassword: false,
             });

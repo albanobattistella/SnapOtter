@@ -12,6 +12,9 @@ export type Permission =
   | "teams:manage"
   | "features:manage"
   | "system:health"
-  | "audit:read";
+  | "audit:read"
+  | "compliance:manage"
+  | "webhooks:manage"
+  | "security:manage";
 
 export type Role = "admin" | "editor" | "user";

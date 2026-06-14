@@ -17,7 +17,7 @@ import sharp from "sharp";
 import { z } from "zod";
 import { env } from "../config.js";
 import { db, schema } from "../db/index.js";
-import { auditLog } from "../lib/audit.js";
+import { auditFromRequest } from "../lib/audit.js";
 import {
   deleteStoredFile,
   deleteThumbnail,
@@ -82,26 +82,63 @@ function serializeFile(row: typeof schema.userFiles.$inferSelect) {
 }
 
 /**
- * Check whether a user has exceeded their storage quota.
- * Returns the total bytes used, or throws if the quota is exceeded.
+ * Check whether a user (and their team) has exceeded their storage quota.
+ * Uses the pre-computed storageUsed counter on the users table.
+ * Throws with statusCode 413 if the quota is exceeded.
  */
-async function checkStorageQuota(userId: string | null): Promise<void> {
-  if (!userId || env.MAX_STORAGE_PER_USER_MB <= 0) return;
+async function checkStorageQuota(userId: string | null, additionalBytes = 0): Promise<void> {
+  if (!userId) return;
 
-  const [result] = await db
-    .select({ total: sql<number>`coalesce(sum(${schema.userFiles.size}), 0)` })
-    .from(schema.userFiles)
-    .where(eq(schema.userFiles.userId, userId));
+  const [user] = await db
+    .select({
+      storageUsed: schema.users.storageUsed,
+      storageQuota: schema.users.storageQuota,
+      team: schema.users.team,
+    })
+    .from(schema.users)
+    .where(eq(schema.users.id, userId))
+    .limit(1);
 
-  const usedBytes = result?.total ?? 0;
-  const limitBytes = env.MAX_STORAGE_PER_USER_MB * 1024 * 1024;
+  if (!user) return;
+  const { storageUsed, storageQuota, team } = user;
 
-  if (usedBytes >= limitBytes) {
+  // Per-user quota: user-level override, then env fallback
+  const userLimit =
+    storageQuota ??
+    (env.MAX_STORAGE_PER_USER_MB > 0 ? env.MAX_STORAGE_PER_USER_MB * 1024 * 1024 : 0);
+  if (userLimit > 0 && storageUsed + additionalBytes > userLimit) {
     const error = new Error(
-      `Storage quota exceeded. Used ${(usedBytes / (1024 * 1024)).toFixed(1)}MB of ${env.MAX_STORAGE_PER_USER_MB}MB`,
+      `Storage quota exceeded. Used ${((storageUsed + additionalBytes) / (1024 * 1024)).toFixed(1)}MB of ${(userLimit / (1024 * 1024)).toFixed(1)}MB`,
     );
     (error as Error & { statusCode: number }).statusCode = 413;
     throw error;
+  }
+
+  // Per-team quota
+  if (team) {
+    const [teamRow] = await db
+      .select({ storageQuota: schema.teams.storageQuota })
+      .from(schema.teams)
+      .where(eq(schema.teams.id, team))
+      .limit(1);
+
+    if (teamRow?.storageQuota) {
+      const [teamUsed] = await db
+        .select({
+          total: sql<number>`coalesce(sum(${schema.users.storageUsed}), 0)`,
+        })
+        .from(schema.users)
+        .where(eq(schema.users.team, team));
+
+      const teamTotal = Number(teamUsed.total);
+      if (teamTotal + additionalBytes > teamRow.storageQuota) {
+        const error = new Error(
+          `Team storage quota exceeded. Team used ${((teamTotal + additionalBytes) / (1024 * 1024)).toFixed(1)}MB of ${(teamRow.storageQuota / (1024 * 1024)).toFixed(1)}MB`,
+        );
+        (error as Error & { statusCode: number }).statusCode = 413;
+        throw error;
+      }
+    }
   }
 }
 
@@ -224,6 +261,14 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
         // Sanitize SVG uploads to prevent XXE, SSRF, and script injection
         const safeBuffer = isSvgBuffer(buffer) ? sanitizeSvg(buffer) : buffer;
 
+        // Re-check quota with actual file size before persisting
+        try {
+          await checkStorageQuota(userId, safeBuffer.length);
+        } catch (err) {
+          const statusCode = (err as Error & { statusCode?: number }).statusCode ?? 413;
+          return reply.status(statusCode).send({ error: (err as Error).message });
+        }
+
         const safeName = sanitizeFilename(part.filename ?? "upload");
         const mimeType = formatToMime(validation.format);
 
@@ -232,6 +277,7 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
 
         // Create DB record
         const id = randomUUID();
+        const fileSize = safeBuffer.length;
         try {
           await db.insert(schema.userFiles).values({
             id,
@@ -239,7 +285,7 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
             originalName: safeName,
             storedName,
             mimeType,
-            size: safeBuffer.length,
+            size: fileSize,
             width: validation.width,
             height: validation.height,
             version: 1,
@@ -248,6 +294,14 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
           });
         } catch {
           return reply.status(409).send({ error: "Failed to save file record" });
+        }
+
+        // Increment the user's pre-computed storage counter
+        if (userId) {
+          await db
+            .update(schema.users)
+            .set({ storageUsed: sql`${schema.users.storageUsed} + ${fileSize}` })
+            .where(eq(schema.users.id, userId));
         }
 
         const [row] = await db.select().from(schema.userFiles).where(eq(schema.userFiles.id, id));
@@ -259,7 +313,7 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
         return reply.status(400).send({ error: "No valid files uploaded" });
       }
 
-      await auditLog(request.log, "FILE_UPLOADED", {
+      await auditFromRequest(request)("FILE_UPLOADED", {
         userId,
         count: created.length,
         files: created.map((f) => f.originalName),
@@ -495,13 +549,15 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
       .map((f) => f.id);
 
     if (validIds.length === 0) {
-      await auditLog(request.log, "FILE_DELETED", { userId: user.id, count: 0, ids });
+      await auditFromRequest(request)("FILE_DELETED", { userId: user.id, count: 0, ids });
       return reply.send({ deleted: 0 });
     }
 
     type DeleteChainRow = {
       id: string;
       stored_name: string;
+      size: number | null;
+      user_id: string | null;
     };
 
     // Single recursive CTE to collect all chain members for every valid ID
@@ -518,15 +574,15 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
         SELECT uf.id, uf.parent_id FROM user_files uf
         INNER JOIN ancestors a ON uf.id = a.parent_id
       ),
-      chain(id, stored_name) AS (
-        SELECT f.id, f.stored_name FROM user_files f
+      chain(id, stored_name, size, user_id) AS (
+        SELECT f.id, f.stored_name, f.size, f.user_id FROM user_files f
         WHERE f.id IN (SELECT id FROM ancestors WHERE parent_id IS NULL)
         UNION ALL
-        SELECT child.id, child.stored_name
+        SELECT child.id, child.stored_name, child.size, child.user_id
         FROM user_files child
         INNER JOIN chain c ON child.parent_id = c.id
       )
-      SELECT DISTINCT id, stored_name FROM chain
+      SELECT DISTINCT id, stored_name, size, user_id FROM chain
     `);
     const chainRows = cteResult.rows;
 
@@ -542,7 +598,23 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
       await db.delete(schema.userFiles).where(inArray(schema.userFiles.id, chainIds));
     }
 
-    await auditLog(request.log, "FILE_DELETED", {
+    // Decrement storageUsed per user (group by userId for files:all scenarios)
+    const perUserSizes = new Map<string, number>();
+    for (const row of chainRows) {
+      if (row.user_id && row.size) {
+        perUserSizes.set(row.user_id, (perUserSizes.get(row.user_id) ?? 0) + row.size);
+      }
+    }
+    for (const [uid, totalSize] of perUserSizes) {
+      await db
+        .update(schema.users)
+        .set({
+          storageUsed: sql`GREATEST(0, ${schema.users.storageUsed} - ${totalSize})`,
+        })
+        .where(eq(schema.users.id, uid));
+    }
+
+    await auditFromRequest(request)("FILE_DELETED", {
       userId: user.id,
       count: chainRows.length,
       ids,
@@ -635,11 +707,20 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
     // Sanitize SVG results to prevent XXE, SSRF, and script injection
     const safeResultBuffer = isSvgBuffer(fileBuffer) ? sanitizeSvg(fileBuffer) : fileBuffer;
 
+    // Re-check quota with actual file size before persisting
+    try {
+      await checkStorageQuota(userId, safeResultBuffer.length);
+    } catch (err) {
+      const statusCode = (err as Error & { statusCode?: number }).statusCode ?? 413;
+      return reply.status(statusCode).send({ error: (err as Error).message });
+    }
+
     // Persist to disk
     const storedName = await saveFile(safeResultBuffer, resultName);
 
     // Create DB record
     const id = randomUUID();
+    const fileSize = safeResultBuffer.length;
     try {
       await db.insert(schema.userFiles).values({
         id,
@@ -647,7 +728,7 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
         originalName: resultName,
         storedName,
         mimeType,
-        size: safeResultBuffer.length,
+        size: fileSize,
         width: validation.width,
         height: validation.height,
         version: nextVersion,
@@ -656,6 +737,14 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
       });
     } catch {
       return reply.status(409).send({ error: "Failed to save result record" });
+    }
+
+    // Increment the user's pre-computed storage counter
+    if (userId) {
+      await db
+        .update(schema.users)
+        .set({ storageUsed: sql`${schema.users.storageUsed} + ${fileSize}` })
+        .where(eq(schema.users.id, userId));
     }
 
     const [row] = await db.select().from(schema.userFiles).where(eq(schema.userFiles.id, id));

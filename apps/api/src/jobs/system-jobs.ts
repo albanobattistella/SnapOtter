@@ -10,17 +10,24 @@
  * calling runSystemJob); anything else is a bug.
  */
 import type { Job } from "bullmq";
-import { inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, lt, sql } from "drizzle-orm";
 import { env } from "../config.js";
 import { db, schema } from "../db/index.js";
 import { getMaxAgeMs } from "../lib/cleanup.js";
 import { deletePrefix, listJobDirs, type ObjectInfo } from "../lib/object-storage.js";
+import { runAuditArchive } from "./audit-archive.js";
 import { getQueue } from "./queues.js";
+import { runSiemForward } from "./siem-forward.js";
 
 export const SYSTEM_JOBS = {
   storageTtl: "system:storage-ttl",
   sessionPurge: "system:session-purge",
   retention: "system:retention",
+  siemForward: "system:siem-forward",
+  auditArchive: "system:audit-archive",
+  storageReconciliation: "system:storage-reconciliation",
+  gdprExport: "system:gdpr-export",
+  alertEvaluator: "system:alert-evaluator",
 } as const;
 
 // -- Scheduling ---------------------------------------------------------------
@@ -39,6 +46,17 @@ export async function scheduleSystemJobs(): Promise<void> {
   }
   await q.upsertJobScheduler(SYSTEM_JOBS.sessionPurge, { every: 60 * 60_000 });
   await q.upsertJobScheduler(SYSTEM_JOBS.retention, { every: 6 * 60 * 60_000 });
+  await q.upsertJobScheduler(SYSTEM_JOBS.siemForward, { every: 30_000 });
+  // Monthly: 2:00 AM on the 1st of each month
+  await q.upsertJobScheduler(SYSTEM_JOBS.auditArchive, {
+    pattern: "0 2 1 * *",
+  });
+  // Weekly: 3:00 AM Sunday -- reconcile storageUsed counters
+  await q.upsertJobScheduler(SYSTEM_JOBS.storageReconciliation, {
+    pattern: "0 3 * * 0",
+  });
+  // Alert evaluator: every 60 seconds
+  await q.upsertJobScheduler(SYSTEM_JOBS.alertEvaluator, { every: 60_000 });
 }
 
 /** Enqueue a one-shot system job (e.g. startup cleanup trigger). */
@@ -58,6 +76,33 @@ export async function runSystemJob(job: Job): Promise<unknown> {
       return db.execute(sql`DELETE FROM sessions WHERE expires_at < now()`);
     case SYSTEM_JOBS.retention:
       return retentionSweep();
+    case SYSTEM_JOBS.siemForward:
+      return runSiemForward();
+    case SYSTEM_JOBS.auditArchive:
+      return runAuditArchive();
+    case SYSTEM_JOBS.storageReconciliation: {
+      const { storageReconciliationJob } = await import("./storage-reconciliation.js");
+      return storageReconciliationJob();
+    }
+    case SYSTEM_JOBS.gdprExport: {
+      const { gdprExportJob } = await import("./gdpr-export.js");
+      const exportData = job.data as unknown as { userId: string; jobId: string };
+      const { outputRef } = await gdprExportJob(exportData.userId, exportData.jobId);
+      // Update the job row with the output reference
+      await db
+        .update(schema.jobs)
+        .set({
+          status: "completed",
+          completedAt: new Date(),
+          outputRefs: [outputRef],
+        })
+        .where(eq(schema.jobs.id, exportData.jobId));
+      return { outputRef };
+    }
+    case SYSTEM_JOBS.alertEvaluator: {
+      const { evaluateAlerts } = await import("./alert-evaluator.js");
+      return evaluateAlerts();
+    }
     default:
       // batch-finalize runs on the system pool too but is routed by the
       // worker before calling runSystemJob. Anything else is a bug.
@@ -99,8 +144,61 @@ export function decideExpiry(
 }
 
 async function storageTtlSweep(): Promise<{ removed: number; failed: number }> {
+  // Build set of user IDs under legal hold (direct or via team) once per sweep
+  const heldUserRows = await db
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(eq(schema.users.legalHold, true));
+  const heldUserIds = new Set(heldUserRows.map((r) => r.id));
+
+  const heldTeamRows = await db
+    .select({ id: schema.teams.id })
+    .from(schema.teams)
+    .where(eq(schema.teams.legalHold, true));
+  if (heldTeamRows.length > 0) {
+    const teamUsers = await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(
+        inArray(
+          schema.users.team,
+          heldTeamRows.map((r) => r.id),
+        ),
+      );
+    for (const u of teamUsers) heldUserIds.add(u.id);
+  }
+
+  // --- Per-job deleteAfter sweep (team retention overrides) ---
+  // Runs regardless of the global TTL; deleteAfter is an absolute deadline.
+  let deleteAfterCleaned = 0;
+  try {
+    const expiredJobs = await db
+      .select({ id: schema.jobs.id, userId: schema.jobs.userId })
+      .from(schema.jobs)
+      .where(and(isNotNull(schema.jobs.deleteAfter), lt(schema.jobs.deleteAfter, new Date())));
+
+    for (const job of expiredJobs) {
+      // Skip jobs belonging to users under legal hold
+      if (job.userId && heldUserIds.has(job.userId)) continue;
+      try {
+        await deletePrefix(`uploads/${job.id}`);
+        await deletePrefix(`outputs/${job.id}`);
+        deleteAfterCleaned++;
+      } catch {
+        // Directory may not exist
+      }
+    }
+
+    if (deleteAfterCleaned > 0) {
+      console.log(`Storage TTL: cleaned up ${deleteAfterCleaned} jobs by deleteAfter`);
+    }
+  } catch {
+    // deleteAfter sweep is best-effort
+  }
+
+  // --- Global TTL sweep ---
   const maxAgeMs = await getMaxAgeMs();
-  if (maxAgeMs <= 0) return { removed: 0, failed: 0 };
+  if (maxAgeMs <= 0) return { removed: deleteAfterCleaned, failed: 0 };
 
   const cutoffMs = Date.now() - maxAgeMs;
   const uploadDirs = await listJobDirs("uploads");
@@ -127,10 +225,28 @@ async function storageTtlSweep(): Promise<{ removed: number; failed: number }> {
     }
   }
 
+  // Batch-lookup userId for legal hold check (only if any users are held)
+  const jobUserMap = new Map<string, string | null>();
+  if (heldUserIds.size > 0 && allDirs.length > 0) {
+    const allJobIds = [...new Set(allDirs.map((d) => d.key.split("/")[1]))];
+    if (allJobIds.length > 0) {
+      const userRows = await db
+        .select({ id: schema.jobs.id, userId: schema.jobs.userId })
+        .from(schema.jobs)
+        .where(inArray(schema.jobs.id, allJobIds));
+      for (const r of userRows) jobUserMap.set(r.id, r.userId);
+    }
+  }
+
   let removed = 0;
   const errors: string[] = [];
   for (const dir of allDirs) {
     if (decideExpiry(dir, cutoffMs, rowsById) === "expired") {
+      // Skip deletion if the job's user is under legal hold
+      const jobId = dir.key.split("/")[1];
+      const userId = jobUserMap.get(jobId);
+      if (userId && heldUserIds.has(userId)) continue;
+
       try {
         await deletePrefix(dir.key);
         removed++;
@@ -146,20 +262,43 @@ async function storageTtlSweep(): Promise<{ removed: number; failed: number }> {
   if (removed > 0) {
     console.log(`Storage TTL: removed ${removed} expired job dirs`);
   }
-  return { removed, failed: errors.length };
+  return { removed: removed + deleteAfterCleaned, failed: errors.length };
 }
 
 // -- Retention sweep ----------------------------------------------------------
 
 async function retentionSweep(): Promise<void> {
+  // Subquery to find users under legal hold (direct or via team)
+  const heldUsersSubquery = sql`(
+    SELECT u.id FROM users u
+    LEFT JOIN teams t ON u.team = t.id
+    WHERE u.legal_hold = true OR t.legal_hold = true
+  )`;
+
   if (env.JOBS_RETENTION_DAYS > 0) {
     await db.execute(
-      sql`DELETE FROM jobs WHERE created_at < now() - ${env.JOBS_RETENTION_DAYS} * interval '1 day' AND status IN ('completed', 'failed', 'canceled')`,
+      sql`DELETE FROM jobs
+        WHERE created_at < now() - ${env.JOBS_RETENTION_DAYS} * interval '1 day'
+        AND status IN ('completed', 'failed', 'canceled')
+        AND (user_id IS NULL OR user_id NOT IN ${heldUsersSubquery})`,
     );
   }
   if (env.AUDIT_RETENTION_DAYS > 0) {
-    await db.execute(
-      sql`DELETE FROM audit_log WHERE created_at < now() - ${env.AUDIT_RETENTION_DAYS} * interval '1 day'`,
-    );
+    const tamperResult = await db
+      .select({ value: schema.settings.value })
+      .from(schema.settings)
+      .where(eq(schema.settings.key, "tamperResistantAudit"))
+      .limit(1);
+
+    const isTamperResistant = tamperResult.length > 0 && tamperResult[0].value === "true";
+
+    // Only delete audit logs if tamper-resistant mode is OFF
+    if (!isTamperResistant) {
+      await db.execute(
+        sql`DELETE FROM audit_log
+          WHERE created_at < now() - ${env.AUDIT_RETENTION_DAYS} * interval '1 day'
+          AND (actor_id IS NULL OR actor_id NOT IN ${heldUsersSubquery})`,
+      );
+    }
   }
 }

@@ -12,6 +12,7 @@ interface UsageData {
   perUser: Array<{ username: string | null; runs: number; bytesIn: string }>;
   durations: Array<{ pool: string; p50Ms: number | null; p95Ms: number | null }>;
   storage: { libraryBytes: string; libraryFiles: number };
+  teamStorage?: Array<{ teamName: string; totalBytes: string; userCount: number }>;
 }
 
 export function UsageSection() {
@@ -260,6 +261,43 @@ export function UsageSection() {
               </div>
             </div>
           </div>
+
+          {/* Storage by Team */}
+          {data.teamStorage && data.teamStorage.length > 0 && (
+            <div className="rounded-lg border border-border p-4 space-y-3">
+              <h4 className="text-sm font-semibold text-foreground">
+                {t.settings.usage.storageByTeam}
+              </h4>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-start py-1.5 text-xs font-medium text-muted-foreground">
+                      {t.settings.usage.teamColumn}
+                    </th>
+                    <th className="text-end py-1.5 text-xs font-medium text-muted-foreground">
+                      {t.settings.usage.storageColumn}
+                    </th>
+                    <th className="text-end py-1.5 text-xs font-medium text-muted-foreground">
+                      {t.settings.usage.usersColumn}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.teamStorage.map((row) => (
+                    <tr key={row.teamName} className="border-b border-border last:border-0">
+                      <td className="py-1.5 text-foreground">{row.teamName}</td>
+                      <td className="py-1.5 text-end text-muted-foreground font-mono">
+                        {formatFileSize(Number(row.totalBytes))}
+                      </td>
+                      <td className="py-1.5 text-end text-muted-foreground font-mono">
+                        {row.userCount}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       ) : null}
     </div>

@@ -122,6 +122,7 @@ export default defineConfig({
       sharp: path.join(apiNodeModules, "sharp"),
       ioredis: path.join(apiNodeModules, "ioredis"),
       bullmq: path.join(apiNodeModules, "bullmq"),
+      otpauth: path.join(apiNodeModules, "otpauth"),
       "openid-client": path.join(apiNodeModules, "openid-client"),
       "opentype.js": path.join(apiNodeModules, "opentype.js"),
       "posthog-node": path.join(apiNodeModules, "posthog-node"),

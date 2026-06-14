@@ -6,6 +6,7 @@ import {
   jsonb,
   pgEnum,
   pgTable,
+  primaryKey,
   text,
   timestamp,
 } from "drizzle-orm/pg-core";
@@ -28,12 +29,18 @@ export const users = pgTable("users", {
   authProvider: text("auth_provider").notNull().default("local"),
   externalId: text("external_id"),
   email: text("email"),
+  legalHold: boolean("legal_hold").notNull().default(false),
+  storageUsed: bigint("storage_used", { mode: "number" }).notNull().default(0),
+  storageQuota: bigint("storage_quota", { mode: "number" }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .$defaultFn(() => new Date()),
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .$defaultFn(() => new Date()),
+  totpSecret: text("totp_secret"),
+  totpEnabled: boolean("totp_enabled").notNull().default(false),
+  recoveryCodesHash: text("recovery_codes_hash"),
   analyticsEnabled: boolean("analytics_enabled"),
   analyticsConsentShownAt: timestamp("analytics_consent_shown_at", { withTimezone: true }),
   analyticsConsentRemindAt: timestamp("analytics_consent_remind_at", { withTimezone: true }),
@@ -42,6 +49,9 @@ export const users = pgTable("users", {
 export const teams = pgTable("teams", {
   id: text("id").primaryKey(),
   name: text("name").notNull().unique(),
+  legalHold: boolean("legal_hold").notNull().default(false),
+  storageQuota: bigint("storage_quota", { mode: "number" }),
+  retentionHours: integer("retention_hours"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .$defaultFn(() => new Date()),
@@ -54,6 +64,7 @@ export const sessions = pgTable("sessions", {
     .references(() => users.id, { onDelete: "cascade" }),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
   idToken: text("id_token"),
+  lastActivity: timestamp("last_activity", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .$defaultFn(() => new Date()),
@@ -90,6 +101,7 @@ export const jobs = pgTable(
       .$defaultFn(() => new Date()),
     startedAt: timestamp("started_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
+    deleteAfter: timestamp("delete_after", { withTimezone: true }),
   },
   (table) => [
     index("jobs_created_at_idx").on(table.createdAt),
@@ -124,25 +136,36 @@ export const pipelines = pgTable("pipelines", {
     .$defaultFn(() => new Date()),
 });
 
-export const auditLog = pgTable("audit_log", {
-  id: text("id").primaryKey(),
-  actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
-  actorUsername: text("actor_username").notNull(),
-  action: text("action").notNull(),
-  targetType: text("target_type"),
-  targetId: text("target_id"),
-  details: jsonb("details").$type<Record<string, unknown>>(),
-  ipAddress: text("ip_address"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .$defaultFn(() => new Date()),
-});
+export const auditLog = pgTable(
+  "audit_log",
+  {
+    id: text("id").primaryKey(),
+    actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+    actorUsername: text("actor_username").notNull(),
+    action: text("action").notNull(),
+    targetType: text("target_type"),
+    targetId: text("target_id"),
+    details: jsonb("details").$type<Record<string, unknown>>(),
+    ipAddress: text("ip_address"),
+    integrity: text("integrity"),
+    requestId: text("request_id"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [
+    index("audit_log_created_at_idx").on(table.createdAt),
+    index("audit_log_action_idx").on(table.action),
+    index("audit_log_actor_id_idx").on(table.actorId),
+  ],
+);
 
 export const roles = pgTable("roles", {
   id: text("id").primaryKey(),
   name: text("name").notNull().unique(),
   description: text("description").notNull().default(""),
   permissions: jsonb("permissions").$type<string[]>().notNull(),
+  toolPermissions: jsonb("tool_permissions").$type<{ mode: string; allowed: string[] } | null>(),
   isBuiltin: boolean("is_builtin").notNull().default(false),
   createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -169,3 +192,19 @@ export const userFiles = pgTable("user_files", {
     .notNull()
     .$defaultFn(() => new Date()),
 });
+
+export const userPreferences = pgTable(
+  "user_preferences",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    key: text("key").notNull(),
+    value: jsonb("value").$type<Record<string, unknown>>().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.key] })],
+);

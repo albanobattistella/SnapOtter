@@ -25,9 +25,9 @@ import { getPermissions, hasPermission } from "../../../apps/api/src/permissions
 
 describe("permissions", () => {
   describe("getPermissions", () => {
-    it("returns all 14 permissions for admin", async () => {
+    it("returns all 17 permissions for admin", async () => {
       const perms = await getPermissions("admin");
-      expect(perms).toHaveLength(14);
+      expect(perms).toHaveLength(17);
       expect(perms).toContain("tools:use");
       expect(perms).toContain("files:own");
       expect(perms).toContain("files:all");
@@ -42,6 +42,9 @@ describe("permissions", () => {
       expect(perms).toContain("features:manage");
       expect(perms).toContain("system:health");
       expect(perms).toContain("audit:read");
+      expect(perms).toContain("compliance:manage");
+      expect(perms).toContain("webhooks:manage");
+      expect(perms).toContain("security:manage");
     });
 
     it("returns only basic permissions for user role", async () => {

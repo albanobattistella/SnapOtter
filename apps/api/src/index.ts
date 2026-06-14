@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { statfs } from "node:fs/promises";
 import { join } from "node:path";
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
@@ -13,7 +14,7 @@ import { runMigrations } from "./db/migrate.js";
 import { startCancelListener, stopCancelListener } from "./jobs/cancel.js";
 import { closeRedis, pingRedis } from "./jobs/connection.js";
 import { closeFlowProducer, closeQueueEvents } from "./jobs/enqueue.js";
-import { closeQueues, queueCounts } from "./jobs/queues.js";
+import { closeQueues, perPoolHealth, queueCounts } from "./jobs/queues.js";
 import { enqueueSystemJob, SYSTEM_JOBS, scheduleSystemJobs } from "./jobs/system-jobs.js";
 import { closeWorkers, startWorkers } from "./jobs/worker.js";
 import { captureException, initAnalytics, shutdownAnalytics } from "./lib/analytics.js";
@@ -21,6 +22,8 @@ import { shouldRunStartupCleanup } from "./lib/cleanup.js";
 import { buildCsp } from "./lib/csp.js";
 import { ensureAiDirs, recoverInterruptedInstalls } from "./lib/feature-status.js";
 
+import { requestDuration } from "./lib/metrics.js";
+import { getSettingString } from "./lib/settings-helpers.js";
 import { requirePermission } from "./permissions.js";
 import {
   authMiddleware,
@@ -29,7 +32,9 @@ import {
   ensureBuiltinRoles,
   ensureDefaultAdmin,
 } from "./plugins/auth.js";
+import { registerMfa } from "./plugins/mfa.js";
 import { oidcRoutes } from "./plugins/oidc.js";
+import { registerSaml } from "./plugins/saml.js";
 import { registerStatic } from "./plugins/static.js";
 import { registerUpload } from "./plugins/upload.js";
 import { adminOpsRoutes } from "./routes/admin-ops.js";
@@ -39,6 +44,7 @@ import { auditLogRoutes } from "./routes/audit-log.js";
 import { registerBatchRoutes } from "./routes/batch.js";
 import { configRoutes } from "./routes/config.js";
 import { docsRoutes } from "./routes/docs.js";
+import { registerEnterpriseRoutes } from "./routes/enterprise/index.js";
 import { registerFeatureRoutes } from "./routes/features.js";
 import { registerFetchUrlsRoute } from "./routes/fetch-urls.js";
 import { fileRoutes } from "./routes/files.js";
@@ -172,7 +178,16 @@ await startCancelListener();
 ensureAiDirs();
 recoverInterruptedInstalls();
 
+function parseTrustProxy(value: string): boolean | number | string {
+  if (value === "true") return true;
+  if (value === "false") return false;
+  const asNum = Number(value);
+  if (!Number.isNaN(asNum)) return asNum;
+  return value; // CIDR list
+}
+
 const app = Fastify({
+  genReqId: (req) => (req.headers["x-request-id"] as string) ?? randomUUID(),
   logger: {
     level: env.LOG_LEVEL,
     transport: {
@@ -194,7 +209,7 @@ const app = Fastify({
     redact: ["req.headers.authorization", "req.headers.cookie"],
   },
   bodyLimit: env.MAX_UPLOAD_SIZE_MB > 0 ? env.MAX_UPLOAD_SIZE_MB * 1024 * 1024 : 1073741824,
-  trustProxy: env.TRUST_PROXY,
+  trustProxy: parseTrustProxy(env.TRUST_PROXY),
   routerOptions: { maxParamLength: 500 },
 });
 
@@ -246,6 +261,7 @@ await app.register(cors, {
 // HTTP so it is safe (and desirable) to send it in dev/staging too. CSP catches
 // injection issues early when applied during development.
 app.addHook("onSend", async (_request, reply) => {
+  reply.header("x-request-id", _request.id);
   reply.header("X-Content-Type-Options", "nosniff");
   reply.header("X-Frame-Options", "DENY");
   reply.header("X-XSS-Protection", "0");
@@ -253,6 +269,26 @@ app.addHook("onSend", async (_request, reply) => {
   reply.header("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   reply.header("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   reply.header("Content-Security-Policy", buildCsp(_request.url.startsWith("/api/docs")));
+});
+
+// Record HTTP request duration for Prometheus (bounded cardinality: 5 route groups * 5 status classes)
+app.addHook("onResponse", (request, reply, done) => {
+  const duration = reply.elapsedTime / 1000;
+
+  const url = request.url;
+  let routeGroup = "other";
+  if (url.startsWith("/api/v1/tools/") || url.startsWith("/api/v1/jobs/")) routeGroup = "tools";
+  else if (url.startsWith("/api/auth/") || url.startsWith("/api/v1/enterprise/"))
+    routeGroup = "auth";
+  else if (url.startsWith("/api/v1/admin/") || url.startsWith("/api/v1/settings"))
+    routeGroup = "admin";
+  else if (url.startsWith("/api/v1/files")) routeGroup = "files";
+  else if (url.startsWith("/api/v1/scim/")) routeGroup = "scim";
+
+  const statusClass = `${Math.floor(reply.statusCode / 100)}xx`;
+
+  requestDuration.observe({ route_group: routeGroup, status_class: statusClass }, duration);
+  done();
 });
 
 // Always register rate-limit plugin so per-route limits (login brute-force protection) work.
@@ -279,17 +315,32 @@ await app.register(cookie, {
   hook: "onRequest",
 });
 
+// IP allowlist (enterprise -- must run before auth to reject early)
+import { registerIpAllowlist } from "./plugins/ip-allowlist.js";
+import { registerPerUserRateLimit } from "./plugins/per-user-rate-limit.js";
+
+await registerIpAllowlist(app);
+
 // Public config routes (no auth required)
 await configRoutes(app);
 
 // Auth middleware (must be registered before routes it protects)
 await authMiddleware(app);
 
+// Per-user rate limiting (after auth so request.user is populated)
+await registerPerUserRateLimit(app);
+
 // Auth routes
 await authRoutes(app);
 
 // OIDC routes
 await oidcRoutes(app);
+
+// SAML routes
+await registerSaml(app);
+
+// MFA routes (TOTP enrollment, verification, disable)
+await registerMfa(app);
 
 // File upload/download routes
 await fileRoutes(app);
@@ -339,8 +390,21 @@ await rolesRoutes(app);
 // Admin ops routes (runtime log level, Prometheus metrics)
 await adminOpsRoutes(app);
 
+// Enterprise routes (license-gated features)
+await registerEnterpriseRoutes(app);
+
 // API docs (Scalar)
 await docsRoutes(app);
+
+// Disk space check for readiness probe (local storage mode only)
+async function checkDiskSpace(path: string, minBytes: number): Promise<boolean> {
+  try {
+    const stats = await statfs(path);
+    return stats.bfree * stats.bsize > minBytes;
+  } catch {
+    return true; // Path doesn't exist or not applicable -- skip check
+  }
+}
 
 // Public health check (checks core dependencies)
 app.get("/api/v1/health", async (_request, reply) => {
@@ -373,12 +437,41 @@ app.get("/api/v1/admin/health", async (request, reply) => {
     /* db unreachable */
   }
   let queueStats = { active: 0, pending: 0 };
+  let pools: Record<string, unknown> = {};
   try {
     const counts = await queueCounts();
     queueStats = { active: counts.active, pending: counts.waiting };
+    pools = await perPoolHealth();
   } catch {
     /* redis unreachable */
   }
+
+  // Storage total across all users
+  let libraryStorage = "0";
+  try {
+    const storageResult = await db
+      .select({
+        totalBytes: sql<string>`coalesce(sum(${schema.users.storageUsed}), 0)::text`,
+      })
+      .from(schema.users);
+    libraryStorage = storageResult[0]?.totalBytes ?? "0";
+  } catch {
+    /* db error */
+  }
+
+  // Backup recency
+  let lastBackup: string | null = null;
+  try {
+    const backupResult = await db
+      .select({ value: schema.settings.value })
+      .from(schema.settings)
+      .where(eq(schema.settings.key, "backup_last_completed"))
+      .limit(1);
+    lastBackup = backupResult.length > 0 ? backupResult[0].value : null;
+  } catch {
+    /* db error */
+  }
+
   return {
     status: dbOk ? "healthy" : "degraded",
     version: APP_VERSION,
@@ -386,6 +479,9 @@ app.get("/api/v1/admin/health", async (request, reply) => {
     storage: { mode: env.STORAGE_MODE, available: "N/A" },
     database: dbOk ? "ok" : "error",
     queue: queueStats,
+    pools,
+    libraryStorage,
+    lastBackup,
     ai: { gpu: isGpuAvailable(), dispatcher: getDispatcherStatus() },
     enterprise: enterpriseLicense
       ? { active: true, org: enterpriseLicense.org, plan: enterpriseLicense.plan }
@@ -403,6 +499,25 @@ app.get("/api/v1/config/auth", async () => {
     config.oidcProviderName = env.OIDC_PROVIDER_NAME || null;
     config.oidcLoginUrl = "/api/auth/oidc/login";
   }
+
+  // SAML SSO requires both env flag and enterprise license
+  let samlLicensed = false;
+  if (env.SAML_ENABLED) {
+    try {
+      const { isFeatureEnabled } = await import("@snapotter/enterprise");
+      samlLicensed = isFeatureEnabled("saml_sso");
+    } catch {
+      // Enterprise package not available
+    }
+  }
+  if (env.SAML_ENABLED && samlLicensed) {
+    config.samlEnabled = true;
+    config.samlProviderName = env.SAML_PROVIDER_NAME || "SSO";
+    config.samlLoginUrl = "/api/auth/saml/login";
+  }
+
+  config.ssoEnforced = (await getSettingString("ssoEnforcement", "false")) === "true";
+
   return config;
 });
 
@@ -421,8 +536,28 @@ app.get("/api/v1/readyz", async (_request, reply) => {
   } catch {
     /* redis unreachable */
   }
-  const ok = postgres && redis;
-  return reply.code(ok ? 200 : 503).send({ ok, postgres, redis });
+
+  // Disk space: fail readiness if below 500 MB on storage paths (local mode only)
+  const diskOk =
+    env.STORAGE_MODE !== "s3"
+      ? (await checkDiskSpace(env.WORKSPACE_PATH, 500 * 1024 * 1024)) &&
+        (await checkDiskSpace(env.FILES_STORAGE_PATH, 500 * 1024 * 1024))
+      : true;
+
+  // S3 reachability (S3 mode only)
+  let s3Ok = true;
+  if (env.STORAGE_MODE === "s3") {
+    try {
+      const { loadS3Storage } = await import("@snapotter/enterprise");
+      const s3 = await loadS3Storage();
+      await s3.checkConnection();
+    } catch {
+      s3Ok = false;
+    }
+  }
+
+  const ok = postgres && redis && diskOk && s3Ok;
+  return reply.code(ok ? 200 : 503).send({ ok, postgres, redis, disk: diskOk, s3: s3Ok });
 });
 
 // Cancel a job (authenticated)

@@ -12,6 +12,7 @@ export async function auditLogRoutes(app: FastifyInstance): Promise<void> {
           page?: string;
           limit?: string;
           action?: string;
+          ip?: string;
           from?: string;
           to?: string;
         };
@@ -29,6 +30,9 @@ export async function auditLogRoutes(app: FastifyInstance): Promise<void> {
 
       if (request.query.action) {
         conditions.push(eq(schema.auditLog.action, request.query.action));
+      }
+      if (request.query.ip) {
+        conditions.push(eq(schema.auditLog.ipAddress, request.query.ip));
       }
       if (request.query.from) {
         const fromDate = new Date(request.query.from);
@@ -68,6 +72,7 @@ export async function auditLogRoutes(app: FastifyInstance): Promise<void> {
           targetId: e.targetId,
           details: e.details ?? null,
           ipAddress: e.ipAddress,
+          requestId: e.requestId ?? null,
           createdAt: e.createdAt.toISOString(),
         })),
         total: countResult?.count ?? 0,

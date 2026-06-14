@@ -16,7 +16,7 @@ vi.mock("../../../apps/api/src/plugins/auth.js", () => ({
 import { getPermissions, hasPermission } from "../../../apps/api/src/permissions.js";
 
 describe("role permissions", () => {
-  it("admin has all 14 permissions", async () => {
+  it("admin has all 17 permissions", async () => {
     const perms = await getPermissions("admin");
     expect(perms).toContain("tools:use");
     expect(perms).toContain("files:all");
@@ -24,7 +24,10 @@ describe("role permissions", () => {
     expect(perms).toContain("features:manage");
     expect(perms).toContain("system:health");
     expect(perms).toContain("audit:read");
-    expect(perms.length).toBe(14);
+    expect(perms).toContain("compliance:manage");
+    expect(perms).toContain("webhooks:manage");
+    expect(perms).toContain("security:manage");
+    expect(perms.length).toBe(17);
   });
 
   it("editor has collaborative but not admin permissions", async () => {

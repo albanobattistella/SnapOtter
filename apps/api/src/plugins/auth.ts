@@ -1,11 +1,14 @@
 import { createHash, randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, asc, eq, ne, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { env } from "../config.js";
 import { db, schema } from "../db/index.js";
-import { auditLog, sanitizeAuditInput } from "../lib/audit.js";
+import { sharedRedis } from "../jobs/connection.js";
+import { auditFromRequest, sanitizeAuditInput } from "../lib/audit.js";
+import { authAttempts } from "../lib/metrics.js";
+import { getSettingNumber, getSettingString } from "../lib/settings-helpers.js";
 import { getPermissions, requirePermission } from "../permissions.js";
 
 const scryptAsync = promisify(scrypt);
@@ -49,14 +52,23 @@ export function computeKeyPrefix(rawKey: string): string {
   return createHash("sha256").update(rawKey).digest("hex").slice(0, 16);
 }
 
-const PASSWORD_RULES =
-  "Password must be at least 8 characters with uppercase, lowercase, and a number";
+async function validatePasswordStrength(password: string): Promise<string | null> {
+  const minLength = await getSettingNumber("passwordMinLength", 8);
+  if (password.length < minLength) return `Password must be at least ${minLength} characters`;
 
-function validatePasswordStrength(password: string): string | null {
-  if (password.length < 8) return PASSWORD_RULES;
-  if (!/[A-Z]/.test(password)) return PASSWORD_RULES;
-  if (!/[a-z]/.test(password)) return PASSWORD_RULES;
-  if (!/[0-9]/.test(password)) return PASSWORD_RULES;
+  const requireUpper = await getSettingString("passwordRequireUppercase", "true");
+  const requireLower = await getSettingString("passwordRequireLowercase", "true");
+  const requireDigit = await getSettingString("passwordRequireDigit", "true");
+  const requireSpecial = await getSettingString("passwordRequireSpecial", "false");
+
+  if (requireUpper === "true" && !/[A-Z]/.test(password))
+    return "Password must contain an uppercase letter";
+  if (requireLower === "true" && !/[a-z]/.test(password))
+    return "Password must contain a lowercase letter";
+  if (requireDigit === "true" && !/\d/.test(password)) return "Password must contain a digit";
+  if (requireSpecial === "true" && !/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password))
+    return "Password must contain a special character";
+
   return null;
 }
 
@@ -211,6 +223,9 @@ export async function ensureBuiltinRoles(): Promise<void> {
         "features:manage",
         "system:health",
         "audit:read",
+        "compliance:manage",
+        "webhooks:manage",
+        "security:manage",
       ],
       isBuiltin: true,
     },
@@ -269,6 +284,28 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         return reply.status(403).send({ error: "Authentication is disabled" });
       }
 
+      // SSO enforcement check
+      const ssoEnforced = await getSettingString("ssoEnforcement", "false");
+      if (ssoEnforced === "true") {
+        let isEnabled = false;
+        try {
+          const { isFeatureEnabled } = await import("@snapotter/enterprise");
+          isEnabled = isFeatureEnabled("sso_enforcement");
+        } catch {}
+
+        if (isEnabled) {
+          const breakGlassUsername = await getSettingString("ssoBreakGlassUsername", "");
+          const { username } = loginSchema.parse(request.body);
+
+          if (username !== breakGlassUsername) {
+            return reply.status(403).send({
+              error: "Local password login is disabled. Please use SSO.",
+              code: "SSO_ENFORCED",
+            });
+          }
+        }
+      }
+
       const parsed = loginSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.status(400).send({ error: "Username and password are required" });
@@ -287,8 +324,11 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         .from(schema.users)
         .where(eq(schema.users.username, body.username));
 
+      const audit = auditFromRequest(request);
+
       if (!user || !user.passwordHash) {
-        await auditLog(request.log, "LOGIN_FAILED", {
+        authAttempts.inc({ method: "password", result: "failure" });
+        await audit("LOGIN_FAILED", {
           username: sanitizeAuditInput(body.username),
           reason: "unknown_user",
         });
@@ -297,11 +337,38 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
       const valid = await verifyPassword(body.password, user.passwordHash);
       if (!valid) {
-        await auditLog(request.log, "LOGIN_FAILED", {
+        authAttempts.inc({ method: "password", result: "failure" });
+        await audit("LOGIN_FAILED", {
           username: sanitizeAuditInput(body.username),
           reason: "bad_password",
         });
         return reply.status(401).send({ error: "Invalid credentials" });
+      }
+
+      // ── MFA challenge ──────────────────────────────────────────
+      if (user.totpEnabled) {
+        const mfaToken = randomUUID();
+        const redis = sharedRedis();
+        await redis.setex(`mfa:${mfaToken}`, 300, user.id);
+
+        await audit("MFA_CHALLENGE_ISSUED", { userId: user.id, username: user.username });
+
+        // Determine if MFA policy requires enrollment for this user
+        let mfaRequired = false;
+        try {
+          const { getMfaPolicy, isMfaRequiredForUser } = await import("./mfa.js");
+          const policy = await getMfaPolicy();
+          mfaRequired = isMfaRequiredForUser(policy, user.role);
+        } catch {
+          // MFA plugin not loaded
+        }
+
+        return reply.status(200).send({
+          requiresMfa: true,
+          mfaToken,
+          mfaRequired,
+          message: "MFA verification required",
+        });
       }
 
       // Create session
@@ -314,9 +381,37 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         expiresAt,
       });
 
-      await auditLog(request.log, "LOGIN_SUCCESS", { userId: user.id, username: user.username });
+      // ── Concurrent session limit (FIFO eviction) ──────────────
+      const maxSessions = await getSettingNumber("maxSessionsPerUser");
+      if (maxSessions > 0) {
+        const sessions = await db
+          .select({ id: schema.sessions.id, createdAt: schema.sessions.createdAt })
+          .from(schema.sessions)
+          .where(eq(schema.sessions.userId, user.id))
+          .orderBy(asc(schema.sessions.createdAt));
+
+        if (sessions.length > maxSessions) {
+          const toDelete = sessions.slice(0, sessions.length - maxSessions);
+          for (const s of toDelete) {
+            await db.delete(schema.sessions).where(eq(schema.sessions.id, s.id));
+          }
+        }
+      }
+
+      authAttempts.inc({ method: "password", result: "success" });
+      await audit("LOGIN_SUCCESS", { userId: user.id, username: user.username });
 
       const [teamRow] = await db.select().from(schema.teams).where(eq(schema.teams.id, user.team));
+
+      // Check if MFA enrollment is required by policy but user hasn't enrolled yet
+      let mfaRequired = false;
+      try {
+        const { getMfaPolicy, isMfaRequiredForUser } = await import("./mfa.js");
+        const policy = await getMfaPolicy();
+        mfaRequired = isMfaRequiredForUser(policy, user.role) && !user.totpEnabled;
+      } catch {
+        // MFA plugin not loaded
+      }
 
       return reply.send({
         token,
@@ -332,6 +427,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
           analyticsConsentRemindAt: user.analyticsConsentRemindAt?.getTime() ?? null,
         },
         expiresAt: expiresAt.toISOString(),
+        ...(mfaRequired && { mfaRequired: true }),
       });
     },
   );
@@ -375,7 +471,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       cookieReply.clearCookie("snapotter-session", { path: "/" });
     }
 
-    await auditLog(request.log, "LOGOUT", { userId: user?.id });
+    await auditFromRequest(request)("LOGOUT", { userId: user?.id });
     return reply.send({ ok: true, ...(logoutUrl && { logoutUrl }) });
   });
 
@@ -425,7 +521,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         mustChangePassword: env.SKIP_MUST_CHANGE_PASSWORD ? false : user.mustChangePassword,
         permissions: await getPermissions(user.role),
         authProvider: user.authProvider ?? "local",
-        loginMethod: session.idToken ? "oidc" : "local",
+        loginMethod: session.idToken ? "oidc" : user.authProvider === "saml" ? "saml" : "local",
         email: user.email ?? null,
         hasLocalPassword: !!user.passwordHash,
         hasOidcLink: !!user.externalId,
@@ -451,7 +547,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     }
     const body = parsed.data;
 
-    const pwError = validatePasswordStrength(body.newPassword);
+    const pwError = await validatePasswordStrength(body.newPassword);
     if (pwError) {
       return reply.status(400).send({
         error: pwError,
@@ -497,7 +593,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
     // Revoke all API keys - if credentials were compromised, keys must be rotated too
     await db.delete(schema.apiKeys).where(eq(schema.apiKeys.userId, authUser.id));
 
-    await auditLog(request.log, "PASSWORD_CHANGED", {
+    await auditFromRequest(request)("PASSWORD_CHANGED", {
       userId: authUser.id,
       username: authUser.username,
     });
@@ -566,7 +662,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       });
     }
 
-    const registerPwError = validatePasswordStrength(body.password);
+    const registerPwError = await validatePasswordStrength(body.password);
     if (registerPwError) {
       return reply.status(400).send({
         error: registerPwError,
@@ -666,7 +762,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       mustChangePassword: true,
     });
 
-    await auditLog(request.log, "USER_CREATED", {
+    await auditFromRequest(request)("USER_CREATED", {
       adminId: admin.id,
       newUserId: id,
       newUsername: body.username,
@@ -781,7 +877,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         );
       }
 
-      await auditLog(request.log, "USER_UPDATED", {
+      await auditFromRequest(request)("USER_UPDATED", {
         adminId: admin.id,
         targetUserId: id,
         changes: { role: updates.role, team: updates.team },
@@ -808,7 +904,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       }
       const body = parsed.data;
 
-      const pwError = validatePasswordStrength(body.newPassword);
+      const pwError = await validatePasswordStrength(body.newPassword);
       if (pwError) {
         return reply.status(400).send({
           error: pwError,
@@ -842,7 +938,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       // Revoke all API keys
       await db.delete(schema.apiKeys).where(eq(schema.apiKeys.userId, id));
 
-      await auditLog(request.log, "PASSWORD_RESET", {
+      await auditFromRequest(request)("PASSWORD_RESET", {
         adminId: admin.id,
         targetUserId: id,
         targetUsername: user.username,
@@ -880,7 +976,7 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
       // Delete the user (cascades to api_keys via FK)
       await db.delete(schema.users).where(eq(schema.users.id, id));
 
-      await auditLog(request.log, "USER_DELETED", {
+      await auditFromRequest(request)("USER_DELETED", {
         adminId: admin.id,
         deletedUserId: id,
         deletedUsername: user.username,
@@ -917,6 +1013,7 @@ const PUBLIC_PATHS = [
   "/api/docs",
   "/api/v1/openapi.yaml",
   "/api/v1/meme-templates/",
+  "/api/v1/scim/",
 ];
 
 function isPublicRoute(url: string): boolean {
@@ -998,6 +1095,7 @@ export async function authMiddleware(app: FastifyInstance): Promise<void> {
               .from(schema.users)
               .where(eq(schema.users.id, key.userId));
             if (apiUser) {
+              authAttempts.inc({ method: "apikey", result: "success" });
               const keyPermissions = key.permissions ?? undefined;
               (request as FastifyRequest & { user?: AuthUser }).user = {
                 id: apiUser.id,
@@ -1009,6 +1107,7 @@ export async function authMiddleware(app: FastifyInstance): Promise<void> {
             }
           }
         }
+        authAttempts.inc({ method: "apikey", result: "failure" });
       }
 
       // Public routes can proceed without a valid session
@@ -1021,6 +1120,36 @@ export async function authMiddleware(app: FastifyInstance): Promise<void> {
     if (!user) {
       if (isPublic) return;
       return reply.status(401).send({ error: "User not found" });
+    }
+
+    // ── Idle timeout enforcement ───────────────────────────────────
+    const idleTimeoutMinutes = await getSettingNumber("sessionIdleTimeoutMinutes");
+    if (idleTimeoutMinutes > 0) {
+      const redis = sharedRedis();
+      const idleKey = `session:idle:${token}`;
+      const lastSeen = await redis.get(idleKey);
+
+      if (!lastSeen) {
+        // Redis key expired or first request -- check Postgres lastActivity
+        if (session.lastActivity) {
+          const elapsed = Date.now() - session.lastActivity.getTime();
+          if (elapsed > idleTimeoutMinutes * 60 * 1000) {
+            await db.delete(schema.sessions).where(eq(schema.sessions.id, token));
+            if (isPublic) return;
+            return reply
+              .status(401)
+              .send({ error: "Session expired due to inactivity", code: "IDLE_TIMEOUT" });
+          }
+        }
+        // Flush lastActivity to Postgres on cache miss (avoids per-request DB writes)
+        await db
+          .update(schema.sessions)
+          .set({ lastActivity: new Date() })
+          .where(eq(schema.sessions.id, token));
+      }
+
+      // Refresh Redis key with TTL = idle timeout
+      await redis.setex(idleKey, idleTimeoutMinutes * 60, Date.now().toString());
     }
 
     // Attach user info to request for downstream handlers

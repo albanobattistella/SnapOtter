@@ -338,6 +338,8 @@ interface TeamEntry {
   id: string;
   name: string;
   memberCount: number;
+  storageQuota: number | null;
+  retentionHours: number | null;
   createdAt: string;
 }
 
@@ -686,6 +688,52 @@ function SystemSection() {
         </button>
       </SettingRow>
 
+      <div className="pt-4 border-t border-border">
+        <h4 className="text-sm font-semibold text-foreground mb-3">
+          {t.settings.dataRetention.title}
+        </h4>
+      </div>
+      <SettingRow
+        label={t.settings.dataRetention.fileMaxAgeHours}
+        description={t.settings.dataRetention.fileMaxAgeHoursDesc}
+      >
+        <input
+          type="number"
+          value={settings.tempFileMaxAgeHours || "72"}
+          onChange={(e) => updateSetting("tempFileMaxAgeHours", e.target.value)}
+          aria-label={t.settings.dataRetention.fileMaxAgeHours}
+          className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground w-24"
+          min={1}
+          max={8760}
+        />
+      </SettingRow>
+      <SettingRow
+        label={t.settings.dataRetention.jobsRetentionDays}
+        description={t.settings.dataRetention.jobsRetentionDaysDesc}
+      >
+        <input
+          type="number"
+          value={settings.jobsRetentionDays || "30"}
+          onChange={(e) => updateSetting("jobsRetentionDays", e.target.value)}
+          aria-label={t.settings.dataRetention.jobsRetentionDays}
+          className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground w-24"
+          min={0}
+        />
+      </SettingRow>
+      <SettingRow
+        label={t.settings.dataRetention.auditRetentionDays}
+        description={t.settings.dataRetention.auditRetentionDaysDesc}
+      >
+        <input
+          type="number"
+          value={settings.auditRetentionDays || "0"}
+          onChange={(e) => updateSetting("auditRetentionDays", e.target.value)}
+          aria-label={t.settings.dataRetention.auditRetentionDays}
+          className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground w-24"
+          min={0}
+        />
+      </SettingRow>
+
       <div className="flex items-center gap-3 pt-2">
         <button
           type="button"
@@ -757,6 +805,7 @@ function SystemSection() {
 
 function SecuritySection() {
   const { t } = useTranslation();
+  const { hasPermission } = useAuth();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -913,6 +962,278 @@ function SecuritySection() {
 
       <div className="border-t border-border pt-4">
         <p className="text-sm text-muted-foreground">{t.settings.security.loginAttemptLimitNote}</p>
+      </div>
+
+      {hasPermission("settings:write") && <AdminSecuritySettings />}
+    </div>
+  );
+}
+
+function AdminSecuritySettings() {
+  const { t } = useTranslation();
+  const [settings, setSettings] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiGet<{ settings: Record<string, string> }>("/v1/settings")
+      .then((data) => setSettings(data.settings))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const updateSetting = useCallback((key: string, value: string) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  const handleSave = useCallback(async () => {
+    setSaving(true);
+    setSaveMsg(null);
+    try {
+      await apiPut("/v1/settings", settings);
+      setSaveMsg(t.settings.security.securitySettingsSaved);
+    } catch {
+      setSaveMsg(t.settings.security.securitySettingsFailed);
+    } finally {
+      setSaving(false);
+      setTimeout(() => setSaveMsg(null), 3000);
+    }
+  }, [settings, t]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-t border-border pt-6 space-y-6">
+      <div>
+        <h4 className="text-sm font-semibold text-foreground">
+          {t.settings.security.adminHeading}
+        </h4>
+        <p className="text-xs text-muted-foreground mt-1">{t.settings.security.adminDescription}</p>
+      </div>
+
+      <SettingRow
+        label={t.settings.security.sessionIdleTimeout}
+        description={t.settings.security.sessionIdleTimeoutDesc}
+      >
+        <input
+          type="number"
+          value={settings.sessionIdleTimeoutMinutes || "0"}
+          onChange={(e) => updateSetting("sessionIdleTimeoutMinutes", e.target.value)}
+          aria-label={t.settings.security.sessionIdleTimeout}
+          className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground w-24"
+          min={0}
+        />
+      </SettingRow>
+
+      <SettingRow
+        label={t.settings.security.maxSessionsPerUser}
+        description={t.settings.security.maxSessionsPerUserDesc}
+      >
+        <input
+          type="number"
+          value={settings.maxSessionsPerUser || "0"}
+          onChange={(e) => updateSetting("maxSessionsPerUser", e.target.value)}
+          aria-label={t.settings.security.maxSessionsPerUser}
+          className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground w-24"
+          min={0}
+        />
+      </SettingRow>
+
+      <SettingRow
+        label={t.settings.security.mfaPolicy}
+        description={t.settings.security.mfaPolicyDesc}
+      >
+        <select
+          value={settings.mfaPolicy || "optional"}
+          onChange={(e) => updateSetting("mfaPolicy", e.target.value)}
+          aria-label={t.settings.security.mfaPolicy}
+          className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground"
+        >
+          <option value="optional">{t.settings.security.mfaPolicyOptional}</option>
+          <option value="admins_only">{t.settings.security.mfaPolicyAdminsOnly}</option>
+          <option value="required">{t.settings.security.mfaPolicyRequired}</option>
+        </select>
+      </SettingRow>
+
+      <SettingRow
+        label={t.settings.security.ssoEnforcement}
+        description={t.settings.security.ssoEnforcementDesc}
+      >
+        <button
+          type="button"
+          role="switch"
+          aria-checked={settings.ssoEnforcement === "true"}
+          aria-label={t.settings.security.ssoEnforcement}
+          onClick={() =>
+            updateSetting("ssoEnforcement", settings.ssoEnforcement === "true" ? "false" : "true")
+          }
+          className={cn(
+            "w-11 h-6 rounded-full transition-colors relative",
+            settings.ssoEnforcement === "true" ? "bg-primary" : "bg-muted-foreground/30",
+          )}
+        >
+          <span
+            className={cn(
+              "block w-4 h-4 rounded-full bg-white absolute top-1 transition-transform",
+              settings.ssoEnforcement === "true" ? "translate-x-6" : "translate-x-1",
+            )}
+          />
+        </button>
+      </SettingRow>
+
+      {settings.ssoEnforcement === "true" && (
+        <SettingRow
+          label={t.settings.security.ssoBreakGlassUsername}
+          description={t.settings.security.ssoBreakGlassUsernameDesc}
+        >
+          <input
+            type="text"
+            value={settings.ssoBreakGlassUsername || ""}
+            onChange={(e) => updateSetting("ssoBreakGlassUsername", e.target.value)}
+            aria-label={t.settings.security.ssoBreakGlassUsername}
+            className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground w-40"
+            placeholder="admin"
+          />
+        </SettingRow>
+      )}
+
+      <div className="pt-2 border-t border-border">
+        <h4 className="text-sm font-semibold text-foreground mb-3">
+          {t.settings.security.passwordPolicyHeading}
+        </h4>
+      </div>
+
+      <SettingRow
+        label={t.settings.security.passwordMinLength}
+        description={t.settings.security.passwordMinLengthDesc}
+      >
+        <input
+          type="number"
+          value={settings.passwordMinLength || "8"}
+          onChange={(e) => updateSetting("passwordMinLength", e.target.value)}
+          aria-label={t.settings.security.passwordMinLength}
+          className="px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground w-24"
+          min={4}
+          max={128}
+        />
+      </SettingRow>
+
+      <SettingRow
+        label={t.settings.security.passwordRequireUppercase}
+        description={t.settings.security.passwordRequireUppercaseDesc}
+      >
+        <button
+          type="button"
+          role="switch"
+          aria-checked={settings.passwordRequireUppercase !== "false"}
+          aria-label={t.settings.security.passwordRequireUppercase}
+          onClick={() =>
+            updateSetting(
+              "passwordRequireUppercase",
+              settings.passwordRequireUppercase === "false" ? "true" : "false",
+            )
+          }
+          className={cn(
+            "w-11 h-6 rounded-full transition-colors relative",
+            settings.passwordRequireUppercase !== "false" ? "bg-primary" : "bg-muted-foreground/30",
+          )}
+        >
+          <span
+            className={cn(
+              "block w-4 h-4 rounded-full bg-white absolute top-1 transition-transform",
+              settings.passwordRequireUppercase !== "false" ? "translate-x-6" : "translate-x-1",
+            )}
+          />
+        </button>
+      </SettingRow>
+
+      <SettingRow
+        label={t.settings.security.passwordRequireNumber}
+        description={t.settings.security.passwordRequireNumberDesc}
+      >
+        <button
+          type="button"
+          role="switch"
+          aria-checked={settings.passwordRequireNumber !== "false"}
+          aria-label={t.settings.security.passwordRequireNumber}
+          onClick={() =>
+            updateSetting(
+              "passwordRequireNumber",
+              settings.passwordRequireNumber === "false" ? "true" : "false",
+            )
+          }
+          className={cn(
+            "w-11 h-6 rounded-full transition-colors relative",
+            settings.passwordRequireNumber !== "false" ? "bg-primary" : "bg-muted-foreground/30",
+          )}
+        >
+          <span
+            className={cn(
+              "block w-4 h-4 rounded-full bg-white absolute top-1 transition-transform",
+              settings.passwordRequireNumber !== "false" ? "translate-x-6" : "translate-x-1",
+            )}
+          />
+        </button>
+      </SettingRow>
+
+      <SettingRow
+        label={t.settings.security.passwordRequireSpecial}
+        description={t.settings.security.passwordRequireSpecialDesc}
+      >
+        <button
+          type="button"
+          role="switch"
+          aria-checked={settings.passwordRequireSpecial === "true"}
+          aria-label={t.settings.security.passwordRequireSpecial}
+          onClick={() =>
+            updateSetting(
+              "passwordRequireSpecial",
+              settings.passwordRequireSpecial === "true" ? "false" : "true",
+            )
+          }
+          className={cn(
+            "w-11 h-6 rounded-full transition-colors relative",
+            settings.passwordRequireSpecial === "true" ? "bg-primary" : "bg-muted-foreground/30",
+          )}
+        >
+          <span
+            className={cn(
+              "block w-4 h-4 rounded-full bg-white absolute top-1 transition-transform",
+              settings.passwordRequireSpecial === "true" ? "translate-x-6" : "translate-x-1",
+            )}
+          />
+        </button>
+      </SettingRow>
+
+      <div className="flex items-center gap-3 pt-2">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+        >
+          {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
+          {t.settings.system.saveButton}
+        </button>
+        {saveMsg && (
+          <span
+            className={cn(
+              "text-sm",
+              saveMsg === t.settings.security.securitySettingsFailed
+                ? "text-destructive"
+                : "text-green-600 dark:text-green-400",
+            )}
+          >
+            {saveMsg}
+          </span>
+        )}
       </div>
     </div>
   );
@@ -1870,6 +2191,10 @@ function TeamsSection() {
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [editingTeamName, setEditingTeamName] = useState("");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
+  const [quotaMb, setQuotaMb] = useState("");
+  const [retention, setRetention] = useState("");
+  const [savingQuota, setSavingQuota] = useState(false);
   const [actionMsg, setActionMsg] = useState<{ type: "success" | "error"; text: string } | null>(
     null,
   );
@@ -1958,6 +2283,43 @@ function TeamsSection() {
       setTimeout(() => setActionMsg(null), 3000);
     },
     [loadTeams],
+  );
+
+  const handleExpandTeam = useCallback(
+    (tm: TeamEntry) => {
+      if (expandedTeamId === tm.id) {
+        setExpandedTeamId(null);
+        return;
+      }
+      setExpandedTeamId(tm.id);
+      setQuotaMb(tm.storageQuota ? String(Math.round(tm.storageQuota / (1024 * 1024))) : "");
+      setRetention(tm.retentionHours ? String(tm.retentionHours) : "");
+    },
+    [expandedTeamId],
+  );
+
+  const handleSaveQuota = useCallback(
+    async (id: string) => {
+      setSavingQuota(true);
+      try {
+        const body: Record<string, number | null> = {};
+        const mbVal = quotaMb.trim() ? Number(quotaMb) : 0;
+        body.storageQuota = mbVal > 0 ? mbVal * 1024 * 1024 : null;
+        const retVal = retention.trim() ? Number(retention) : 0;
+        body.retentionHours = retVal > 0 ? retVal : null;
+        await apiPut(`/v1/teams/${id}`, body);
+        setActionMsg({ type: "success", text: t.settings.teams.quotaSaved });
+        setExpandedTeamId(null);
+        await loadTeams();
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Failed to save";
+        setActionMsg({ type: "error", text: msg });
+      } finally {
+        setSavingQuota(false);
+        setTimeout(() => setActionMsg(null), 3000);
+      }
+    },
+    [quotaMb, retention, loadTeams],
   );
 
   if (loading) {
@@ -2049,97 +2411,177 @@ function TeamsSection() {
           </div>
         ) : (
           teams.map((tm) => (
-            <div
-              key={tm.id}
-              className={cn(
-                "items-center px-4 py-3 border-b border-border last:border-0 last:rounded-b-lg hover:bg-muted/20 transition-colors",
-                isMobile ? "flex gap-3" : "grid grid-cols-[1fr_100px_60px] gap-2",
-              )}
-            >
-              <div className="flex-1 min-w-0">
-                {editingTeamId === tm.id ? (
+            <Fragment key={tm.id}>
+              <div
+                className={cn(
+                  "items-center px-4 py-3 border-b border-border last:border-0 last:rounded-b-lg hover:bg-muted/20 transition-colors",
+                  isMobile ? "flex gap-3" : "grid grid-cols-[1fr_100px_60px] gap-2",
+                )}
+              >
+                <div className="flex-1 min-w-0">
+                  {editingTeamId === tm.id ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={editingTeamName}
+                        onChange={(e) => setEditingTeamName(e.target.value)}
+                        className="px-2 py-1 rounded border border-border bg-background text-sm text-foreground w-40"
+                        ref={(el) => el?.focus()}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleRename(tm.id);
+                          if (e.key === "Escape") setEditingTeamId(null);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRename(tm.id)}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        {t.common.save}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingTeamId(null)}
+                        className="text-xs text-muted-foreground hover:underline"
+                      >
+                        {t.common.cancel}
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <span className="text-sm font-medium text-foreground truncate block">
+                        {tm.name}
+                      </span>
+                      {isMobile && (
+                        <span className="text-xs text-muted-foreground">
+                          {tm.memberCount} {plural(tm.memberCount, "member", "members")}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                {!isMobile && (
+                  <span className="text-sm text-muted-foreground">{tm.memberCount}</span>
+                )}
+                <div className="flex items-center gap-1 justify-end relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setOpenMenuId(openMenuId === tm.id ? null : tm.id);
+                    }}
+                    className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                  {openMenuId === tm.id && (
+                    <div
+                      role="menu"
+                      className="absolute right-0 top-8 z-50 w-36 rounded-lg border border-border bg-background shadow-lg py-1"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingTeamId(tm.id);
+                          setEditingTeamName(tm.name);
+                          setOpenMenuId(null);
+                        }}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        {t.settings.teams.renameAction}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleExpandTeam(tm);
+                          setOpenMenuId(null);
+                        }}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                      >
+                        <Settings className="h-3.5 w-3.5" />
+                        {t.settings.heading}
+                      </button>
+                      <div className="border-t border-border my-1" />
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(tm.id, tm.name)}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        {t.settings.teams.deleteAction}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {expandedTeamId === tm.id && (
+                <div className="px-4 py-3 border-b border-border last:border-0 bg-muted/10 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label
+                        htmlFor={`quota-${tm.id}`}
+                        className="text-xs font-medium text-muted-foreground"
+                      >
+                        {t.settings.teams.teamStorageQuota}
+                      </label>
+                      <input
+                        id={`quota-${tm.id}`}
+                        type="number"
+                        min="0"
+                        value={quotaMb}
+                        onChange={(e) => setQuotaMb(e.target.value)}
+                        placeholder="0"
+                        className="w-full px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground"
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        {t.settings.teams.teamStorageQuotaDesc}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <label
+                        htmlFor={`retention-${tm.id}`}
+                        className="text-xs font-medium text-muted-foreground"
+                      >
+                        {t.settings.teams.teamRetentionHours}
+                      </label>
+                      <input
+                        id={`retention-${tm.id}`}
+                        type="number"
+                        min="0"
+                        value={retention}
+                        onChange={(e) => setRetention(e.target.value)}
+                        placeholder="0"
+                        className="w-full px-3 py-1.5 rounded-lg border border-border bg-background text-sm text-foreground"
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        {t.settings.teams.teamRetentionHoursDesc}
+                      </p>
+                    </div>
+                  </div>
                   <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={editingTeamName}
-                      onChange={(e) => setEditingTeamName(e.target.value)}
-                      className="px-2 py-1 rounded border border-border bg-background text-sm text-foreground w-40"
-                      ref={(el) => el?.focus()}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleRename(tm.id);
-                        if (e.key === "Escape") setEditingTeamId(null);
-                      }}
-                    />
                     <button
                       type="button"
-                      onClick={() => handleRename(tm.id)}
-                      className="text-xs text-primary hover:underline"
+                      disabled={savingQuota}
+                      onClick={() => handleSaveQuota(tm.id)}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
                     >
+                      {savingQuota && (
+                        <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                      )}
                       {t.common.save}
                     </button>
                     <button
                       type="button"
-                      onClick={() => setEditingTeamId(null)}
-                      className="text-xs text-muted-foreground hover:underline"
+                      onClick={() => setExpandedTeamId(null)}
+                      className="px-3 py-1.5 rounded-lg border border-border text-xs text-muted-foreground hover:bg-muted transition-colors"
                     >
                       {t.common.cancel}
                     </button>
                   </div>
-                ) : (
-                  <div>
-                    <span className="text-sm font-medium text-foreground truncate block">
-                      {tm.name}
-                    </span>
-                    {isMobile && (
-                      <span className="text-xs text-muted-foreground">
-                        {tm.memberCount} {plural(tm.memberCount, "member", "members")}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-              {!isMobile && <span className="text-sm text-muted-foreground">{tm.memberCount}</span>}
-              <div className="flex items-center gap-1 justify-end relative shrink-0">
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setOpenMenuId(openMenuId === tm.id ? null : tm.id);
-                  }}
-                  className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </button>
-                {openMenuId === tm.id && (
-                  <div
-                    role="menu"
-                    className="absolute right-0 top-8 z-50 w-36 rounded-lg border border-border bg-background shadow-lg py-1"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingTeamId(tm.id);
-                        setEditingTeamName(tm.name);
-                        setOpenMenuId(null);
-                      }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                      {t.settings.teams.renameAction}
-                    </button>
-                    <div className="border-t border-border my-1" />
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(tm.id, tm.name)}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-destructive hover:bg-destructive/10 transition-colors"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      {t.settings.teams.deleteAction}
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
+                </div>
+              )}
+            </Fragment>
           ))
         )}
       </div>
@@ -2525,26 +2967,39 @@ function RolesSection() {
 const AUDIT_ACTIONS = [
   "LOGIN_SUCCESS",
   "LOGIN_FAILED",
-  "USER_CREATED",
-  "USER_UPDATED",
-  "USER_DELETED",
+  "LOGOUT",
   "PASSWORD_CHANGED",
   "PASSWORD_RESET",
+  "USER_CREATED",
+  "USER_DELETED",
+  "USER_UPDATED",
+  "FILE_UPLOADED",
+  "FILE_DELETED",
   "API_KEY_CREATED",
   "API_KEY_DELETED",
   "ROLE_CREATED",
   "ROLE_UPDATED",
   "ROLE_DELETED",
   "SETTINGS_UPDATED",
+  "OIDC_LOGIN_SUCCESS",
+  "OIDC_USER_CREATED",
+  "OIDC_USER_LINKED",
+  "OIDC_LOGIN_FAILED",
+  "TOOL_EXECUTED",
+  "BATCH_EXECUTED",
+  "PIPELINE_EXECUTED",
 ] as const;
 
 interface AuditEntry {
   id: string;
+  actorId: string | null;
   actorUsername: string;
   action: string;
   targetType: string | null;
   targetId: string | null;
   details: Record<string, unknown> | null;
+  ipAddress: string | null;
+  requestId: string | null;
   createdAt: string;
 }
 
@@ -2646,6 +3101,11 @@ function AuditLogSection() {
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-sm text-foreground">{entry.actorUsername}</span>
+                      {entry.ipAddress && (
+                        <span className="font-mono text-xs text-muted-foreground tabular-nums">
+                          {entry.ipAddress}
+                        </span>
+                      )}
                       {entry.targetType && (
                         <span className="text-xs text-muted-foreground">
                           {entry.targetType}
@@ -2674,6 +3134,7 @@ function AuditLogSection() {
                   <th className="text-start px-3 py-2 font-medium text-muted-foreground">
                     {t.settings.auditLog.tableHeaderUser}
                   </th>
+                  <th className="text-start px-3 py-2 font-medium text-muted-foreground">IP</th>
                   <th className="text-start px-3 py-2 font-medium text-muted-foreground">
                     {t.settings.auditLog.tableHeaderAction}
                   </th>
@@ -2693,6 +3154,9 @@ function AuditLogSection() {
                         {formatRelativeTime(entry.createdAt)}
                       </td>
                       <td className="px-3 py-2 text-foreground">{entry.actorUsername}</td>
+                      <td className="px-3 py-2 font-mono text-xs text-muted-foreground tabular-nums whitespace-nowrap">
+                        {entry.ipAddress ?? "---"}
+                      </td>
                       <td className="px-3 py-2">
                         <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">
                           {entry.action}
@@ -2706,7 +3170,7 @@ function AuditLogSection() {
                     </tr>
                     {expandedId === entry.id && entry.details && (
                       <tr className="border-b border-border last:border-0">
-                        <td colSpan={4} className="px-3 py-2 bg-muted/10">
+                        <td colSpan={5} className="px-3 py-2 bg-muted/10">
                           <pre className="text-xs text-muted-foreground whitespace-pre-wrap font-mono overflow-x-auto">
                             {JSON.stringify(entry.details, null, 2)}
                           </pre>

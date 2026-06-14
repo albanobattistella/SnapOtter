@@ -46,7 +46,11 @@ import {
   ensureDefaultAdmin,
   requireAuth,
 } from "../../apps/api/src/plugins/auth.js";
+import { registerIpAllowlist } from "../../apps/api/src/plugins/ip-allowlist.js";
+import { registerMfa } from "../../apps/api/src/plugins/mfa.js";
 import { oidcRoutes } from "../../apps/api/src/plugins/oidc.js";
+import { registerPerUserRateLimit } from "../../apps/api/src/plugins/per-user-rate-limit.js";
+import { registerSaml } from "../../apps/api/src/plugins/saml.js";
 import { registerUpload } from "../../apps/api/src/plugins/upload.js";
 import { adminOpsRoutes } from "../../apps/api/src/routes/admin-ops.js";
 import { analyticsRoutes } from "../../apps/api/src/routes/analytics.js";
@@ -54,6 +58,7 @@ import { apiKeyRoutes } from "../../apps/api/src/routes/api-keys.js";
 import { auditLogRoutes } from "../../apps/api/src/routes/audit-log.js";
 import { registerBatchRoutes } from "../../apps/api/src/routes/batch.js";
 import { docsRoutes } from "../../apps/api/src/routes/docs.js";
+import { registerEnterpriseRoutes } from "../../apps/api/src/routes/enterprise/index.js";
 import { registerFetchUrlsRoute } from "../../apps/api/src/routes/fetch-urls.js";
 import { fileRoutes } from "../../apps/api/src/routes/files.js";
 import { registerMemeTemplates } from "../../apps/api/src/routes/meme-templates.js";
@@ -134,14 +139,42 @@ export async function buildTestApp(): Promise<TestApp> {
   // Cookie support
   await app.register(cookie, { secret: "test-cookie-secret", hook: "onRequest" });
 
+  // IP allowlist (enterprise -- guards internally, returns early if not licensed)
+  try {
+    await registerIpAllowlist(app);
+  } catch {
+    // Enterprise package not available in test env
+  }
+
   // Auth middleware (must be registered before routes)
   await authMiddleware(app);
+
+  // Per-user rate limiting (after auth so request.user is populated)
+  try {
+    await registerPerUserRateLimit(app);
+  } catch {
+    // Redis may not be fully available in all test scenarios
+  }
 
   // Auth routes
   await authRoutes(app);
 
   // OIDC routes
   await oidcRoutes(app);
+
+  // SAML routes (enterprise -- guards internally, returns early if not licensed)
+  try {
+    await registerSaml(app);
+  } catch {
+    // Enterprise package not available in test env
+  }
+
+  // MFA routes (TOTP enrollment, verification, disable)
+  try {
+    await registerMfa(app);
+  } catch {
+    // MFA dependencies may not be available in test env
+  }
 
   // File upload/download routes
   await fileRoutes(app);
@@ -184,6 +217,9 @@ export async function buildTestApp(): Promise<TestApp> {
 
   // Admin ops routes (runtime log level, Prometheus metrics)
   await adminOpsRoutes(app);
+
+  // Enterprise routes (license-gated features)
+  await registerEnterpriseRoutes(app);
 
   // Analytics routes
   await analyticsRoutes(app);
@@ -228,6 +264,10 @@ export async function buildTestApp(): Promise<TestApp> {
       config.oidcProviderName = env.OIDC_PROVIDER_NAME || null;
       config.oidcLoginUrl = "/api/auth/oidc/login";
     }
+    config.samlEnabled = false;
+    config.samlProviderName = "";
+    config.samlLoginUrl = "";
+    config.ssoEnforced = false;
     return config;
   });
 
