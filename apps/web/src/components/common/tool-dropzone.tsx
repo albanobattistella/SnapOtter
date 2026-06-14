@@ -1,5 +1,5 @@
 import type { Tool } from "@snapotter/shared";
-import { FileImage, Lock } from "lucide-react";
+import { FileImage } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "@/contexts/i18n-context";
 import { format } from "@/lib/format";
@@ -68,18 +68,9 @@ export function ToolDropzone({
         accept={accept}
         multiple={resolvedMultiple}
         fileFilter={fileFilter}
+        acceptDescription={formatsDisplay ?? undefined}
       />
 
-      {/* Accepted formats */}
-      {formatsDisplay && (
-        <p className="text-xs text-muted-foreground text-center">{formatsDisplay}</p>
-      )}
-
-      {/* Privacy note */}
-      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Lock className="h-3 w-3 shrink-0" />
-        {t.toolPage.privacyNote}
-      </p>
     </div>
   );
 }
