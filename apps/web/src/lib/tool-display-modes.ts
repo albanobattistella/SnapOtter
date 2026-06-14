@@ -74,9 +74,9 @@ export const TOOL_DISPLAY_MODES: Record<string, DisplayMode> = {
   "gif-tools": "before-after",
 
   // Optimization extras
-  "bulk-rename": "before-after",
+  "bulk-rename": "no-comparison",
   favicon: "before-after",
-  "image-to-pdf": "before-after",
+  "image-to-pdf": "no-comparison",
   "optimize-for-web": "before-after",
   "pdf-to-image": "custom-results",
 
@@ -112,7 +112,7 @@ export const TOOL_DISPLAY_MODES: Record<string, DisplayMode> = {
   "compress-video": "media-player",
   "trim-video": "media-player",
   "mute-video": "media-player",
-  "video-to-gif": "side-by-side",
+  "video-to-gif": "media-player",
   "resize-video": "media-player",
   "crop-video": "media-player",
   "rotate-video": "media-player",
@@ -193,7 +193,7 @@ export const TOOL_DISPLAY_MODES: Record<string, DisplayMode> = {
   "to-epub": "no-comparison",
 
   // Data tools
-  "chart-maker": "no-comparison",
+  "chart-maker": "no-dropzone",
   "csv-excel": "no-comparison",
   "csv-json": "no-comparison",
   "json-xml": "no-comparison",
