@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Download,
   FileImage,
   Loader2,
@@ -508,13 +509,15 @@ export function ToolPage() {
   if (isAiTool && !toolInstalled && featureBundle) {
     return (
       <AppLayout breadcrumb={breadcrumb}>
-        <div className="flex-1 flex items-center justify-center overflow-y-auto bg-muted/20">
-          <FeatureInstallPrompt
-            bundle={featureBundle}
-            isAdmin={isAdmin}
-            toolName={tool?.name}
-            toolDescription={tool?.description}
-          />
+        <div className="flex-1 overflow-y-auto bg-muted/20">
+          <div className="flex items-center justify-center min-h-full">
+            <FeatureInstallPrompt
+              bundle={featureBundle}
+              isAdmin={isAdmin}
+              toolName={tool?.name}
+              toolDescription={tool?.description}
+            />
+          </div>
         </div>
       </AppLayout>
     );
@@ -972,15 +975,17 @@ export function ToolPage() {
     if (!hasFile && !isNoDropzone) {
       return (
         <AppLayout breadcrumb={breadcrumb}>
-          <div className="flex-1 flex items-center justify-center overflow-y-auto bg-muted/20">
-            <ToolDropzone
-              tool={tool}
-              accept={toolAccept}
-              fileFilter={toolFileFilter}
-              multiple
-              onFiles={handleFiles}
-              onUrlImport={handleUrlImport}
-            />
+          <div className="flex-1 overflow-y-auto bg-muted/20">
+            <div className="flex items-center justify-center min-h-full">
+              <ToolDropzone
+                tool={tool}
+                accept={toolAccept}
+                fileFilter={toolFileFilter}
+                multiple
+                onFiles={handleFiles}
+                onUrlImport={handleUrlImport}
+              />
+            </div>
           </div>
         </AppLayout>
       );
@@ -1053,6 +1058,21 @@ export function ToolPage() {
             )}
           </section>
 
+          {/* Peek bar -- visible when bottom sheet is collapsed */}
+          {!mobileSettingsOpen && (
+            <button
+              type="button"
+              onClick={() => setMobileSettingsOpen(true)}
+              className="shrink-0 border-t border-border bg-background px-4 py-3 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-1 rounded-full bg-muted-foreground/30" />
+                <span className="text-sm font-medium text-foreground">{t.common.process}</span>
+              </div>
+              <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            </button>
+          )}
+
           {/* Settings BottomSheet */}
           <BottomSheet
             open={mobileSettingsOpen}
@@ -1070,15 +1090,17 @@ export function ToolPage() {
   if (!hasFile && !isNoDropzone) {
     return (
       <AppLayout breadcrumb={breadcrumb}>
-        <div className="flex-1 flex items-center justify-center overflow-y-auto bg-muted/20">
-          <ToolDropzone
-            tool={tool}
-            accept={toolAccept}
-            fileFilter={toolFileFilter}
-            multiple
-            onFiles={handleFiles}
-            onUrlImport={handleUrlImport}
-          />
+        <div className="flex-1 overflow-y-auto bg-muted/20">
+          <div className="flex items-center justify-center min-h-full">
+            <ToolDropzone
+              tool={tool}
+              accept={toolAccept}
+              fileFilter={toolFileFilter}
+              multiple
+              onFiles={handleFiles}
+              onUrlImport={handleUrlImport}
+            />
+          </div>
         </div>
       </AppLayout>
     );
