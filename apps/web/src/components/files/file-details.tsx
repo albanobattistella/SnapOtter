@@ -1,7 +1,7 @@
 import { TOOLS } from "@snapotter/shared";
-import { FileImage, ImageIcon, Workflow } from "lucide-react";
+import { FileImage, ImageIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "@/contexts/i18n-context";
 import {
   apiGetFileDetails,
@@ -79,6 +79,8 @@ export function FileDetails({ mobile = false }: FileDetailsProps) {
   const { selectedFileId } = useFilesPageStore();
   const setFiles = useFileStore((s) => s.setFiles);
   const navigate = useNavigate();
+  const location = useLocation();
+  const selectForTool = (location.state as { selectForTool?: string } | null)?.selectForTool;
 
   const [details, setDetails] = useState<UserFileDetail | null>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
@@ -121,7 +123,13 @@ export function FileDetails({ mobile = false }: FileDetailsProps) {
     if (valid.length === 0) return;
 
     setFiles(valid.map((d) => d.file));
-    navigate("/", { state: { fromLibrary: true } });
+
+    if (selectForTool) {
+      const tool = TOOLS.find((t) => t.id === selectForTool);
+      navigate(tool?.route ?? "/", { state: { fromLibrary: true } });
+    } else {
+      navigate("/", { state: { fromLibrary: true } });
+    }
 
     // Set serverFileId on each entry so tool processing creates new versions
     setTimeout(() => {
@@ -224,19 +232,7 @@ export function FileDetails({ mobile = false }: FileDetailsProps) {
           onClick={handleOpenFile}
           className="w-full px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
         >
-          Open File
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            const { checkedIds } = useFilesPageStore.getState();
-            const ids = checkedIds.size > 1 ? Array.from(checkedIds) : [details.id];
-            navigate("/automate", { state: { libraryFileIds: ids } });
-          }}
-          className="w-full px-4 py-2 border border-primary text-primary text-sm font-medium rounded-lg hover:bg-primary/5 transition-colors flex items-center justify-center gap-2"
-        >
-          <Workflow className="h-4 w-4" />
-          Open in Pipeline
+          {selectForTool ? t.files.selectFile : t.files.openFile}
         </button>
       </div>
     </div>

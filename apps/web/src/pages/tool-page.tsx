@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Crop } from "react-image-crop";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { BeforeAfterSlider } from "@/components/common/before-after-slider";
 import { BottomSheet } from "@/components/common/bottom-sheet";
 import { Dropzone } from "@/components/common/dropzone";
@@ -198,6 +198,7 @@ function FileSelectionInfo({
 export function ToolPage() {
   const { t } = useTranslation();
   const { toolId } = useParams<{ toolId: string }>();
+  const location = useLocation();
   const tool = useMemo(() => TOOLS.find((t) => t.id === toolId), [toolId]);
   const registryEntry = useMemo(
     () => (toolId ? getToolRegistryEntry(toolId) : undefined),
@@ -333,7 +334,10 @@ export function ToolPage() {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: toolId triggers intentional reset on tool navigation
   useEffect(() => {
-    useFileStore.getState().reset();
+    const fromLibrary = (location.state as { fromLibrary?: boolean } | null)?.fromLibrary;
+    if (!fromLibrary) {
+      useFileStore.getState().reset();
+    }
 
     useBase64Store.getState().reset();
     useCollageStore.getState().reset();

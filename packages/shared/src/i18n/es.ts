@@ -3220,6 +3220,7 @@ export const es: TranslationKeys = {
     noFilesFound: "No files found",
     selectFilePrompt: "Select a file to view details",
     openFile: "Open File",
+    selectFile: "Select File",
     openInPipeline: "Open in Pipeline",
     name: "Name",
     format: "Format",

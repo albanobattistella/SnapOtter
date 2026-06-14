@@ -3235,6 +3235,7 @@ export const it: TranslationKeys = {
     noFilesFound: "Nessun file trovato",
     selectFilePrompt: "Seleziona un file per visualizzare i dettagli",
     openFile: "Apri file",
+    selectFile: "Select File",
     openInPipeline: "Apri nella pipeline",
     name: "Nome",
     format: "Formato",

@@ -1,4 +1,4 @@
-import { Download, Search, Trash2, Workflow } from "lucide-react";
+import { Download, Search, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/contexts/i18n-context";
@@ -49,10 +49,6 @@ export function FileList() {
     }
   }
 
-  function handleSendToPipeline() {
-    navigate("/automate", { state: { libraryFileIds: Array.from(checkedIds) } });
-  }
-
   const allChecked = files.length > 0 && checkedIds.size === files.length;
   const someChecked = checkedIds.size > 0;
 
@@ -94,14 +90,6 @@ export function FileList() {
             >
               <Trash2 className="h-3.5 w-3.5" />
               {t.files.delete}
-            </button>
-            <button
-              type="button"
-              onClick={handleSendToPipeline}
-              className="flex items-center gap-1 px-2 py-1 text-xs text-primary hover:bg-primary/10 rounded-lg transition-colors"
-            >
-              <Workflow className="h-3.5 w-3.5" />
-              {t.files.pipeline}
             </button>
             <button
               type="button"
