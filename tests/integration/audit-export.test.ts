@@ -73,7 +73,66 @@ describe("audit export", () => {
       url: "/api/v1/enterprise/audit/export?format=json",
       headers: { authorization: `Bearer ${userToken}` },
     });
-    // Regular users lack audit:read, so they get 403 before the enterprise check
     expect(res.statusCode).toBe(403);
+  });
+
+  it("returns 403 for valid json format without enterprise license", async () => {
+    const res = await testApp.app.inject({
+      method: "GET",
+      url: "/api/v1/enterprise/audit/export?format=json",
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+    const body = JSON.parse(res.body);
+    expect(body.error).toContain("enterprise");
+  });
+
+  it("returns 403 for valid csv format without enterprise license", async () => {
+    const res = await testApp.app.inject({
+      method: "GET",
+      url: "/api/v1/enterprise/audit/export?format=csv",
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+    const body = JSON.parse(res.body);
+    expect(body.error).toContain("enterprise");
+  });
+
+  it("returns 403 before validating invalid format parameter", async () => {
+    const res = await testApp.app.inject({
+      method: "GET",
+      url: "/api/v1/enterprise/audit/export?format=xml",
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("accepts from/to ISO datetime query parameters", async () => {
+    const res = await testApp.app.inject({
+      method: "GET",
+      url: "/api/v1/enterprise/audit/export?format=json&from=2026-01-01T00:00:00Z&to=2026-12-31T23:59:59Z",
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+    const body = JSON.parse(res.body);
+    expect(body.error).toContain("enterprise");
+  });
+
+  it("returns 403 with default format when format is omitted", async () => {
+    const res = await testApp.app.inject({
+      method: "GET",
+      url: "/api/v1/enterprise/audit/export",
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("returns 401 with expired or invalid token", async () => {
+    const res = await testApp.app.inject({
+      method: "GET",
+      url: "/api/v1/enterprise/audit/export?format=json",
+      headers: { authorization: "Bearer invalid-token-value" },
+    });
+    expect(res.statusCode).toBe(401);
   });
 });

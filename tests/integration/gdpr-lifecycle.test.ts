@@ -161,3 +161,104 @@ describe("GDPR data purge", () => {
     expect(res.statusCode).toBe(401);
   });
 });
+
+describe("GDPR export additional validation", () => {
+  it("returns 401 for POST export with invalid token", async () => {
+    const res = await testApp.app.inject({
+      method: "POST",
+      url: "/api/v1/enterprise/users/some-id/export",
+      headers: { authorization: "Bearer invalid-token-value" },
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("returns 401 for GET export status with invalid token", async () => {
+    const res = await testApp.app.inject({
+      method: "GET",
+      url: "/api/v1/enterprise/users/some-id/export/some-job-id",
+      headers: { authorization: "Bearer invalid-token-value" },
+    });
+    expect(res.statusCode).toBe(401);
+  });
+});
+
+describe("GDPR purge body validation", () => {
+  it("rejects purge with confirm as string instead of boolean", async () => {
+    const res = await testApp.app.inject({
+      method: "DELETE",
+      url: "/api/v1/enterprise/users/some-id/purge",
+      headers: { authorization: `Bearer ${adminToken}` },
+      payload: { confirm: "true" },
+    });
+    expect([400, 403]).toContain(res.statusCode);
+  });
+
+  it("rejects purge with confirm: null", async () => {
+    const res = await testApp.app.inject({
+      method: "DELETE",
+      url: "/api/v1/enterprise/users/some-id/purge",
+      headers: { authorization: `Bearer ${adminToken}` },
+      payload: { confirm: null },
+    });
+    expect([400, 403]).toContain(res.statusCode);
+  });
+
+  it("rejects purge with no body at all", async () => {
+    const res = await testApp.app.inject({
+      method: "DELETE",
+      url: "/api/v1/enterprise/users/some-id/purge",
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect([400, 403]).toContain(res.statusCode);
+  });
+
+  it("returns 403 for non-existent user ID without enterprise license", async () => {
+    const res = await testApp.app.inject({
+      method: "DELETE",
+      url: "/api/v1/enterprise/users/00000000-0000-0000-0000-000000000000/purge",
+      headers: { authorization: `Bearer ${adminToken}` },
+      payload: { confirm: true },
+    });
+    expect(res.statusCode).toBe(403);
+    const body = JSON.parse(res.body);
+    expect(body.error).toContain("enterprise");
+  });
+});
+
+describe("GDPR edge cases", () => {
+  it("sequential purge requests for same user return consistent results", async () => {
+    const first = await testApp.app.inject({
+      method: "DELETE",
+      url: "/api/v1/enterprise/users/some-id/purge",
+      headers: { authorization: `Bearer ${adminToken}` },
+      payload: { confirm: true },
+    });
+    const second = await testApp.app.inject({
+      method: "DELETE",
+      url: "/api/v1/enterprise/users/some-id/purge",
+      headers: { authorization: `Bearer ${adminToken}` },
+      payload: { confirm: true },
+    });
+    expect(first.statusCode).toBe(second.statusCode);
+    expect(first.statusCode).toBe(403);
+  });
+
+  it("export initiation rejects GET method", async () => {
+    const res = await testApp.app.inject({
+      method: "GET",
+      url: "/api/v1/enterprise/users/some-id/export",
+      headers: { authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it("purge endpoint rejects POST method", async () => {
+    const res = await testApp.app.inject({
+      method: "POST",
+      url: "/api/v1/enterprise/users/some-id/purge",
+      headers: { authorization: `Bearer ${adminToken}` },
+      payload: { confirm: true },
+    });
+    expect(res.statusCode).toBe(404);
+  });
+});

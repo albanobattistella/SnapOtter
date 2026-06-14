@@ -63,6 +63,60 @@ describe("SCIM 2.0 provisioning", () => {
       expect(names).toContain("User");
       expect(names).toContain("Group");
     });
+
+    it("ServiceProviderConfig includes correct maxResults", async () => {
+      const res = await testApp.app.inject({
+        method: "GET",
+        url: "/api/v1/scim/v2/ServiceProviderConfig",
+      });
+      const body = JSON.parse(res.body);
+      expect(body.filter.maxResults).toBe(200);
+    });
+
+    it("Schemas response has correct User schema attributes", async () => {
+      const res = await testApp.app.inject({
+        method: "GET",
+        url: "/api/v1/scim/v2/Schemas",
+      });
+      const body = JSON.parse(res.body);
+      const userSchema = body.Resources.find(
+        (r: { id: string }) => r.id === "urn:ietf:params:scim:schemas:core:2.0:User",
+      );
+      expect(userSchema).toBeDefined();
+      const attrNames = userSchema.attributes.map((a: { name: string }) => a.name);
+      expect(attrNames).toContain("userName");
+      expect(attrNames).toContain("name");
+      expect(attrNames).toContain("emails");
+      expect(attrNames).toContain("active");
+      expect(attrNames).toContain("externalId");
+    });
+
+    it("Schemas response has correct Group schema attributes", async () => {
+      const res = await testApp.app.inject({
+        method: "GET",
+        url: "/api/v1/scim/v2/Schemas",
+      });
+      const body = JSON.parse(res.body);
+      const groupSchema = body.Resources.find(
+        (r: { id: string }) => r.id === "urn:ietf:params:scim:schemas:core:2.0:Group",
+      );
+      expect(groupSchema).toBeDefined();
+      const attrNames = groupSchema.attributes.map((a: { name: string }) => a.name);
+      expect(attrNames).toContain("displayName");
+      expect(attrNames).toContain("members");
+    });
+
+    it("ResourceTypes have correct endpoints", async () => {
+      const res = await testApp.app.inject({
+        method: "GET",
+        url: "/api/v1/scim/v2/ResourceTypes",
+      });
+      const body = JSON.parse(res.body);
+      const userType = body.Resources.find((r: { name: string }) => r.name === "User");
+      const groupType = body.Resources.find((r: { name: string }) => r.name === "Group");
+      expect(userType.endpoint).toBe("/api/v1/scim/v2/Users");
+      expect(groupType.endpoint).toBe("/api/v1/scim/v2/Groups");
+    });
   });
 
   // ── Auth ───────────────────────────────────────────────────────
@@ -91,6 +145,33 @@ describe("SCIM 2.0 provisioning", () => {
       const res = await testApp.app.inject({
         method: "GET",
         url: "/api/v1/scim/v2/Groups",
+      });
+      expect(res.statusCode).toBe(401);
+    });
+
+    it("rejects Bearer token with extra whitespace", async () => {
+      const res = await testApp.app.inject({
+        method: "GET",
+        url: "/api/v1/scim/v2/Users",
+        headers: { authorization: `Bearer  ${SCIM_TOKEN}` },
+      });
+      expect(res.statusCode).toBe(401);
+    });
+
+    it("rejects lowercase bearer prefix", async () => {
+      const res = await testApp.app.inject({
+        method: "GET",
+        url: "/api/v1/scim/v2/Users",
+        headers: { authorization: `bearer ${SCIM_TOKEN}` },
+      });
+      expect(res.statusCode).toBe(401);
+    });
+
+    it("rejects empty Bearer token value", async () => {
+      const res = await testApp.app.inject({
+        method: "GET",
+        url: "/api/v1/scim/v2/Users",
+        headers: { authorization: "Bearer " },
       });
       expect(res.statusCode).toBe(401);
     });
@@ -154,6 +235,90 @@ describe("SCIM 2.0 provisioning", () => {
       expect(body.schemas).toEqual(["urn:ietf:params:scim:api:messages:2.0:Error"]);
       expect(body.status).toBe(401);
       expect(typeof body.detail).toBe("string");
+    });
+
+    it("403 enterprise error includes SCIM error schema", async () => {
+      const res = await testApp.app.inject({
+        method: "GET",
+        url: "/api/v1/scim/v2/Users",
+        headers: { authorization: `Bearer ${SCIM_TOKEN}` },
+      });
+      expect(res.statusCode).toBe(403);
+      const body = JSON.parse(res.body);
+      expect(body.schemas).toEqual(["urn:ietf:params:scim:api:messages:2.0:Error"]);
+      expect(body.status).toBe(403);
+      expect(typeof body.detail).toBe("string");
+    });
+
+    it("SCIM error responses include schemas, status, and detail fields", async () => {
+      const res = await testApp.app.inject({
+        method: "GET",
+        url: "/api/v1/scim/v2/Users",
+      });
+      expect(res.statusCode).toBe(401);
+      const body = JSON.parse(res.body);
+      expect(body).toHaveProperty("schemas");
+      expect(body).toHaveProperty("status");
+      expect(body).toHaveProperty("detail");
+      expect(Array.isArray(body.schemas)).toBe(true);
+      expect(typeof body.status).toBe("number");
+      expect(typeof body.detail).toBe("string");
+    });
+
+    it("POST Users with missing userName returns 403 from enterprise gate", async () => {
+      const res = await testApp.app.inject({
+        method: "POST",
+        url: "/api/v1/scim/v2/Users",
+        headers: { authorization: `Bearer ${SCIM_TOKEN}` },
+        payload: { active: true },
+      });
+      expect(res.statusCode).toBe(403);
+      const body = JSON.parse(res.body);
+      expect(body.schemas).toContain("urn:ietf:params:scim:api:messages:2.0:Error");
+    });
+  });
+
+  describe("POST Users validation (enterprise gate)", () => {
+    it("POST with empty body returns 403", async () => {
+      const res = await testApp.app.inject({
+        method: "POST",
+        url: "/api/v1/scim/v2/Users",
+        headers: { authorization: `Bearer ${SCIM_TOKEN}` },
+        payload: {},
+      });
+      expect(res.statusCode).toBe(403);
+    });
+
+    it("POST with numeric userName returns 403", async () => {
+      const res = await testApp.app.inject({
+        method: "POST",
+        url: "/api/v1/scim/v2/Users",
+        headers: { authorization: `Bearer ${SCIM_TOKEN}` },
+        payload: { userName: 12345 },
+      });
+      expect(res.statusCode).toBe(403);
+    });
+  });
+
+  describe("POST Groups validation (enterprise gate)", () => {
+    it("POST with empty displayName returns 403", async () => {
+      const res = await testApp.app.inject({
+        method: "POST",
+        url: "/api/v1/scim/v2/Groups",
+        headers: { authorization: `Bearer ${SCIM_TOKEN}` },
+        payload: { displayName: "" },
+      });
+      expect(res.statusCode).toBe(403);
+    });
+
+    it("POST with very long displayName returns 403", async () => {
+      const res = await testApp.app.inject({
+        method: "POST",
+        url: "/api/v1/scim/v2/Groups",
+        headers: { authorization: `Bearer ${SCIM_TOKEN}` },
+        payload: { displayName: "x".repeat(10000) },
+      });
+      expect(res.statusCode).toBe(403);
     });
   });
 });

@@ -24,7 +24,7 @@ describe("webhook delivery", () => {
     expect(fetchMock).toHaveBeenCalledOnce();
     const [url, opts] = fetchMock.mock.calls[0];
     expect(url).toBe("https://siem.example.com/input");
-    expect(opts.headers["Authorization"]).toBe("Bearer test-token");
+    expect(opts.headers.Authorization).toBe("Bearer test-token");
     const body = JSON.parse(opts.body);
     expect(body.source).toBe("snapotter");
     expect(body.version).toBe("1");
@@ -105,6 +105,189 @@ describe("webhook delivery", () => {
     await deliverWebhook("https://example.com", "", [{ event: "test" }]);
 
     const headers = fetchMock.mock.calls[0][1].headers;
-    expect(headers["Authorization"]).toBeUndefined();
+    expect(headers.Authorization).toBeUndefined();
+  });
+
+  it("returns error when request times out", async () => {
+    const abortError = new Error("The operation was aborted");
+    abortError.name = "AbortError";
+    const fetchMock = vi.fn().mockRejectedValue(abortError);
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { deliverWebhook } = await import("../../../apps/api/src/lib/webhook-delivery.js");
+    const result = await deliverWebhook("https://example.com", "", [{ event: "test" }], {
+      maxRetries: 0,
+      initialDelayMs: 1,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("The operation was aborted");
+    expect(result.attempts).toBe(1);
+  });
+
+  it("follows exponential backoff delay pattern", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn().mockRejectedValue(new Error("down"));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { deliverWebhook } = await import("../../../apps/api/src/lib/webhook-delivery.js");
+    const promise = deliverWebhook("https://example.com", "", [{ event: "test" }], {
+      maxRetries: 3,
+      initialDelayMs: 1000,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+
+    await vi.advanceTimersByTimeAsync(4000);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+
+    const result = await promise;
+    expect(result.success).toBe(false);
+    expect(result.attempts).toBe(4);
+    vi.useRealTimers();
+  });
+
+  it("limits retries when maxRetries is 1", async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error("down"));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { deliverWebhook } = await import("../../../apps/api/src/lib/webhook-delivery.js");
+    const result = await deliverWebhook("https://example.com", "", [{ event: "test" }], {
+      maxRetries: 1,
+      initialDelayMs: 1,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.attempts).toBe(2);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("makes no retries when maxRetries is 0", async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new Error("down"));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { deliverWebhook } = await import("../../../apps/api/src/lib/webhook-delivery.js");
+    const result = await deliverWebhook("https://example.com", "", [{ event: "test" }], {
+      maxRetries: 0,
+      initialDelayMs: 1,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.attempts).toBe(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("applies custom initialDelayMs to backoff schedule", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn().mockRejectedValue(new Error("down"));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { deliverWebhook } = await import("../../../apps/api/src/lib/webhook-delivery.js");
+    const promise = deliverWebhook("https://example.com", "", [{ event: "test" }], {
+      maxRetries: 2,
+      initialDelayMs: 500,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(500);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+
+    const result = await promise;
+    expect(result.success).toBe(false);
+    expect(result.attempts).toBe(3);
+    vi.useRealTimers();
+  });
+
+  it("sends payload with source, version, and events fields", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const events = [
+      { event: "FILE_UPLOADED", userId: "u1" },
+      { event: "FILE_DELETED", userId: "u2" },
+    ];
+    const { deliverWebhook } = await import("../../../apps/api/src/lib/webhook-delivery.js");
+    await deliverWebhook("https://example.com/webhook", "", events);
+
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body).toEqual({
+      source: "snapotter",
+      version: "1",
+      events,
+    });
+  });
+
+  it("sends Content-Type application/json header", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { deliverWebhook } = await import("../../../apps/api/src/lib/webhook-delivery.js");
+    await deliverWebhook("https://example.com", "", [{ event: "test" }]);
+
+    const headers = fetchMock.mock.calls[0][1].headers;
+    expect(headers["Content-Type"]).toBe("application/json");
+  });
+
+  it("delivers empty events array", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { deliverWebhook } = await import("../../../apps/api/src/lib/webhook-delivery.js");
+    const result = await deliverWebhook("https://example.com", "", []);
+
+    expect(result.success).toBe(true);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.events).toEqual([]);
+  });
+
+  it("handles very large events array", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const events = Array.from({ length: 1000 }, (_, i) => ({ event: "BULK_OP", index: i }));
+    const { deliverWebhook } = await import("../../../apps/api/src/lib/webhook-delivery.js");
+    const result = await deliverWebhook("https://example.com", "", events);
+
+    expect(result.success).toBe(true);
+    const body = JSON.parse(fetchMock.mock.calls[0][1].body);
+    expect(body.events).toHaveLength(1000);
+  });
+
+  it("sends to URL with path and query components", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { deliverWebhook } = await import("../../../apps/api/src/lib/webhook-delivery.js");
+    const result = await deliverWebhook(
+      "https://api.example.com/v2/webhooks/ingest?source=snapotter",
+      "",
+      [{ event: "test" }],
+    );
+
+    expect(result.success).toBe(true);
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "https://api.example.com/v2/webhooks/ingest?source=snapotter",
+    );
+  });
+
+  it("passes through Authorization header with Bearer prefix", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { deliverWebhook } = await import("../../../apps/api/src/lib/webhook-delivery.js");
+    await deliverWebhook("https://example.com", "Bearer sk-live-abc123", [{ event: "test" }]);
+
+    const headers = fetchMock.mock.calls[0][1].headers;
+    expect(headers.Authorization).toBe("Bearer sk-live-abc123");
   });
 });

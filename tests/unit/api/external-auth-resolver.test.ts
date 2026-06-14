@@ -1,4 +1,33 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+// ── DB mock for findUniqueUsername tests ──────────────────────────
+
+const dbMock = vi.hoisted(() => {
+  let idx = 0;
+  let results: unknown[][] = [];
+  return {
+    reset(r: unknown[][]) {
+      idx = 0;
+      results = r;
+    },
+    nextResult() {
+      return results[idx++] ?? [];
+    },
+  };
+});
+
+vi.mock("../../../apps/api/src/db/index.js", () => ({
+  db: {
+    select: () => ({
+      from: () => ({
+        where: () => Promise.resolve(dbMock.nextResult()),
+      }),
+    }),
+  },
+  schema: {
+    users: { username: "username" },
+  },
+}));
 
 // ── Pure function tests (no DB required) ─────────────────────────
 
@@ -68,5 +97,98 @@ describe("sanitizeUsername", () => {
     // All characters stripped, then padded
     const result = sanitizeUsername("___");
     expect(result.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("handles pure whitespace input", () => {
+    const result = sanitizeUsername("   ");
+    expect(result).toBe("___");
+  });
+
+  it("handles numeric-only input", () => {
+    expect(sanitizeUsername("12345")).toBe("12345");
+  });
+
+  it("handles single character input by padding to 3", () => {
+    const result = sanitizeUsername("a");
+    expect(result).toBe("a__");
+    expect(result.length).toBe(3);
+  });
+
+  it("does not truncate input that is exactly 46 characters", () => {
+    const input = "a".repeat(46);
+    const result = sanitizeUsername(input);
+    expect(result).toBe(input);
+    expect(result.length).toBe(46);
+  });
+
+  it("truncates input that is exactly 47 characters to 46", () => {
+    const input = "a".repeat(47);
+    const result = sanitizeUsername(input);
+    expect(result.length).toBe(46);
+  });
+
+  it("preserves consecutive dots and hyphens", () => {
+    expect(sanitizeUsername("john..--..doe")).toBe("john..--..doe");
+  });
+
+  it("replaces unicode characters with underscores", () => {
+    expect(sanitizeUsername("café")).toBe("caf");
+    expect(sanitizeUsername("jöhn")).toBe("j_hn");
+  });
+
+  it("strips leading @ from input", () => {
+    expect(sanitizeUsername("@user")).toBe("user");
+  });
+
+  it("passes through admin as a valid username", () => {
+    expect(sanitizeUsername("admin")).toBe("admin");
+  });
+
+  it("allows input that starts with numbers", () => {
+    expect(sanitizeUsername("123abc")).toBe("123abc");
+    expect(sanitizeUsername("42user")).toBe("42user");
+  });
+});
+
+describe("findUniqueUsername", () => {
+  let findUniqueUsername: (base: string) => Promise<string>;
+
+  beforeAll(async () => {
+    const mod = await import("../../../apps/api/src/lib/external-auth-resolver.js");
+    findUniqueUsername = mod.findUniqueUsername;
+  });
+
+  beforeEach(() => {
+    dbMock.reset([]);
+  });
+
+  it("returns the base username when it is not taken", async () => {
+    dbMock.reset([[]]);
+    const result = await findUniqueUsername("newuser");
+    expect(result).toBe("newuser");
+  });
+
+  it("appends _2 when the base username is taken", async () => {
+    dbMock.reset([[{ username: "taken" }], []]);
+    const result = await findUniqueUsername("taken");
+    expect(result).toBe("taken_2");
+  });
+
+  it("appends _3 when both base and _2 are taken", async () => {
+    dbMock.reset([[{ username: "taken" }], [{ username: "taken_2" }], []]);
+    const result = await findUniqueUsername("taken");
+    expect(result).toBe("taken_3");
+  });
+
+  it("resolves collisions through the loop until a free slot is found", async () => {
+    dbMock.reset([
+      [{ username: "user" }],
+      [{ username: "user_2" }],
+      [{ username: "user_3" }],
+      [{ username: "user_4" }],
+      [],
+    ]);
+    const result = await findUniqueUsername("user");
+    expect(result).toBe("user_5");
   });
 });

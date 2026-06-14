@@ -37,4 +37,40 @@ describe("audit archival state machine", () => {
     // If we exited because current is undefined (end of chain), no cycle
     expect(current).toBeUndefined();
   });
+
+  it("defines exactly 5 states", () => {
+    const states = new Set<string>();
+    for (const [from, to] of Object.entries(validTransitions)) {
+      states.add(from);
+      states.add(to);
+    }
+    expect(states.size).toBe(5);
+    expect(states).toEqual(new Set(["PENDING", "EXPORTING", "EXPORTED", "PURGING", "COMPLETE"]));
+  });
+
+  it("follows the exact sequence PENDING->EXPORTING->EXPORTED->PURGING->COMPLETE", () => {
+    const chain: string[] = ["PENDING"];
+    let current = "PENDING";
+    while (validTransitions[current]) {
+      current = validTransitions[current];
+      chain.push(current);
+    }
+    expect(chain).toEqual(["PENDING", "EXPORTING", "EXPORTED", "PURGING", "COMPLETE"]);
+  });
+
+  it("has exactly 4 transitions", () => {
+    expect(Object.keys(validTransitions).length).toBe(4);
+  });
+
+  it("visits each state exactly once in the transition chain", () => {
+    const visited: string[] = [];
+    let current: string | undefined = "PENDING";
+    while (current) {
+      visited.push(current);
+      current = validTransitions[current];
+    }
+    const unique = new Set(visited);
+    expect(visited.length).toBe(unique.size);
+    expect(visited.length).toBe(5);
+  });
 });

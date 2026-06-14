@@ -6,6 +6,8 @@ import {
   isEncrypted,
 } from "../../../apps/api/src/lib/encryption.js";
 
+const PREFIX_LEN = "$ENC$".length;
+
 describe("encryption", () => {
   const testKey = "a".repeat(64); // 32 bytes hex-encoded
 
@@ -54,5 +56,70 @@ describe("encryption", () => {
     const key = await deriveAuditHmacKey(testKey);
     expect(key).toBeInstanceOf(Buffer);
     expect(key.length).toBe(32);
+  });
+
+  it("encrypts and decrypts an empty string", async () => {
+    const encrypted = await encrypt("", testKey);
+    expect(isEncrypted(encrypted)).toBe(true);
+    const decrypted = await decrypt(encrypted, testKey);
+    expect(decrypted).toBe("");
+  });
+
+  it("encrypts and decrypts a very long input", async () => {
+    const plaintext = "x".repeat(10_000);
+    const encrypted = await encrypt(plaintext, testKey);
+    const decrypted = await decrypt(encrypted, testKey);
+    expect(decrypted).toBe(plaintext);
+  });
+
+  it("encrypts and decrypts unicode and emoji characters", async () => {
+    const plaintext = "\u{1F9A6}\u{1F30A} Otter says: éàüß 你好 АБВ";
+    const encrypted = await encrypt(plaintext, testKey);
+    const decrypted = await decrypt(encrypted, testKey);
+    expect(decrypted).toBe(plaintext);
+  });
+
+  it("encrypts and decrypts special characters (newlines, tabs, null bytes)", async () => {
+    const plaintext = "line1\nline2\ttab\0null\r\nwindows";
+    const encrypted = await encrypt(plaintext, testKey);
+    const decrypted = await decrypt(encrypted, testKey);
+    expect(decrypted).toBe(plaintext);
+  });
+
+  it("isEncrypted returns true for $ENC$ prefix with invalid base64", () => {
+    expect(isEncrypted("$ENC$!!!not-valid-base64%%%")).toBe(true);
+  });
+
+  it("decrypt returns null for $ENC$ with truncated data", async () => {
+    const result = await decrypt("$ENC$AQID", testKey);
+    expect(result).toBeNull();
+  });
+
+  it("decrypt returns null for $ENC$ with corrupted ciphertext", async () => {
+    const encrypted = await encrypt("hello", testKey);
+    const corrupted = `${encrypted.slice(0, PREFIX_LEN + 10)}AAAA${encrypted.slice(PREFIX_LEN + 14)}`;
+    const result = await decrypt(corrupted, testKey);
+    expect(result).toBeNull();
+  });
+
+  it("deriveAuditHmacKey produces different keys for different master keys", async () => {
+    const keyA = await deriveAuditHmacKey("a".repeat(64));
+    const keyB = await deriveAuditHmacKey("b".repeat(64));
+    expect(keyA.equals(keyB)).toBe(false);
+  });
+
+  it("deriveAuditHmacKey is deterministic", async () => {
+    const first = await deriveAuditHmacKey(testKey);
+    const second = await deriveAuditHmacKey(testKey);
+    expect(first.equals(second)).toBe(true);
+  });
+
+  it("two encryptions of the same plaintext decrypt to the same value", async () => {
+    const plaintext = "roundtrip-check";
+    const encA = await encrypt(plaintext, testKey);
+    const encB = await encrypt(plaintext, testKey);
+    expect(encA).not.toBe(encB);
+    expect(await decrypt(encA, testKey)).toBe(plaintext);
+    expect(await decrypt(encB, testKey)).toBe(plaintext);
   });
 });
