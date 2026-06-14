@@ -51,10 +51,15 @@ export function HomePage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<string>("all");
   const [search, setSearch] = useState("");
-  const { disabledTools, experimentalEnabled, loaded } = useSettingsStore();
+  const { fetch: fetchSettings, disabledTools, experimentalEnabled, loaded } =
+    useSettingsStore();
   const recentToolIds = useRecentTools();
 
   usePageTitle();
+
+  useEffect(() => {
+    fetchSettings();
+  }, [fetchSettings]);
 
   // ── Tab definitions ──────────────────────────────────────────
 
