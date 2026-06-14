@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { FileDetails } from "@/components/files/file-details";
 import { FileList } from "@/components/files/file-list";
 import { FileUploadArea } from "@/components/files/file-upload-area";
@@ -10,12 +11,21 @@ import { useMobile } from "@/hooks/use-mobile";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { useFilesPageStore } from "@/stores/files-page-store";
 
+const MODALITY_MIME_PREFIX: Record<string, string> = {
+  image: "image/",
+  video: "video/",
+  audio: "audio/",
+};
+
 export function FilesPage() {
   const { t } = useTranslation();
   usePageTitle(t.sidebar.files);
   const { activeTab, setActiveTab, selectedFileId } = useFilesPageStore();
   const isMobile = useMobile();
   const [showDetails, setShowDetails] = useState(false);
+  const location = useLocation();
+  const filterModality = (location.state as { filterModality?: string } | null)?.filterModality;
+  const filterMimePrefix = filterModality ? MODALITY_MIME_PREFIX[filterModality] : undefined;
 
   if (isMobile) {
     return (
@@ -60,7 +70,7 @@ export function FilesPage() {
                 if ((e.key === "Enter" || e.key === " ") && selectedFileId) setShowDetails(true);
               }}
             >
-              <FileList />
+              <FileList filterMimePrefix={filterMimePrefix} />
             </div>
           ) : (
             <FileUploadArea />
@@ -103,7 +113,7 @@ export function FilesPage() {
         <FilesNav />
         {activeTab === "recent" ? (
           <>
-            <FileList />
+            <FileList filterMimePrefix={filterMimePrefix} />
             <FileDetails />
           </>
         ) : (

@@ -7,10 +7,10 @@ import { format } from "@/lib/format";
 import { useFilesPageStore } from "@/stores/files-page-store";
 import { FileListItem } from "./file-list-item";
 
-export function FileList() {
+export function FileList({ filterMimePrefix }: { filterMimePrefix?: string }) {
   const { t } = useTranslation();
   const {
-    files,
+    files: allFiles,
     checkedIds,
     loading,
     error,
@@ -23,6 +23,10 @@ export function FileList() {
   const navigate = useNavigate();
   const [inputValue, setInputValue] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const files = filterMimePrefix
+    ? allFiles.filter((f) => f.mimeType.startsWith(filterMimePrefix))
+    : allFiles;
 
   useEffect(() => {
     fetchFiles();

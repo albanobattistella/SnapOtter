@@ -75,7 +75,7 @@ export function ToolDropzone({
       {/* Import from library */}
       <Link
         to="/files"
-        state={{ selectForTool: tool.id }}
+        state={{ selectForTool: tool.id, filterModality: tool.modality }}
         className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <FolderOpen className="h-4 w-4" />
