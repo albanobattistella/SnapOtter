@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { statfs } from "node:fs/promises";
 import { join } from "node:path";
 import cookie from "@fastify/cookie";
 import cors from "@fastify/cors";
@@ -13,7 +14,7 @@ import { runMigrations } from "./db/migrate.js";
 import { startCancelListener, stopCancelListener } from "./jobs/cancel.js";
 import { closeRedis, pingRedis } from "./jobs/connection.js";
 import { closeFlowProducer, closeQueueEvents } from "./jobs/enqueue.js";
-import { closeQueues, queueCounts } from "./jobs/queues.js";
+import { closeQueues, perPoolHealth, queueCounts } from "./jobs/queues.js";
 import { enqueueSystemJob, SYSTEM_JOBS, scheduleSystemJobs } from "./jobs/system-jobs.js";
 import { closeWorkers, startWorkers } from "./jobs/worker.js";
 import { captureException, initAnalytics, shutdownAnalytics } from "./lib/analytics.js";
@@ -370,6 +371,16 @@ await registerEnterpriseRoutes(app);
 // API docs (Scalar)
 await docsRoutes(app);
 
+// Disk space check for readiness probe (local storage mode only)
+async function checkDiskSpace(path: string, minBytes: number): Promise<boolean> {
+  try {
+    const stats = await statfs(path);
+    return stats.bfree * stats.bsize > minBytes;
+  } catch {
+    return true; // Path doesn't exist or not applicable -- skip check
+  }
+}
+
 // Public health check (checks core dependencies)
 app.get("/api/v1/health", async (_request, reply) => {
   let dbOk = false;
@@ -401,12 +412,41 @@ app.get("/api/v1/admin/health", async (request, reply) => {
     /* db unreachable */
   }
   let queueStats = { active: 0, pending: 0 };
+  let pools: Record<string, unknown> = {};
   try {
     const counts = await queueCounts();
     queueStats = { active: counts.active, pending: counts.waiting };
+    pools = await perPoolHealth();
   } catch {
     /* redis unreachable */
   }
+
+  // Storage total across all users
+  let libraryStorage = "0";
+  try {
+    const storageResult = await db
+      .select({
+        totalBytes: sql<string>`coalesce(sum(${schema.users.storageUsed}), 0)::text`,
+      })
+      .from(schema.users);
+    libraryStorage = storageResult[0]?.totalBytes ?? "0";
+  } catch {
+    /* db error */
+  }
+
+  // Backup recency
+  let lastBackup: string | null = null;
+  try {
+    const backupResult = await db
+      .select({ value: schema.settings.value })
+      .from(schema.settings)
+      .where(eq(schema.settings.key, "backup_last_completed"))
+      .limit(1);
+    lastBackup = backupResult.length > 0 ? backupResult[0].value : null;
+  } catch {
+    /* db error */
+  }
+
   return {
     status: dbOk ? "healthy" : "degraded",
     version: APP_VERSION,
@@ -414,6 +454,9 @@ app.get("/api/v1/admin/health", async (request, reply) => {
     storage: { mode: env.STORAGE_MODE, available: "N/A" },
     database: dbOk ? "ok" : "error",
     queue: queueStats,
+    pools,
+    libraryStorage,
+    lastBackup,
     ai: { gpu: isGpuAvailable(), dispatcher: getDispatcherStatus() },
     enterprise: enterpriseLicense
       ? { active: true, org: enterpriseLicense.org, plan: enterpriseLicense.plan }
@@ -468,8 +511,28 @@ app.get("/api/v1/readyz", async (_request, reply) => {
   } catch {
     /* redis unreachable */
   }
-  const ok = postgres && redis;
-  return reply.code(ok ? 200 : 503).send({ ok, postgres, redis });
+
+  // Disk space: fail readiness if below 500 MB on storage paths (local mode only)
+  const diskOk =
+    env.STORAGE_MODE !== "s3"
+      ? (await checkDiskSpace(env.WORKSPACE_PATH, 500 * 1024 * 1024)) &&
+        (await checkDiskSpace(env.FILES_STORAGE_PATH, 500 * 1024 * 1024))
+      : true;
+
+  // S3 reachability (S3 mode only)
+  let s3Ok = true;
+  if (env.STORAGE_MODE === "s3") {
+    try {
+      const { loadS3Storage } = await import("@snapotter/enterprise");
+      const s3 = await loadS3Storage();
+      await s3.checkConnection();
+    } catch {
+      s3Ok = false;
+    }
+  }
+
+  const ok = postgres && redis && diskOk && s3Ok;
+  return reply.code(ok ? 200 : 503).send({ ok, postgres, redis, disk: diskOk, s3: s3Ok });
 });
 
 // Cancel a job (authenticated)

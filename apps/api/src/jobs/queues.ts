@@ -69,3 +69,38 @@ export async function perPoolCounts(): Promise<Record<Pool, { active: number; wa
   }
   return result;
 }
+
+/** Per-pool health details (for admin health endpoint). */
+export async function perPoolHealth(): Promise<
+  Record<Pool, { active: number; waiting: number; failed: number; oldestWaitingMs: number | null }>
+> {
+  const result: Record<
+    string,
+    { active: number; waiting: number; failed: number; oldestWaitingMs: number | null }
+  > = {};
+  for (const pool of POOLS) {
+    const q = queues.get(pool);
+    if (!q) {
+      result[pool] = { active: 0, waiting: 0, failed: 0, oldestWaitingMs: null };
+      continue;
+    }
+    const counts = await q.getJobCounts("active", "waiting", "failed");
+    let oldestWaitingMs: number | null = null;
+    if ((counts.waiting ?? 0) > 0) {
+      const jobs = await q.getJobs(["waiting"], 0, 0, true);
+      if (jobs.length > 0 && jobs[0]) {
+        oldestWaitingMs = Date.now() - jobs[0].timestamp;
+      }
+    }
+    result[pool] = {
+      active: counts.active ?? 0,
+      waiting: counts.waiting ?? 0,
+      failed: counts.failed ?? 0,
+      oldestWaitingMs,
+    };
+  }
+  return result as Record<
+    Pool,
+    { active: number; waiting: number; failed: number; oldestWaitingMs: number | null }
+  >;
+}
