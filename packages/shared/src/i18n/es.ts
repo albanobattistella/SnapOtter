@@ -3317,6 +3317,8 @@ export const es: TranslationKeys = {
       goToWatermarkText: "Ir a Marca de agua de texto",
       goToStripMetadata: "Ir a Eliminar metadatos",
       goToImageInfo: "Ir a Info de imagen",
+      processFile: "Procesar archivo",
+      downloadResult: "Descargar resultado",
     },
     resources: {
       heading: "Recursos",

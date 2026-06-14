@@ -3327,6 +3327,8 @@ export const ru: TranslationKeys = {
       goToWatermarkText: "Перейти к текстовому водяному знаку",
       goToStripMetadata: "Перейти к удалению метаданных",
       goToImageInfo: "Перейти к информации об изображении",
+      processFile: "Обработать файл",
+      downloadResult: "Скачать результат",
     },
     resources: {
       heading: "Ресурсы",

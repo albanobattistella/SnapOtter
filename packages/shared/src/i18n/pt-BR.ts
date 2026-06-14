@@ -3328,6 +3328,8 @@ export const ptBR: TranslationKeys = {
       goToWatermarkText: "Ir para Marca d'agua de texto",
       goToStripMetadata: "Ir para Remover metadados",
       goToImageInfo: "Ir para Info da imagem",
+      processFile: "Processar arquivo",
+      downloadResult: "Baixar resultado",
     },
     resources: {
       heading: "Recursos",

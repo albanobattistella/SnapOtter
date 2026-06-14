@@ -3298,6 +3298,8 @@ export const th: TranslationKeys = {
       goToWatermarkText: "ไปที่ลายน้ำข้อความ",
       goToStripMetadata: "ไปที่ลบข้อมูลเมตา",
       goToImageInfo: "ไปที่ข้อมูลภาพ",
+      processFile: "ประมวลผลไฟล์",
+      downloadResult: "ดาวน์โหลดผลลัพธ์",
     },
     resources: {
       heading: "แหล่งข้อมูล",

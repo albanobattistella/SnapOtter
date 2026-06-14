@@ -3340,6 +3340,8 @@ export const de: TranslationKeys = {
       goToWatermarkText: "Zu Text-Wasserzeichen",
       goToStripMetadata: "Zu Metadaten entfernen",
       goToImageInfo: "Zu Bildinformationen",
+      processFile: "Datei verarbeiten",
+      downloadResult: "Ergebnis herunterladen",
     },
     resources: {
       heading: "Ressourcen",

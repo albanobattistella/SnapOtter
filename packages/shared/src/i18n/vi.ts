@@ -3322,6 +3322,8 @@ export const vi: TranslationKeys = {
       goToWatermarkText: "Đến Hình mờ văn bản",
       goToStripMetadata: "Đến Xóa siêu dữ liệu",
       goToImageInfo: "Đến Thông tin ảnh",
+      processFile: "Xu ly tep",
+      downloadResult: "Tai ket qua",
     },
     resources: {
       heading: "Tài nguyên",

@@ -3266,6 +3266,8 @@ export const ko: TranslationKeys = {
       goToWatermarkText: "텍스트 워터마크로 이동",
       goToStripMetadata: "메타데이터 제거로 이동",
       goToImageInfo: "이미지 정보로 이동",
+      processFile: "파일 처리",
+      downloadResult: "결과 다운로드",
     },
     resources: {
       heading: "리소스",

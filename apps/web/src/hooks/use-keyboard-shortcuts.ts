@@ -55,11 +55,37 @@ export function useKeyboardShortcuts() {
   const { toggleTheme } = useTheme();
 
   const focusSearchBar = useCallback(() => {
-    const searchInput = document.querySelector<HTMLInputElement>('input[placeholder*="Search"]');
+    const searchInput = document.querySelector<HTMLInputElement>(
+      '[data-search-input], input[placeholder*="Search"]',
+    );
     if (searchInput) {
       searchInput.focus();
       searchInput.select();
+    } else {
+      // Navigate to home with focus param so the search input gets focused on mount
+      navigate("/?focus=search");
     }
+  }, [navigate]);
+
+  const triggerProcess = useCallback(() => {
+    // Try submitting a form inside the settings panel first
+    const form = document.querySelector<HTMLFormElement>(".settings-container form");
+    if (form) {
+      form.requestSubmit();
+      return;
+    }
+    // Fall back to clicking a submit-like button inside the settings panel
+    const btn = document.querySelector<HTMLButtonElement>(
+      '.settings-container button[data-testid$="-submit"]',
+    );
+    if (btn && !btn.disabled) {
+      btn.click();
+    }
+  }, []);
+
+  const triggerDownload = useCallback(() => {
+    const el = document.querySelector<HTMLElement>("[data-download-button]");
+    if (el) el.click();
   }, []);
 
   useEffect(() => {
@@ -67,6 +93,8 @@ export function useKeyboardShortcuts() {
       { keys: "mod+k", description: "Focus search bar", action: focusSearchBar },
       { keys: "mod+/", description: "Go to tools", action: () => navigate("/") },
       { keys: "mod+shift+d", description: "Toggle theme", action: toggleTheme },
+      { keys: "mod+enter", description: "Process file", action: triggerProcess },
+      { keys: "mod+s", description: "Download result", action: triggerDownload },
       { keys: "mod+alt+1", description: "Go to Resize", action: () => navigate("/resize") },
       { keys: "mod+alt+2", description: "Go to Crop", action: () => navigate("/crop") },
       { keys: "mod+alt+3", description: "Go to Compress", action: () => navigate("/compress") },
@@ -89,15 +117,17 @@ export function useKeyboardShortcuts() {
       { keys: "mod+alt+8", description: "Go to Image Info", action: () => navigate("/info") },
     ];
 
+    // Shortcuts that should work even when focused on an input/textarea
+    const inputSafeKeys = new Set(["mod+k", "mod+s", "mod+enter"]);
+
     function handler(e: KeyboardEvent) {
-      // Don't intercept when typing in inputs/textareas (except Cmd+K for search)
+      // Don't intercept when typing in inputs/textareas (except input-safe shortcuts)
       const tag = (e.target as HTMLElement)?.tagName;
       const isInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT";
 
       for (const shortcut of shortcuts) {
         if (matchesShortcut(e, shortcut.keys)) {
-          // Allow Cmd+K even in inputs (it focuses search)
-          if (isInput && shortcut.keys !== "mod+k") continue;
+          if (isInput && !inputSafeKeys.has(shortcut.keys)) continue;
           e.preventDefault();
           e.stopPropagation();
           shortcut.action();
@@ -108,7 +138,7 @@ export function useKeyboardShortcuts() {
 
     window.addEventListener("keydown", handler, { capture: true });
     return () => window.removeEventListener("keydown", handler, { capture: true });
-  }, [navigate, toggleTheme, focusSearchBar]);
+  }, [navigate, toggleTheme, focusSearchBar, triggerProcess, triggerDownload]);
 }
 
 /**
@@ -123,6 +153,7 @@ export function formatShortcut(keys: string): string {
       if (lk === "mod") return mac ? "\u2318" : "Ctrl";
       if (lk === "shift") return mac ? "\u21E7" : "Shift";
       if (lk === "alt") return mac ? "\u2325" : "Alt";
+      if (lk === "enter") return mac ? "↩" : "Enter";
       if (lk === "/") return "/";
       return k.trim().toUpperCase();
     })

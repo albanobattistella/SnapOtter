@@ -13,6 +13,8 @@ interface HelpDialogProps {
 const SHORTCUTS = [
   { keys: "mod+k", description: "Focus search bar" },
   { keys: "mod+/", description: "Go to tools" },
+  { keys: "mod+enter", description: "Process file" },
+  { keys: "mod+s", description: "Download result" },
   { keys: "mod+shift+d", description: "Toggle theme" },
   { keys: "mod+alt+1", description: "Go to Resize" },
   { keys: "mod+alt+2", description: "Go to Crop" },

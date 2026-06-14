@@ -3281,6 +3281,8 @@ export const ja: TranslationKeys = {
       goToWatermarkText: "テキストウォーターマークへ移動",
       goToStripMetadata: "メタデータ削除へ移動",
       goToImageInfo: "画像情報へ移動",
+      processFile: "ファイルを処理",
+      downloadResult: "結果をダウンロード",
     },
     resources: {
       heading: "リソース",

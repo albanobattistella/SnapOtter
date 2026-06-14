@@ -3325,6 +3325,8 @@ export const id: TranslationKeys = {
       goToWatermarkText: "Ke Watermark Teks",
       goToStripMetadata: "Ke Hapus Metadata",
       goToImageInfo: "Ke Info Gambar",
+      processFile: "Proses file",
+      downloadResult: "Unduh hasil",
     },
     resources: {
       heading: "Sumber Daya",

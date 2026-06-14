@@ -3247,6 +3247,8 @@ export const zhTW: TranslationKeys = {
       goToWatermarkText: "前往文字浮水印",
       goToStripMetadata: "前往移除中繼資料",
       goToImageInfo: "前往影像資訊",
+      processFile: "處理檔案",
+      downloadResult: "下載結果",
     },
     resources: {
       heading: "資源",

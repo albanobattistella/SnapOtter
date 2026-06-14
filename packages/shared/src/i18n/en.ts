@@ -3277,6 +3277,8 @@ export const en = {
       goToWatermarkText: "Go to Watermark Text",
       goToStripMetadata: "Go to Strip Metadata",
       goToImageInfo: "Go to Image Info",
+      processFile: "Process file",
+      downloadResult: "Download result",
     },
     resources: {
       heading: "Resources",

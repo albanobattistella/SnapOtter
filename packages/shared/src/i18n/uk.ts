@@ -3328,6 +3328,8 @@ export const uk: TranslationKeys = {
       goToWatermarkText: "Перейти до текстового водяного знаку",
       goToStripMetadata: "Перейти до видалення метаданих",
       goToImageInfo: "Перейти до інформації про зображення",
+      processFile: "Обробити файл",
+      downloadResult: "Завантажити результат",
     },
     resources: {
       heading: "Ресурси",

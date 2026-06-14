@@ -2,7 +2,7 @@ import type { Tool } from "@snapotter/shared";
 import { CATEGORIES, MODALITIES, TOOLS } from "@snapotter/shared";
 import { FileImage, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ToolCard } from "@/components/common/tool-card.js";
 import { AppLayout } from "@/components/layout/app-layout.js";
 import { Footer } from "@/components/layout/footer.js";
@@ -215,12 +215,24 @@ function HomeSearchBar({
   placeholder: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Auto-focus when navigated here with ?focus=search (e.g. from Cmd+K on a tool page)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("focus") === "search") {
+      inputRef.current?.focus();
+      navigate("/", { replace: true });
+    }
+  }, [location.search, navigate]);
 
   return (
     <div className="relative max-w-xl mx-auto mb-6">
       <Search className="absolute start-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground pointer-events-none" />
       <input
         ref={inputRef}
+        data-search-input
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}

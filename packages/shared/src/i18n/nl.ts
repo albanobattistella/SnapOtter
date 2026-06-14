@@ -3328,6 +3328,8 @@ export const nl: TranslationKeys = {
       goToWatermarkText: "Naar Tekst-watermerk",
       goToStripMetadata: "Naar Metadata verwijderen",
       goToImageInfo: "Naar Beeldinformatie",
+      processFile: "Bestand verwerken",
+      downloadResult: "Resultaat downloaden",
     },
     resources: {
       heading: "Bronnen",

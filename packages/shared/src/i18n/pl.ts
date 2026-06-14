@@ -3335,6 +3335,8 @@ export const pl: TranslationKeys = {
       goToWatermarkText: "Przejdź do tekstowego znaku wodnego",
       goToStripMetadata: "Przejdź do usuwania metadanych",
       goToImageInfo: "Przejdź do informacji o obrazie",
+      processFile: "Przetwórz plik",
+      downloadResult: "Pobierz wynik",
     },
     resources: {
       heading: "Zasoby",

@@ -3332,6 +3332,8 @@ export const it: TranslationKeys = {
       goToWatermarkText: "Vai a Filigrana testo",
       goToStripMetadata: "Vai a Rimuovi metadati",
       goToImageInfo: "Vai a Info immagine",
+      processFile: "Elabora file",
+      downloadResult: "Scarica risultato",
     },
     resources: {
       heading: "Risorse",

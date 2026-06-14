@@ -3310,6 +3310,8 @@ export const ar: TranslationKeys = {
       goToWatermarkText: "الانتقال للعلامة المائية النصية",
       goToStripMetadata: "الانتقال لإزالة البيانات الوصفية",
       goToImageInfo: "الانتقال لمعلومات الصورة",
+      processFile: "معالجة الملف",
+      downloadResult: "تنزيل النتيجة",
     },
     resources: {
       heading: "الموارد",

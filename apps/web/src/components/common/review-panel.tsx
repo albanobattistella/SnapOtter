@@ -81,6 +81,7 @@ export function ReviewPanel({
       {/* Download button with format + size */}
       <button
         type="button"
+        data-download-button
         onClick={handleDownload}
         className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm flex items-center justify-center gap-2 hover:bg-primary/90"
       >

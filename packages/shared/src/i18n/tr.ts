@@ -3332,6 +3332,8 @@ export const tr: TranslationKeys = {
       goToWatermarkText: "Metin Filigranına git",
       goToStripMetadata: "Meta Veri Kaldırmaya git",
       goToImageInfo: "Görüntü Bilgisine git",
+      processFile: "Dosyayi isle",
+      downloadResult: "Sonucu indir",
     },
     resources: {
       heading: "Kaynaklar",

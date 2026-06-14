@@ -3322,6 +3322,8 @@ export const sv: TranslationKeys = {
       goToWatermarkText: "Ga till Textvattenstampel",
       goToStripMetadata: "Ga till Ta bort metadata",
       goToImageInfo: "Ga till Bildinformation",
+      processFile: "Bearbeta fil",
+      downloadResult: "Ladda ner resultat",
     },
     resources: {
       heading: "Resurser",

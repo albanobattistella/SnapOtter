@@ -3248,6 +3248,8 @@ export const zhCN: TranslationKeys = {
       goToWatermarkText: "前往文字水印",
       goToStripMetadata: "前往移除元数据",
       goToImageInfo: "前往图片信息",
+      processFile: "处理文件",
+      downloadResult: "下载结果",
     },
     resources: {
       heading: "资源",

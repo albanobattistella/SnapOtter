@@ -3307,6 +3307,8 @@ export const hi: TranslationKeys = {
       goToWatermarkText: "टेक्स्ट वॉटरमार्क पर जाएं",
       goToStripMetadata: "मेटाडेटा हटाएं पर जाएं",
       goToImageInfo: "इमेज जानकारी पर जाएं",
+      processFile: "फ़ाइल प्रोसेस करें",
+      downloadResult: "परिणाम डाउनलोड करें",
     },
     resources: {
       heading: "संसाधन",

@@ -3338,6 +3338,8 @@ export const fr: TranslationKeys = {
       goToWatermarkText: "Aller au Filigrane texte",
       goToStripMetadata: "Aller a Supprimer les metadonnees",
       goToImageInfo: "Aller a Info image",
+      processFile: "Traiter le fichier",
+      downloadResult: "Telecharger le resultat",
     },
     resources: {
       heading: "Ressources",
