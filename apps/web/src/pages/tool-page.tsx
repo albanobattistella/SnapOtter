@@ -361,13 +361,13 @@ export function ToolPage() {
     setMobileSettingsOpen(false);
   }, [toolId]);
 
-  const toolAccept = registryEntry?.accept;
+  const toolAccept = registryEntry?.accept ?? tool?.acceptedInputs?.join(",");
   const toolAcceptExts = useMemo(
     () => toolAccept?.split(",").map((e) => e.trim().replace(/^\./, "").toLowerCase()),
     [toolAccept],
   );
   const toolFileFilter = useMemo(() => {
-    if (!toolAcceptExts) return undefined;
+    if (!toolAcceptExts || toolAcceptExts.length === 0) return undefined;
     return (file: File) => {
       const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
       return toolAcceptExts.includes(ext);
