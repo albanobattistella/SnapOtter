@@ -238,15 +238,8 @@ async function processToolJob(job: Job<ToolJobData>): Promise<ToolJobResult> {
     // Generate preview for non-browser-previewable formats
     const previewRef = await generatePreview(resultBuffer, resultContentType, jobId, inputBuffer);
 
-    // Auto-save to user file library
-    const savedFileId = await autoSaveToLibrary({
-      fileId: data.fileId,
-      userId: data.userId,
-      buffer: resultBuffer,
-      outName,
-      contentType: resultContentType,
-      toolId: data.toolId,
-    });
+    // No auto-save -- users save to library explicitly via the UI
+    const savedFileId: string | undefined = undefined;
 
     const durationMs = Date.now() - startTime;
 

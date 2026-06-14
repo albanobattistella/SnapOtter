@@ -1,7 +1,8 @@
-import { AlertCircle, ArrowLeft, CheckCircle2, Download, FileText } from "lucide-react";
-import { useMemo } from "react";
+import { AlertCircle, ArrowLeft, CheckCircle2, Download, FileText, FolderPlus } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "@/contexts/i18n-context";
+import { formatHeaders } from "@/lib/api";
 import { formatFileSize, triggerDownload } from "@/lib/download";
 import { format } from "@/lib/format";
 
@@ -71,6 +72,28 @@ export function ReviewPanel({
   const handleDownload = () => {
     triggerDownload(downloadUrl, filename);
   };
+
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
+
+  const handleSaveToFiles = useCallback(async () => {
+    setSaveStatus("saving");
+    try {
+      const res = await fetch(downloadUrl);
+      const blob = await res.blob();
+      const formData = new FormData();
+      formData.append("file", new File([blob], filename, { type: fileType }));
+      const uploadRes = await fetch("/api/v1/files/upload", {
+        method: "POST",
+        headers: formatHeaders(),
+        body: formData,
+      });
+      if (!uploadRes.ok) throw new Error("Upload failed");
+      setSaveStatus("saved");
+    } catch {
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    }
+  }, [downloadUrl, filename, fileType]);
 
   const hasBatchStats =
     totalCount != null && totalCount > 1 && successCount != null && failedCount != null;
@@ -162,6 +185,23 @@ export function ReviewPanel({
             : hasBatchStats && successCount != null && successCount > 1
               ? `${format(t.toolPage.downloadFiles, { count: successCount })} (ZIP, ${formatFileSize(fileSize)})`
               : `${t.toolPage.download} ${fileType} (${formatFileSize(fileSize)})`}
+        </button>
+      )}
+
+      {/* Save to Files */}
+      {!isDataOutput && (
+        <button
+          type="button"
+          onClick={handleSaveToFiles}
+          disabled={saveStatus === "saving" || saveStatus === "saved"}
+          className="w-full py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-colors"
+        >
+          <FolderPlus className="h-4 w-4" />
+          {saveStatus === "saving"
+            ? t.common.saving
+            : saveStatus === "saved"
+              ? t.toolPage.savedToFiles
+              : t.toolPage.saveToFiles}
         </button>
       )}
 

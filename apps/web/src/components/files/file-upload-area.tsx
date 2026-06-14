@@ -1,10 +1,11 @@
 import { Upload } from "lucide-react";
 import { useState } from "react";
-import { isImageFile } from "@/components/common/dropzone";
+import { useTranslation } from "@/contexts/i18n-context";
 import { cn } from "@/lib/utils";
 import { useFilesPageStore } from "@/stores/files-page-store";
 
 export function FileUploadArea() {
+  const { t } = useTranslation();
   const { uploadFiles, loading, uploadProgress } = useFilesPageStore();
   const [dragging, setDragging] = useState(false);
 
@@ -20,14 +21,13 @@ export function FileUploadArea() {
   function handleDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragging(false);
-    const files = Array.from(e.dataTransfer.files).filter(isImageFile);
+    const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) uploadFiles(files);
   }
 
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     if (files.length > 0) uploadFiles(files);
-    // Reset input so the same file can be re-selected
     e.target.value = "";
   }
 
@@ -57,19 +57,13 @@ export function FileUploadArea() {
         )}
         <div className="text-center">
           <p className="text-sm font-medium text-foreground">
-            {loading ? "Uploading..." : "Drop images here"}
+            {loading ? t.common.loading : t.files.dropFilesHere}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
-            {loading ? "" : "or click to select files"}
+            {loading ? "" : t.files.orClickToSelect}
           </p>
         </div>
-        <input
-          type="file"
-          accept="image/*,.avif,.heic,.heif,.hif,.jxl,.dng,.cr2,.cr3,.nef,.nrw,.arw,.orf,.rw2,.raf,.pef,.3fr,.iiq,.srw,.x3f,.rwl,.gpr,.fff,.mrw,.mef,.kdc,.dcr,.erf,.ptx,.tga,.psd,.exr,.hdr,.svgz,.jp2,.j2k,.qoi,.eps,.dds,.cur,.apng,.dpx,.cin,.fits,.ppm,.pgm,.pbm,.pfm"
-          multiple
-          className="hidden"
-          onChange={handleInputChange}
-        />
+        <input type="file" multiple className="hidden" onChange={handleInputChange} />
       </label>
     </div>
   );
