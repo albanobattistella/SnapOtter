@@ -1,6 +1,6 @@
-import { APP_VERSION, TOOLS, en, shouldShowConsent } from "@snapotter/shared";
+import { APP_VERSION, en, shouldShowConsent } from "@snapotter/shared";
 import { Component, type ErrorInfo, lazy, type ReactNode, Suspense, useEffect } from "react";
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster, toast } from "sonner";
 import { ConnectionMonitor } from "./components/common/connection-monitor";
 import { KeyboardShortcutProvider } from "./components/common/keyboard-shortcut-provider";
@@ -75,13 +75,6 @@ class ErrorBoundary extends Component<
     }
     return this.props.children;
   }
-}
-
-function LegacyToolRedirect() {
-  const { toolId } = useParams<{ toolId: string }>();
-  const tool = TOOLS.find((t) => t.id === toolId);
-  if (tool) return <Navigate to={tool.route} replace />;
-  return <Navigate to="/" replace />;
 }
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -241,31 +234,10 @@ export function App() {
                   <Route path="/change-password" element={<ChangePasswordPage />} />
                   <Route path="/automate" element={<AutomatePage />} />
                   <Route path="/files" element={<FilesPage />} />
-                  <Route path="/fullscreen" element={<Navigate to="/" replace />} />
                   <Route path="/privacy" element={<PrivacyPolicyPage />} />
-                  {/* Redirects: old color tools consolidated into adjust-colors */}
-                  <Route
-                    path="/brightness-contrast"
-                    element={<Navigate to="/image/adjust-colors" replace />}
-                  />
-                  <Route
-                    path="/saturation"
-                    element={<Navigate to="/image/adjust-colors" replace />}
-                  />
-                  <Route
-                    path="/color-channels"
-                    element={<Navigate to="/image/adjust-colors" replace />}
-                  />
-                  <Route
-                    path="/color-effects"
-                    element={<Navigate to="/image/adjust-colors" replace />}
-                  />
                   <Route path="/analytics-consent" element={<AnalyticsConsentPage />} />
                   <Route path="/editor" element={<EditorPage />} />
-                  {/* Modality-prefixed tool routes */}
                   <Route path="/:modality/:toolId" element={<ToolPage />} />
-                  {/* Legacy: redirect old /:toolId URLs to /:modality/:toolId */}
-                  <Route path="/:toolId" element={<LegacyToolRedirect />} />
                   <Route path="/" element={<HomePage />} />
                 </Routes>
               </Suspense>
