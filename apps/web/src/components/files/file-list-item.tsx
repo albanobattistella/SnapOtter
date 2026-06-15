@@ -23,9 +23,10 @@ function toolName(toolId: string): string {
 
 interface FileListItemProps {
   file: UserFile;
+  disabled?: boolean;
 }
 
-export function FileListItem({ file }: FileListItemProps) {
+export function FileListItem({ file, disabled }: FileListItemProps) {
   const { selectedFileId, checkedIds, selectFile, toggleChecked } = useFilesPageStore();
   const isSelected = selectedFileId === file.id;
   const isChecked = checkedIds.has(file.id);
@@ -34,16 +35,21 @@ export function FileListItem({ file }: FileListItemProps) {
     <div
       role="option"
       aria-selected={isSelected}
-      tabIndex={0}
-      onClick={() => selectFile(file.id)}
+      aria-disabled={disabled}
+      tabIndex={disabled ? -1 : 0}
+      onClick={() => {
+        if (!disabled) selectFile(file.id);
+      }}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") selectFile(file.id);
+        if (!disabled && (e.key === "Enter" || e.key === " ")) selectFile(file.id);
       }}
       className={cn(
-        "flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors",
-        isSelected
-          ? "bg-primary/10 border border-primary/30"
-          : "hover:bg-muted border border-transparent",
+        "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors border",
+        disabled
+          ? "opacity-40 cursor-not-allowed border-transparent"
+          : isSelected
+            ? "bg-primary/10 border-primary/30 cursor-pointer"
+            : "hover:bg-muted border-transparent cursor-pointer",
       )}
     >
       {/* Checkbox */}

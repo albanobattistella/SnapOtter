@@ -24,9 +24,7 @@ export function FileList({ filterMimePrefix }: { filterMimePrefix?: string }) {
   const [inputValue, setInputValue] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const files = filterMimePrefix
-    ? allFiles.filter((f) => f.mimeType.startsWith(filterMimePrefix))
-    : allFiles;
+  const files = allFiles;
 
   useEffect(() => {
     fetchFiles();
@@ -124,7 +122,15 @@ export function FileList({ filterMimePrefix }: { filterMimePrefix?: string }) {
             <p className="text-sm text-muted-foreground">{t.files.noFilesFound}</p>
           </div>
         )}
-        {!loading && !error && files.map((file) => <FileListItem key={file.id} file={file} />)}
+        {!loading &&
+          !error &&
+          files.map((file) => (
+            <FileListItem
+              key={file.id}
+              file={file}
+              disabled={!!filterMimePrefix && !file.mimeType.startsWith(filterMimePrefix)}
+            />
+          ))}
       </div>
     </div>
   );
