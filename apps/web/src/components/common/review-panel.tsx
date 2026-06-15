@@ -5,6 +5,7 @@ import { useTranslation } from "@/contexts/i18n-context";
 import { formatHeaders } from "@/lib/api";
 import { formatFileSize, triggerDownload } from "@/lib/download";
 import { format } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 /** Tools whose primary output is text/data, not a downloadable file. */
 const DATA_OUTPUT_TOOLS = new Set([
@@ -188,54 +189,59 @@ export function ReviewPanel({
         </button>
       )}
 
-      {/* Save to Files */}
+      {/* Save to Files -- subtle text link */}
       {!isDataOutput && (
-        <button
-          type="button"
-          onClick={handleSaveToFiles}
-          disabled={saveStatus === "saving" || saveStatus === "saved"}
-          className={`w-full py-2 rounded-lg border text-sm flex items-center justify-center gap-2 transition-all ${
-            saveStatus === "saved"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400"
-              : "border-border text-muted-foreground hover:text-foreground hover:bg-muted disabled:opacity-50"
-          }`}
-        >
-          {saveStatus === "saved" ? (
-            <CheckCircle2 className="h-4 w-4" />
-          ) : saveStatus === "saving" ? (
-            <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <FolderPlus className="h-4 w-4" />
-          )}
-          {saveStatus === "saving"
-            ? t.common.saving
-            : saveStatus === "saved"
-              ? t.toolPage.savedToFiles
-              : t.toolPage.saveToFiles}
-        </button>
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={handleSaveToFiles}
+            disabled={saveStatus === "saving" || saveStatus === "saved"}
+            className={cn(
+              "text-xs flex items-center gap-1.5 transition-colors",
+              saveStatus === "saved"
+                ? "text-emerald-600 dark:text-emerald-400"
+                : "text-muted-foreground hover:text-foreground disabled:opacity-50",
+            )}
+          >
+            {saveStatus === "saved" ? (
+              <CheckCircle2 className="h-3 w-3" />
+            ) : saveStatus === "saving" ? (
+              <div className="h-3 w-3 border-1.5 border-current border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <FolderPlus className="h-3 w-3" />
+            )}
+            {saveStatus === "saving"
+              ? t.common.saving
+              : saveStatus === "saved"
+                ? t.toolPage.savedToFiles
+                : t.toolPage.saveToFiles}
+          </button>
+        </div>
       )}
 
-      {/* Adjust settings */}
-      <button
-        type="button"
-        onClick={onUndo}
-        className="w-full py-2 rounded-lg border border-border text-foreground hover:bg-muted text-sm font-medium"
-      >
-        {t.toolPage.adjustSettings}
-      </button>
-
-      {/* Text links */}
-      <div className="flex flex-col items-center gap-1.5 text-xs">
+      {/* Edit settings / New file -- side by side */}
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={onUndo}
+          className="py-2 rounded-lg border border-border text-foreground hover:bg-muted text-xs font-medium"
+        >
+          {t.toolPage.adjustSettings}
+        </button>
         <button
           type="button"
           onClick={onStartOver}
-          className="text-muted-foreground hover:text-foreground"
+          className="py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted text-xs font-medium"
         >
-          {t.toolPage.startOver}
+          {t.toolPage.newFile}
         </button>
+      </div>
+
+      {/* Back to Tools -- subtle link, hidden since breadcrumb handles this */}
+      <div className="flex justify-center">
         <Link
           to="/"
-          className="text-muted-foreground hover:text-foreground flex items-center gap-1"
+          className="text-xs text-muted-foreground/60 hover:text-muted-foreground flex items-center gap-1"
         >
           <ArrowLeft className="h-3 w-3" />
           {t.toolPage.backToTools}

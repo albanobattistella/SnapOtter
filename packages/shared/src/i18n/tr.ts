@@ -2464,6 +2464,7 @@ export const tr: TranslationKeys = {
     savedToFiles: "Saved to Files",
     adjustSettings: "Adjust settings",
     startOver: "Start over with a new file",
+    newFile: "New file",
     backToTools: "Back to Tools",
     original: "Original",
     processed: "Processed",
