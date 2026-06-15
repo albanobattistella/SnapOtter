@@ -19,13 +19,20 @@ const PROGRESS_MESSAGES = [
 type PreviewState = "idle" | "generating" | "ready" | "error";
 
 export interface NonNativePreviewProps {
-  file: File;
+  file?: File;
+  src?: string;
   filename: string;
   fileSize: number;
   modality: "video" | "audio";
 }
 
-export function NonNativePreview({ file, filename, fileSize, modality }: NonNativePreviewProps) {
+export function NonNativePreview({
+  file,
+  src,
+  filename,
+  fileSize,
+  modality,
+}: NonNativePreviewProps) {
   const { t } = useTranslation();
   const [state, setState] = useState<PreviewState>("idle");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -64,8 +71,17 @@ export function NonNativePreview({ file, filename, fileSize, modality }: NonNati
     abortRef.current = controller;
 
     try {
+      let fileToUpload = file;
+      if (!fileToUpload && src) {
+        const res = await fetch(src);
+        const blob = await res.blob();
+        fileToUpload = new File([blob], filename, { type: blob.type });
+      }
+      if (!fileToUpload) {
+        throw new Error("No file to generate preview from");
+      }
       const formData = new FormData();
-      formData.append("file", file, filename);
+      formData.append("file", fileToUpload, filename);
 
       const response = await fetch("/api/v1/preview/generate", {
         method: "POST",

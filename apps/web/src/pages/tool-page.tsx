@@ -672,17 +672,25 @@ export function ToolPage() {
       const nativeVideoExts = new Set(["mp4", "webm", "ogg", "ogv", "m4v", "mov"]);
       const isNativeVideo = nativeVideoExts.has(currentExt);
 
-      if (!isNativeVideo && currentExt && currentEntry?.file) {
-        return (
-          <Suspense fallback={<div className="text-sm text-muted-foreground">Loading...</div>}>
-            <NonNativePreview
-              file={currentEntry.file}
-              filename={currentFileName}
-              fileSize={currentEntry.file.size}
-              modality="video"
-            />
-          </Suspense>
-        );
+      if (!isNativeVideo && currentExt) {
+        const previewFile = hasProcessed ? undefined : currentEntry?.file;
+        const previewSrc = hasProcessed ? processedUrl : undefined;
+        const previewSize = hasProcessed
+          ? (currentEntry?.processedSize ?? 0)
+          : (currentEntry?.file?.size ?? 0);
+        if (previewFile || previewSrc) {
+          return (
+            <Suspense fallback={<div className="text-sm text-muted-foreground">Loading...</div>}>
+              <NonNativePreview
+                file={previewFile}
+                src={previewSrc}
+                filename={currentFileName}
+                fileSize={previewSize}
+                modality="video"
+              />
+            </Suspense>
+          );
+        }
       }
       return (
         <Suspense fallback={<div className="text-sm text-muted-foreground">Loading...</div>}>
