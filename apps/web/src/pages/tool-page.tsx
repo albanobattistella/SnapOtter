@@ -674,23 +674,21 @@ export function ToolPage() {
 
       if (!isNativeVideo && currentExt) {
         const previewFile = hasProcessed ? undefined : currentEntry?.file;
-        const previewSrc = hasProcessed ? processedUrl : undefined;
+        const previewSrc = hasProcessed ? (processedUrl ?? originalBlobUrl) : undefined;
         const previewSize = hasProcessed
           ? (currentEntry?.processedSize ?? 0)
           : (currentEntry?.file?.size ?? 0);
-        if (previewFile || previewSrc) {
-          return (
-            <Suspense fallback={<div className="text-sm text-muted-foreground">Loading...</div>}>
-              <NonNativePreview
-                file={previewFile}
-                src={previewSrc}
-                filename={currentFileName}
-                fileSize={previewSize}
-                modality="video"
-              />
-            </Suspense>
-          );
-        }
+        return (
+          <Suspense fallback={<div className="text-sm text-muted-foreground">Loading...</div>}>
+            <NonNativePreview
+              file={previewFile}
+              src={previewSrc}
+              filename={currentFileName}
+              fileSize={previewSize}
+              modality="video"
+            />
+          </Suspense>
+        );
       }
       return (
         <Suspense fallback={<div className="text-sm text-muted-foreground">Loading...</div>}>
