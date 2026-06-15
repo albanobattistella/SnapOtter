@@ -580,7 +580,7 @@ export function ToolPage() {
       : "processed-image");
   const processedFileType = processedFileName.split(".").pop()?.toUpperCase() || "IMAGE";
   const isProcessedPreviewable = processedUrl
-    ? canBrowserPreview(processedUrl, currentEntry?.processedFilename)
+    ? canBrowserPreview(processedUrl, currentEntry?.processedFilename ?? processedFileName)
     : false;
   // Use server-generated preview for non-previewable formats (HEIC, TIFF).
   // Falls back to the upload-decoded blobUrl so TIFF/DNG always have a renderable src.
@@ -653,12 +653,13 @@ export function ToolPage() {
       // Tools that convert video to a non-video format (gif, webp, frames):
       // after processing, show the result as an image instead of a video player
       if (hasProcessed && processedUrl) {
-        const ext = (currentEntry?.processedFilename ?? "").split(".").pop()?.toLowerCase();
+        const outName = currentEntry?.processedFilename ?? processedFileName;
+        const ext = outName.split(".").pop()?.toLowerCase();
         if (ext && ["gif", "webp", "png", "jpg", "jpeg", "apng"].includes(ext)) {
           return (
             <ImageViewer
               src={processedUrl}
-              filename={currentEntry?.processedFilename ?? ""}
+              filename={outName}
               fileSize={currentEntry?.processedSize ?? 0}
             />
           );
