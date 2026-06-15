@@ -142,7 +142,7 @@ export function registerCompose(app: FastifyInstance) {
             input: processedOverlay,
             top: settings.y,
             left: settings.x,
-            blend: settings.blendMode as import("sharp").Blend,
+            blend: settings.blendMode as sharp.Blend,
           },
         ])
         .toBuffer();

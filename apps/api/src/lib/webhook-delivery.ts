@@ -26,7 +26,7 @@ export async function deliverWebhook(
   });
 
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (authHeader) headers["Authorization"] = authHeader;
+  if (authHeader) headers.Authorization = authHeader;
 
   let lastError: string | undefined;
   for (let attempt = 0; attempt <= maxRetries; attempt++) {

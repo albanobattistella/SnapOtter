@@ -5,7 +5,7 @@
  * default job options (retry policy, TTL-based cleanup).
  */
 import { Queue } from "bullmq";
-import { createRedisConnection } from "./connection.js";
+import { createBullMQConnection } from "./connection.js";
 import { POOLS, type Pool, queueName, type ToolJobData, type ToolJobResult } from "./types.js";
 
 const queues = new Map<Pool, Queue<ToolJobData, ToolJobResult>>();
@@ -15,7 +15,7 @@ export function getQueue(pool: Pool): Queue<ToolJobData, ToolJobResult> {
   let q = queues.get(pool);
   if (!q) {
     q = new Queue<ToolJobData, ToolJobResult>(queueName(pool), {
-      connection: createRedisConnection(),
+      connection: createBullMQConnection(),
       defaultJobOptions: {
         attempts: pool === "ai" ? 1 : 2,
         backoff: { type: "exponential", delay: 1000 },

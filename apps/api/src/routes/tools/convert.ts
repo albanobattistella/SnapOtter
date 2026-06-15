@@ -120,9 +120,7 @@ export function registerConvert(app: FastifyInstance) {
       }
 
       const inputExt = extname(filename).toLowerCase().replace(".", "");
-      const sharpOpts: import("sharp").SharpOptions = isSvgBuffer(inputBuffer)
-        ? { density: 300 }
-        : {};
+      const sharpOpts: sharp.SharpOptions = isSvgBuffer(inputBuffer) ? { density: 300 } : {};
       // Preserve animation frames when both input and output are animatable formats
       if (ANIMATABLE_FORMATS.has(inputExt) && ANIMATABLE_FORMATS.has(settings.format)) {
         sharpOpts.animated = true;

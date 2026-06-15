@@ -31,7 +31,7 @@ export async function compress(image: Sharp, options: CompressOptions): Promise<
   const safeDetected = NO_ENCODER.has(detected) ? "png" : detected;
   const outputFormat = (FORMAT_MAP[format ?? ""] ??
     FORMAT_MAP[safeDetected] ??
-    safeDetected) as keyof import("sharp").FormatEnum;
+    safeDetected) as keyof sharp.FormatEnum;
 
   if (targetSizeBytes !== undefined) {
     if (targetSizeBytes <= 0) {
@@ -52,7 +52,7 @@ export async function compress(image: Sharp, options: CompressOptions): Promise<
 async function findBestQuality(
   inputBuffer: Buffer,
   resize: { width: number; height: number } | null,
-  format: keyof import("sharp").FormatEnum,
+  format: keyof sharp.FormatEnum,
   targetBytes: number,
 ): Promise<number | null> {
   let low = 1;
@@ -82,7 +82,7 @@ async function findBestQuality(
 
 async function compressToTargetSize(
   inputBuffer: Buffer,
-  format: keyof import("sharp").FormatEnum,
+  format: keyof sharp.FormatEnum,
   targetBytes: number,
 ): Promise<Sharp> {
   const quality = await findBestQuality(inputBuffer, null, format, targetBytes);

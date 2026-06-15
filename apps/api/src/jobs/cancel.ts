@@ -16,7 +16,7 @@ import type Redis from "ioredis";
 import { db, schema } from "../db/index.js";
 import { createRedisConnection, sharedRedis } from "./connection.js";
 import { getQueue } from "./queues.js";
-import { bullPrefix, POOLS, type Pool } from "./types.js";
+import { bullPrefix, POOLS } from "./types.js";
 
 // ── Per-worker cancel registry ──────────────────────────────────
 

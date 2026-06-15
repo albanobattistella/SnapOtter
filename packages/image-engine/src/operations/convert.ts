@@ -1,3 +1,4 @@
+import type sharp from "sharp";
 import type { ConvertOptions, Sharp } from "../types.js";
 
 /**
@@ -31,5 +32,5 @@ export async function convert(image: Sharp, options: ConvertOptions): Promise<Sh
     formatOptions.quality = quality;
   }
 
-  return image.toFormat(sharpFormat as keyof import("sharp").FormatEnum, formatOptions);
+  return image.toFormat(sharpFormat as keyof sharp.FormatEnum, formatOptions);
 }

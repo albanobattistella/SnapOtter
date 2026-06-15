@@ -43,8 +43,8 @@ import {
 import { hasAiJobHandler, runAiToolJob } from "./ai-handlers.js";
 import { recordChildOutcome } from "./batch-progress.js";
 import { registerCancelable, unregisterCancelable } from "./cancel.js";
-import { createRedisConnection } from "./connection.js";
-import { autoSaveToLibrary, buildOutputName, generatePreview } from "./postprocess.js";
+import { createBullMQConnection } from "./connection.js";
+import { buildOutputName, generatePreview } from "./postprocess.js";
 import { runSystemJob } from "./system-jobs.js";
 import { POOLS, type Pool, queueName, type ToolJobData, type ToolJobResult } from "./types.js";
 
@@ -578,7 +578,7 @@ async function processPipelineFinalize(job: Job<ToolJobData>): Promise<ToolJobRe
   // Copy last step's output to outputs/<pipelineJobId>/<filename> so
   // the legacy download URL /api/v1/download/<pipelineJobId>/... works.
   const lastOutputBuffer = await getObjectBuffer(lastOutputRef);
-  const outFilename = lastOutputRef.split("/").pop()!;
+  const outFilename = lastOutputRef.split("/").pop() ?? "output";
   const parentKey = `outputs/${data.jobId}/${outFilename}`;
   await putObject(parentKey, lastOutputBuffer);
 
@@ -636,13 +636,15 @@ async function processPipelineFinalize(job: Job<ToolJobData>): Promise<ToolJobRe
  * failures would skip the DB write and leave the row "processing".
  */
 async function processBatchChild(job: Job<ToolJobData>): Promise<ToolJobResult> {
+  const parentId = job.data.parentId ?? "";
+  const totalFiles = job.data.totalFiles ?? 0;
   try {
     const result = await processToolJob(job);
-    await recordChildOutcome(job.data.parentId!, job.data.totalFiles!, job.data.filename);
+    await recordChildOutcome(parentId, totalFiles, job.data.filename);
     return result;
   } catch (err) {
     const error = stripInternalPaths(err instanceof Error ? err.message : String(err));
-    await recordChildOutcome(job.data.parentId!, job.data.totalFiles!, job.data.filename, error);
+    await recordChildOutcome(parentId, totalFiles, job.data.filename, error);
     // Return a completed job with a failure marker so the parent runs.
     return {
       outputRefs: [],
@@ -687,7 +689,7 @@ async function processBatchFinalize(job: Job<ToolJobData>): Promise<ToolJobResul
     }
 
     if (row.status === "completed" && row.outputRefs?.[0]) {
-      const outFilename = row.outputRefs[0].split("/").pop()!;
+      const outFilename = row.outputRefs[0].split("/").pop() ?? "output";
       manifest.push({ index: i, filename: outFilename, outputRef: row.outputRefs[0] });
     } else {
       const errorMsg = (row.error as { message?: string } | null)?.message ?? "Processing failed";
@@ -732,7 +734,7 @@ export function startWorkers(): void {
       };
 
       const worker = new Worker<ToolJobData, unknown>(queueName(pool), systemProcessor, {
-        connection: createRedisConnection(),
+        connection: createBullMQConnection(),
         concurrency: workerConcurrency,
         stalledInterval: 30_000,
       });
@@ -754,7 +756,7 @@ export function startWorkers(): void {
     };
 
     const worker = new Worker<ToolJobData, ToolJobResult>(queueName(pool), processor, {
-      connection: createRedisConnection(),
+      connection: createBullMQConnection(),
       concurrency: workerConcurrency,
       stalledInterval: 30_000,
     });

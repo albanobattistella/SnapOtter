@@ -1,25 +1,25 @@
 import sharp from "sharp";
 
+type SharpFormat = keyof sharp.FormatEnum | "avif";
+
 export interface OutputFormat {
-  format: keyof sharp.FormatEnum;
+  format: SharpFormat;
   extension: string;
   contentType: string;
   quality: number;
 }
 
-const FORMAT_MAP: Record<
-  string,
-  { format: keyof sharp.FormatEnum; extension: string; contentType: string }
-> = {
-  jpeg: { format: "jpeg", extension: "jpg", contentType: "image/jpeg" },
-  png: { format: "png", extension: "png", contentType: "image/png" },
-  webp: { format: "webp", extension: "webp", contentType: "image/webp" },
-  gif: { format: "gif", extension: "gif", contentType: "image/gif" },
-  tiff: { format: "tiff", extension: "tiff", contentType: "image/tiff" },
-  avif: { format: "avif", extension: "avif", contentType: "image/avif" },
-  heif: { format: "avif", extension: "avif", contentType: "image/avif" },
-  jxl: { format: "jxl" as keyof sharp.FormatEnum, extension: "jxl", contentType: "image/jxl" },
-};
+const FORMAT_MAP: Record<string, { format: SharpFormat; extension: string; contentType: string }> =
+  {
+    jpeg: { format: "jpeg", extension: "jpg", contentType: "image/jpeg" },
+    png: { format: "png", extension: "png", contentType: "image/png" },
+    webp: { format: "webp", extension: "webp", contentType: "image/webp" },
+    gif: { format: "gif", extension: "gif", contentType: "image/gif" },
+    tiff: { format: "tiff", extension: "tiff", contentType: "image/tiff" },
+    avif: { format: "avif", extension: "avif", contentType: "image/avif" },
+    heif: { format: "avif", extension: "avif", contentType: "image/avif" },
+    jxl: { format: "jxl", extension: "jxl", contentType: "image/jxl" },
+  };
 
 const DEFAULT_QUALITY = 95;
 const PNG_FALLBACK = FORMAT_MAP.png;

@@ -10,9 +10,9 @@ import { FlowProducer, type Job, QueueEvents } from "bullmq";
 import { eq } from "drizzle-orm";
 import { env } from "../config.js";
 import { db, schema } from "../db/index.js";
-import { createRedisConnection } from "./connection.js";
+import { createBullMQConnection } from "./connection.js";
 import { getQueue } from "./queues.js";
-import { POOLS, type Pool, queueName, type ToolJobData, type ToolJobResult } from "./types.js";
+import { type Pool, queueName, type ToolJobData, type ToolJobResult } from "./types.js";
 
 // ── QueueEvents (one per pool, lazy) ────────────────────────────
 
@@ -22,7 +22,7 @@ function getQueueEvents(pool: Pool): QueueEvents {
   let qe = queueEventsMap.get(pool);
   if (!qe) {
     qe = new QueueEvents(queueName(pool), {
-      connection: createRedisConnection(),
+      connection: createBullMQConnection(),
     });
     queueEventsMap.set(pool, qe);
   }
@@ -42,7 +42,7 @@ let _flowProducer: FlowProducer | null = null;
 export function getFlowProducer(): FlowProducer {
   if (!_flowProducer) {
     _flowProducer = new FlowProducer({
-      connection: createRedisConnection(),
+      connection: createBullMQConnection(),
     });
   }
   return _flowProducer;

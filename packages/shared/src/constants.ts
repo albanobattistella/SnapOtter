@@ -1,4 +1,10 @@
-import { AUDIO_INPUTS, IMAGE_INPUTS, MODALITY_URL_SLUG, SUBTITLE_INPUTS, VIDEO_INPUTS } from "./modality.js";
+import {
+  AUDIO_INPUTS,
+  IMAGE_INPUTS,
+  MODALITY_URL_SLUG,
+  SUBTITLE_INPUTS,
+  VIDEO_INPUTS,
+} from "./modality.js";
 import type { CategoryInfo, SocialMediaPreset, Tool } from "./types.js";
 
 export const CATEGORIES: CategoryInfo[] = [

@@ -4,6 +4,7 @@
  * Uses ioredis with settings compatible with BullMQ's requirements
  * (maxRetriesPerRequest: null for blocking commands).
  */
+import type { ConnectionOptions } from "bullmq";
 import Redis from "ioredis";
 import { env } from "../config.js";
 
@@ -17,6 +18,11 @@ export function createRedisConnection(): Redis {
     maxRetriesPerRequest: null,
     enableReadyCheck: true,
   });
+}
+
+// ioredis 5.11 vs BullMQ's bundled 5.10 type mismatch
+export function createBullMQConnection(): ConnectionOptions {
+  return createRedisConnection() as unknown as ConnectionOptions;
 }
 
 let _shared: Redis | null = null;

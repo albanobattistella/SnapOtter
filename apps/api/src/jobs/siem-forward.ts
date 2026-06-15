@@ -35,10 +35,10 @@ async function readSettingValue(key: string): Promise<string | null> {
   return row?.value ?? null;
 }
 
-export async function runSiemForward(): Promise<{ forwarded: number } | void> {
+export async function runSiemForward(): Promise<{ forwarded: number } | undefined> {
   // 1. Read SIEM config
   const config = await readSiemConfig();
-  if (!config || !config.enabled || !config.webhookUrl) {
+  if (!config?.enabled || !config.webhookUrl) {
     return;
   }
 

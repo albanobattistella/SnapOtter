@@ -24,14 +24,16 @@ const settingsSchema = z.object({
   quality: z.number().min(1).max(100).default(90),
 });
 
+type SharpFormat = keyof sharp.FormatEnum | "avif";
+
 function resolveOutputFormat(
   outputFormat: string,
   originalExt: string,
-): { sharpFormat: keyof sharp.FormatEnum | null; ext: string } {
+): { sharpFormat: SharpFormat | null; ext: string } {
   if (outputFormat === "original") {
     return { sharpFormat: null, ext: originalExt };
   }
-  const map: Record<string, { sharpFormat: keyof sharp.FormatEnum; ext: string }> = {
+  const map: Record<string, { sharpFormat: SharpFormat; ext: string }> = {
     png: { sharpFormat: "png", ext: ".png" },
     jpg: { sharpFormat: "jpeg", ext: ".jpg" },
     webp: { sharpFormat: "webp", ext: ".webp" },

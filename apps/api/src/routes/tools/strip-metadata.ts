@@ -209,7 +209,7 @@ export function registerStripMetadata(app: FastifyInstance) {
         case "webp":
           result.webp({ quality: 85 });
           break;
-        case "avif":
+        case "heif":
           result.avif({ quality: 50 });
           break;
         case "tiff":

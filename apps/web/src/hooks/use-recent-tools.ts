@@ -37,7 +37,7 @@ export function recordRecentTool(toolId: string) {
   const updated = [toolId, ...current.filter((id) => id !== toolId)].slice(0, MAX_RECENT);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   cachedRaw = null;
-  listeners.forEach((l) => l());
+  for (const l of listeners) l();
 }
 
 export function useRecentTools(): string[] {
