@@ -1,7 +1,7 @@
 import type { Tool } from "@snapotter/shared";
-import { CATEGORIES, TOOLS } from "@snapotter/shared";
-import { Search, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { CATEGORIES, MODALITIES, TOOLS } from "@snapotter/shared";
+import { ChevronDown, Search, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ToolCard } from "@/components/common/tool-card.js";
 import { AppLayout } from "@/components/layout/app-layout.js";
@@ -10,6 +10,7 @@ import { useFuseSearch } from "@/hooks/use-fuse-search.js";
 import { usePageTitle } from "@/hooks/use-page-title.js";
 import { useRecentTools } from "@/hooks/use-recent-tools.js";
 import { format } from "@/lib/format.js";
+import { ICON_MAP } from "@/lib/icon-map.js";
 import { getCategoryName, getToolName } from "@/lib/tool-i18n.js";
 import { cn } from "@/lib/utils.js";
 import { useSettingsStore } from "@/stores/settings-store";
@@ -18,6 +19,29 @@ interface TabDef {
   key: string;
   label: string;
 }
+
+const COLLAPSE_STORAGE_KEY = "snapotter-collapsed-modalities";
+
+function getCollapsedModalities(): Set<string> {
+  try {
+    const raw = localStorage.getItem(COLLAPSE_STORAGE_KEY);
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function saveCollapsedModalities(collapsed: Set<string>) {
+  localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify([...collapsed]));
+}
+
+const MODALITY_TAB_ORDER = [
+  { modalityId: "image", tabKey: "image", label: "Image" },
+  { modalityId: "video", tabKey: "video", label: "Video" },
+  { modalityId: "audio", tabKey: "audio", label: "Audio" },
+  { modalityId: "document", tabKey: "document", label: "Documents" },
+  { modalityId: "file", tabKey: "data", label: "Data" },
+];
 
 export function HomePage() {
   const { t } = useTranslation();
@@ -113,8 +137,10 @@ export function HomePage() {
 
           {search ? (
             <SearchResults results={searchResults} query={search} onClear={() => setSearch("")} />
+          ) : activeTab === "all" ? (
+            <AllTabContent recentTools={recentTools} visibleTools={visibleTools} />
           ) : (
-            <ToolGrid recentTools={recentTools} groupedTools={groupedTools} />
+            <CategoryGrid groupedTools={groupedTools} />
           )}
         </div>
       </div>
@@ -255,19 +281,46 @@ function SearchResults({
   );
 }
 
-// ── Tool Grid (used by both All tab and modality tabs) ───────────
+// ── All Tab: Grouped by modality, then by category ───────────────
 
-function ToolGrid({
+function AllTabContent({
   recentTools,
-  groupedTools,
+  visibleTools,
 }: {
   recentTools: Tool[];
-  groupedTools: Map<string, Tool[]>;
+  visibleTools: Tool[];
 }) {
   const { t } = useTranslation();
+  const [collapsed, setCollapsed] = useState<Set<string>>(getCollapsedModalities);
+
+  const toggleModality = useCallback((modalityId: string) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(modalityId)) next.delete(modalityId);
+      else next.add(modalityId);
+      saveCollapsedModalities(next);
+      return next;
+    });
+  }, []);
+
+  const toolsByModality = useMemo(() => {
+    const map = new Map<string, Map<string, Tool[]>>();
+    for (const tool of visibleTools) {
+      let modMap = map.get(tool.modality);
+      if (!modMap) {
+        modMap = new Map();
+        map.set(tool.modality, modMap);
+      }
+      const existing = modMap.get(tool.category);
+      if (existing) existing.push(tool);
+      else modMap.set(tool.category, [tool]);
+    }
+    return map;
+  }, [visibleTools]);
 
   return (
     <div className="space-y-6">
+      {/* Recent */}
       {recentTools.length > 0 && (
         <section>
           <h2 className="text-[11px] font-semibold uppercase text-muted-foreground/70 tracking-widest mb-2">
@@ -287,6 +340,86 @@ function ToolGrid({
         </section>
       )}
 
+      {/* Modality sections */}
+      {MODALITY_TAB_ORDER.map(({ modalityId, label }) => {
+        const categoryMap = toolsByModality.get(modalityId);
+        if (!categoryMap || categoryMap.size === 0) return null;
+
+        const totalCount = [...categoryMap.values()].reduce((sum, arr) => sum + arr.length, 0);
+        const isCollapsed = collapsed.has(modalityId);
+        const modality = MODALITIES.find((m) => m.id === modalityId);
+        const ModalityIcon = modality
+          ? (ICON_MAP[modality.icon] as React.ComponentType<{ className?: string }>)
+          : null;
+
+        return (
+          <section key={modalityId}>
+            <button
+              type="button"
+              onClick={() => toggleModality(modalityId)}
+              className="w-full flex items-center gap-2 py-2 mb-2 border-b border-border/40 group cursor-pointer"
+            >
+              {ModalityIcon && (
+                <div
+                  className="p-1 rounded"
+                  style={{
+                    backgroundColor: `${modality?.color ?? "#6B7280"}15`,
+                    color: modality?.color ?? "#6B7280",
+                  }}
+                >
+                  <ModalityIcon className="h-4 w-4" />
+                </div>
+              )}
+              <span className="text-sm font-semibold text-foreground">{label}</span>
+              <span className="text-xs text-muted-foreground">{totalCount}</span>
+              <div className="flex-1" />
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 text-muted-foreground transition-transform",
+                  isCollapsed && "-rotate-90",
+                )}
+              />
+            </button>
+
+            {!isCollapsed && (
+              <div className="space-y-5 ps-1">
+                {CATEGORIES.filter((cat) => categoryMap.has(cat.id)).map((category) => {
+                  const tools = categoryMap.get(category.id) ?? [];
+                  return (
+                    <div key={category.id}>
+                      <h3 className="text-[11px] font-semibold uppercase text-muted-foreground/50 tracking-widest mb-1.5">
+                        {getCategoryName(t, category.id, category.name)}
+                      </h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {tools.map((tool) => (
+                          <ToolCard key={tool.id} tool={tool} variant="descriptive" />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Category Grid (used by modality tabs) ────────────────────────
+
+function CategoryGrid({ groupedTools }: { groupedTools: Map<string, Tool[]> }) {
+  const { t } = useTranslation();
+
+  if (groupedTools.size === 0) {
+    return (
+      <p className="text-center text-muted-foreground py-16">{t.fullscreenGrid.noToolsFound}</p>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
       {CATEGORIES.filter((cat) => groupedTools.has(cat.id)).map((category) => {
         const tools = groupedTools.get(category.id) ?? [];
         return (
