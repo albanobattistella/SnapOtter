@@ -666,7 +666,7 @@ export function ToolPage() {
       }
       // Check if the current file is browser-playable
       const currentFileName = hasProcessed
-        ? (currentEntry?.processedFilename ?? "")
+        ? (currentEntry?.processedFilename ?? processedFileName ?? "")
         : (currentEntry?.file?.name ?? "");
       const currentExt = currentFileName.split(".").pop()?.toLowerCase() ?? "";
       const nativeVideoExts = new Set(["mp4", "webm", "ogg", "ogv", "m4v", "mov"]);
