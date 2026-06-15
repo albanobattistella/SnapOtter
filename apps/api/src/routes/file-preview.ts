@@ -1,13 +1,14 @@
 /**
  * GET /api/v1/files/:id/preview
  *
- * Server-side preview generation for non-native video/audio formats.
- * Generates a browser-playable H.264 MP4 (video) or MP3 (audio) preview
- * and caches it on disk for subsequent requests.
+ * Server-side preview generation for non-native video/audio formats
+ * and document files. Generates browser-playable H.264 MP4 (video),
+ * MP3 (audio), or PDF (documents) previews and caches them on disk.
  */
 import { createReadStream } from "node:fs";
-import { access, mkdir } from "node:fs/promises";
+import { access, copyFile, mkdir, rename, rm } from "node:fs/promises";
 import { join } from "node:path";
+import { convertDocument, sofficeAvailable } from "@snapotter/doc-engine";
 import { runFfmpeg } from "@snapotter/media-engine";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -43,6 +44,18 @@ async function fileExists(path: string): Promise<boolean> {
   }
 }
 
+const OFFICE_MIMES = new Set([
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.oasis.opendocument.text",
+  "application/vnd.oasis.opendocument.spreadsheet",
+  "application/vnd.oasis.opendocument.presentation",
+  "application/msword",
+  "application/vnd.ms-excel",
+  "application/vnd.ms-powerpoint",
+]);
+
 export async function filePreviewRoutes(app: FastifyInstance): Promise<void> {
   app.get(
     "/api/v1/files/:id/preview",
@@ -63,13 +76,71 @@ export async function filePreviewRoutes(app: FastifyInstance): Promise<void> {
 
       const isVideo = file.mimeType.startsWith("video/");
       const isAudio = file.mimeType.startsWith("audio/");
+      const isPdf = file.mimeType === "application/pdf";
+      const isOfficeDoc = OFFICE_MIMES.has(file.mimeType);
 
-      if (!isVideo && !isAudio) {
-        return reply
-          .status(400)
-          .send({ error: "Preview only supported for video and audio files" });
+      if (!isVideo && !isAudio && !isPdf && !isOfficeDoc) {
+        return reply.status(400).send({ error: "Preview not supported for this file type" });
       }
 
+      // PDF: stream the original file directly
+      if (isPdf) {
+        const inputPath = getStoredFilePath(file.storedName);
+        return reply
+          .header("Content-Type", "application/pdf")
+          .header("Cache-Control", "public, max-age=86400, immutable")
+          .send(createReadStream(inputPath));
+      }
+
+      // Office documents: convert to PDF via LibreOffice
+      if (isOfficeDoc) {
+        const cachedPath = previewPath(id, ".pdf");
+
+        if (await fileExists(cachedPath)) {
+          return reply
+            .header("Content-Type", "application/pdf")
+            .header("Cache-Control", "public, max-age=86400, immutable")
+            .send(createReadStream(cachedPath));
+        }
+
+        if (!sofficeAvailable()) {
+          return reply
+            .status(422)
+            .send({ error: "LibreOffice is not available for document preview" });
+        }
+
+        await ensurePreviewDir();
+        const inputPath = getStoredFilePath(file.storedName);
+
+        // Copy to a temp file with the original extension so LibreOffice
+        // can detect the format correctly from the extension.
+        const origExt = file.originalName.match(/\.[^.]+$/)?.[0] ?? "";
+        const tempInput = join(previewDirPath(), `${id}-input${origExt}`);
+        await copyFile(inputPath, tempInput);
+
+        try {
+          await convertDocument(tempInput, previewDirPath(), "pdf", {
+            timeoutMs: (env.LIBREOFFICE_TIMEOUT_S || 120) * 1000,
+          });
+
+          // convertDocument outputs next to the temp file; rename to cached path
+          const producedPath = join(previewDirPath(), `${id}-input.pdf`);
+          await rename(producedPath, cachedPath);
+        } catch (err) {
+          request.log.error({ err, fileId: id }, "Document preview generation failed");
+          return reply.status(422).send({ error: "Could not generate document preview" });
+        } finally {
+          // Clean up temp input copy
+          await rm(tempInput, { force: true }).catch(() => {});
+        }
+
+        return reply
+          .header("Content-Type", "application/pdf")
+          .header("Cache-Control", "public, max-age=86400, immutable")
+          .send(createReadStream(cachedPath));
+      }
+
+      // Video / Audio preview via FFmpeg
       const previewExt = isVideo ? ".mp4" : ".mp3";
       const contentType = isVideo ? "video/mp4" : "audio/mpeg";
       const cachedPath = previewPath(id, previewExt);

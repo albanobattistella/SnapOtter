@@ -120,6 +120,11 @@ input[type="range"]::-moz-range-track {
   text-align: left;
 }
 
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
 /* Slide-in animation for settings panel */
 @keyframes settings-slide-in {
   from {

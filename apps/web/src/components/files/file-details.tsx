@@ -1,5 +1,5 @@
 import { TOOLS } from "@snapotter/shared";
-import { FileImage, FileText, ImageIcon, Loader2, Music, Play, Video } from "lucide-react";
+import { FileImage, FileText, ImageIcon, Music, Play, Video } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "@/contexts/i18n-context";
@@ -68,6 +68,18 @@ function AuthImage({ src, alt, className }: { src: string; alt: string; classNam
 const NATIVE_VIDEO = new Set(["mp4", "webm", "ogg", "ogv", "m4v"]);
 const NATIVE_AUDIO = new Set(["mp3", "wav", "ogg", "oga", "opus", "aac", "m4a", "flac", "webm"]);
 
+const OFFICE_MIMES = new Set([
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.oasis.opendocument.text",
+  "application/vnd.oasis.opendocument.spreadsheet",
+  "application/vnd.oasis.opendocument.presentation",
+  "application/msword",
+  "application/vnd.ms-excel",
+  "application/vnd.ms-powerpoint",
+]);
+
 function isNativePlayable(mimeType: string, filename: string): boolean {
   const ext = filename.split(".").pop()?.toLowerCase() ?? "";
   if (mimeType.startsWith("video/")) return NATIVE_VIDEO.has(ext);
@@ -91,8 +103,10 @@ function FilePreview({
 
   const isMedia = mimeType.startsWith("video/") || mimeType.startsWith("audio/");
   const nativePlayable = isMedia && isNativePlayable(mimeType, name);
+  const isPdf = mimeType === "application/pdf";
+  const isOfficeDoc = OFFICE_MIMES.has(mimeType);
 
-  // Fetch native-playable media directly from the download endpoint.
+  // Fetch native-playable media or PDF directly from the download endpoint.
   // Also resets server-side preview state when the file changes.
   useEffect(() => {
     // Reset server-side preview state on every file change
@@ -102,6 +116,23 @@ function FilePreview({
     });
     setPreviewLoading(false);
     setPreviewError(false);
+
+    if (isPdf) {
+      let revoked = false;
+      fetch(getFileDownloadUrl(fileId), { headers: formatHeaders() })
+        .then((res) => res.blob())
+        .then((blob) => {
+          if (!revoked) setMediaSrc(URL.createObjectURL(blob));
+        })
+        .catch(() => {});
+      return () => {
+        revoked = true;
+        setMediaSrc((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return null;
+        });
+      };
+    }
 
     if (!isMedia || !nativePlayable) return;
     let revoked = false;
@@ -119,7 +150,7 @@ function FilePreview({
         return null;
       });
     };
-  }, [isMedia, nativePlayable, fileId]);
+  }, [isMedia, nativePlayable, isPdf, fileId]);
 
   const handleGeneratePreview = useCallback(() => {
     setPreviewLoading(true);
@@ -140,7 +171,61 @@ function FilePreview({
       });
   }, [fileId]);
 
-  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  // PDF files -- render inline in iframe
+  if (isPdf) {
+    return mediaSrc ? (
+      <iframe src={mediaSrc} className="w-full h-48 rounded-lg border border-border" title={name} />
+    ) : (
+      <div className="w-full h-48 rounded-lg bg-muted flex items-center justify-center">
+        <div className="h-4 w-4 border-2 border-muted-foreground/30 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Office documents -- convert to PDF via preview endpoint
+  if (isOfficeDoc) {
+    if (previewSrc) {
+      return (
+        <iframe
+          src={previewSrc}
+          className="w-full h-48 rounded-lg border border-border"
+          title={name}
+        />
+      );
+    }
+
+    if (previewLoading) {
+      return (
+        <div className="w-full rounded-lg bg-muted flex flex-col items-center justify-center gap-3 p-6">
+          <div className="w-full max-w-48 h-1 rounded-full bg-border overflow-hidden">
+            <div
+              className="h-full w-1/3 rounded-full bg-primary"
+              style={{ animation: "shimmer 1.5s ease-in-out infinite" }}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground">Generating preview...</span>
+        </div>
+      );
+    }
+
+    return (
+      <div className="w-full h-32 rounded-lg bg-muted flex flex-col items-center justify-center gap-2">
+        <button
+          type="button"
+          onClick={handleGeneratePreview}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
+        >
+          <Play className="h-4 w-4" />
+          Generate Preview
+        </button>
+        {previewError && (
+          <span className="text-xs text-muted-foreground">
+            Preview generation failed. Try again.
+          </span>
+        )}
+      </div>
+    );
+  }
 
   // Video files
   if (mimeType.startsWith("video/")) {
@@ -168,8 +253,14 @@ function FilePreview({
 
     if (previewLoading) {
       return (
-        <div className="w-full h-32 rounded-lg bg-muted flex items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <div className="w-full rounded-lg bg-muted flex flex-col items-center justify-center gap-3 p-6">
+          <div className="w-full max-w-48 h-1 rounded-full bg-border overflow-hidden">
+            <div
+              className="h-full w-1/3 rounded-full bg-primary"
+              style={{ animation: "shimmer 1.5s ease-in-out infinite" }}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground">Generating preview...</span>
         </div>
       );
     }
@@ -181,14 +272,14 @@ function FilePreview({
           onClick={handleGeneratePreview}
           className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
         >
-          <Play className="h-5 w-5" />
+          <Play className="h-4 w-4" />
           Generate Preview
         </button>
-        <span className="text-xs text-muted-foreground">
-          {previewError
-            ? "Preview generation failed. Try again."
-            : `${ext.toUpperCase()} requires server-side conversion`}
-        </span>
+        {previewError && (
+          <span className="text-xs text-muted-foreground">
+            Preview generation failed. Try again.
+          </span>
+        )}
       </div>
     );
   }
@@ -219,8 +310,14 @@ function FilePreview({
 
     if (previewLoading) {
       return (
-        <div className="w-full h-32 rounded-lg bg-muted flex items-center justify-center">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <div className="w-full rounded-lg bg-muted flex flex-col items-center justify-center gap-3 p-6">
+          <div className="w-full max-w-48 h-1 rounded-full bg-border overflow-hidden">
+            <div
+              className="h-full w-1/3 rounded-full bg-primary"
+              style={{ animation: "shimmer 1.5s ease-in-out infinite" }}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground">Generating preview...</span>
         </div>
       );
     }
@@ -232,14 +329,14 @@ function FilePreview({
           onClick={handleGeneratePreview}
           className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors"
         >
-          <Play className="h-5 w-5" />
+          <Play className="h-4 w-4" />
           Generate Preview
         </button>
-        <span className="text-xs text-muted-foreground">
-          {previewError
-            ? "Preview generation failed. Try again."
-            : `${ext.toUpperCase()} requires server-side conversion`}
-        </span>
+        {previewError && (
+          <span className="text-xs text-muted-foreground">
+            Preview generation failed. Try again.
+          </span>
+        )}
       </div>
     );
   }
