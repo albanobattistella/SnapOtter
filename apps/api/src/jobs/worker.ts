@@ -44,7 +44,7 @@ import { hasAiJobHandler, runAiToolJob } from "./ai-handlers.js";
 import { recordChildOutcome } from "./batch-progress.js";
 import { registerCancelable, unregisterCancelable } from "./cancel.js";
 import { createBullMQConnection } from "./connection.js";
-import { buildOutputName, generatePreview } from "./postprocess.js";
+import { autoSaveToLibrary, buildOutputName, generatePreview } from "./postprocess.js";
 import { runSystemJob } from "./system-jobs.js";
 import { POOLS, type Pool, queueName, type ToolJobData, type ToolJobResult } from "./types.js";
 
@@ -267,8 +267,18 @@ async function processToolJob(job: Job<ToolJobData>): Promise<ToolJobResult> {
       // Generate preview for non-browser-previewable formats
       const previewRef = await generatePreview(resultBuffer, resultContentType, jobId, inputBuffer);
 
-      // No auto-save -- users save to library explicitly via the UI
-      const savedFileId: string | undefined = undefined;
+      // Auto-save a new version when the input came from the user's library
+      // (data.fileId is set by tool-factory when the upload referenced a
+      // library file). Without a fileId this is a no-op, so tool-first uploads
+      // are not auto-saved.
+      const savedFileId = await autoSaveToLibrary({
+        fileId: data.fileId,
+        userId: data.userId,
+        buffer: resultBuffer,
+        outName,
+        contentType: resultContentType,
+        toolId: data.toolId,
+      });
 
       const durationMs = Date.now() - startTime;
 
@@ -495,6 +505,37 @@ async function processPipelineStep(job: Job<ToolJobData>): Promise<ToolJobResult
  * When part of a pipeline-batch (parentId is set), also records the
  * child outcome for batch progress tracking.
  */
+/** Best-effort content type from a filename extension (for preview dispatch). */
+function contentTypeForFilename(name: string): string {
+  const ext = name.split(".").pop()?.toLowerCase() ?? "";
+  const map: Record<string, string> = {
+    pdf: "application/pdf",
+    mp4: "video/mp4",
+    webm: "video/webm",
+    mov: "video/quicktime",
+    mkv: "video/x-matroska",
+    avi: "video/x-msvideo",
+    mp3: "audio/mpeg",
+    wav: "audio/wav",
+    ogg: "audio/ogg",
+    flac: "audio/flac",
+    m4a: "audio/mp4",
+    aac: "audio/aac",
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    gif: "image/gif",
+    webp: "image/webp",
+    avif: "image/avif",
+    svg: "image/svg+xml",
+    bmp: "image/bmp",
+    tiff: "image/tiff",
+    heic: "image/heic",
+    heif: "image/heif",
+  };
+  return map[ext] ?? "application/octet-stream";
+}
+
 async function processPipelineFinalize(job: Job<ToolJobData>): Promise<ToolJobResult> {
   const data = job.data;
   const totalSteps = data.totalSteps ?? 0;
@@ -582,6 +623,12 @@ async function processPipelineFinalize(job: Job<ToolJobData>): Promise<ToolJobRe
   const parentKey = `outputs/${data.jobId}/${outFilename}`;
   await putObject(parentKey, lastOutputBuffer);
 
+  // Modality-aware preview of the final output (video poster / pdf first page /
+  // image thumb) so the pipeline result carries a previewUrl like single-tool
+  // results do. Content type is derived from the output extension.
+  const contentType = contentTypeForFilename(outFilename);
+  const previewRef = await generatePreview(lastOutputBuffer, contentType, data.jobId);
+
   await db
     .update(schema.jobs)
     .set({
@@ -593,11 +640,27 @@ async function processPipelineFinalize(job: Job<ToolJobData>): Promise<ToolJobRe
     })
     .where(eq(schema.jobs.id, data.jobId));
 
+  const result: ToolJobResult = {
+    outputRefs: [parentKey],
+    filename: outFilename,
+    contentType,
+    originalSize: firstBytesIn,
+    processedSize: lastBytesOut,
+    previewRef,
+    resultPayload: {
+      stepsCompleted: totalSteps,
+      steps,
+    },
+  };
+
   updateSingleFileProgress({
     jobId: progressJobId,
     phase: "complete",
     percent: 100,
     stage: "complete",
+    // Carry the full result (incl. previewUrl) so the SSE fallback path
+    // (sync-window timeout) still delivers a downloadable output.
+    result: buildLegacyResultPayload(result, data.jobId),
   });
 
   // Batch progress (pipeline-batch only)
@@ -605,17 +668,7 @@ async function processPipelineFinalize(job: Job<ToolJobData>): Promise<ToolJobRe
     await recordChildOutcome(data.parentId, data.totalFiles, outFilename);
   }
 
-  return {
-    outputRefs: [parentKey],
-    filename: outFilename,
-    contentType: "application/octet-stream",
-    originalSize: firstBytesIn,
-    processedSize: lastBytesOut,
-    resultPayload: {
-      stepsCompleted: totalSteps,
-      steps,
-    },
-  };
+  return result;
 }
 
 // ── Batch child handler ───────────────────────────────────────

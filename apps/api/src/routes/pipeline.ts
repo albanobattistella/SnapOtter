@@ -205,7 +205,7 @@ export async function registerPipelineRoutes(app: FastifyInstance): Promise<void
    */
   app.post("/api/v1/pipeline/execute", async (request: FastifyRequest, reply: FastifyReply) => {
     let fileBuffer: Buffer | null = null;
-    let filename = "image";
+    let filename = "file";
     let pipelineRaw: string | null = null;
     let clientJobId: string | null = null;
 
@@ -219,7 +219,7 @@ export async function registerPipelineRoutes(app: FastifyInstance): Promise<void
             chunks.push(chunk);
           }
           fileBuffer = Buffer.concat(chunks);
-          filename = sanitizeFilename(part.filename ?? "image");
+          filename = sanitizeFilename(part.filename ?? "file");
         } else if (part.fieldname === "pipeline") {
           pipelineRaw = part.value as string;
         } else if (part.fieldname === "clientJobId") {
@@ -501,6 +501,9 @@ export async function registerPipelineRoutes(app: FastifyInstance): Promise<void
       return reply.send({
         jobId,
         downloadUrl: `/api/v1/download/${jobId}/${encodeURIComponent(result.filename)}`,
+        previewUrl: result.previewRef
+          ? `/api/v1/download/${jobId}/${result.previewRef.split("/").pop()}`
+          : undefined,
         originalSize,
         processedSize: result.processedSize,
         stepsCompleted: result.resultPayload?.stepsCompleted ?? parsedSteps.length,
@@ -686,7 +689,7 @@ export async function registerPipelineRoutes(app: FastifyInstance): Promise<void
           if (buffer.length > 0) {
             files.push({
               buffer,
-              filename: sanitizeFilename(part.filename ?? "image"),
+              filename: sanitizeFilename(part.filename ?? "file"),
             });
           }
         } else if (part.fieldname === "pipeline") {
@@ -706,7 +709,7 @@ export async function registerPipelineRoutes(app: FastifyInstance): Promise<void
     }
 
     if (files.length === 0) {
-      return reply.status(400).send({ error: "No image files provided" });
+      return reply.status(400).send({ error: "No files provided" });
     }
 
     // Enforce batch size limit
