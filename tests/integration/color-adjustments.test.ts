@@ -3,7 +3,7 @@
  *
  * Covers brightness, contrast, exposure, saturation, hue, temperature, tint,
  * sharpness, channel adjustments, and effects (grayscale, sepia, invert).
- * Also tests legacy alias routes (brightness-contrast, saturation, etc.).
+ * Consolidated adjust-colors tool replaces the old brightness-contrast, saturation, etc.
  */
 
 import { readFileSync } from "node:fs";
@@ -222,37 +222,6 @@ describe("Multiple input formats", () => {
       "test.webp",
       "image/webp",
     );
-    expect(res.statusCode).toBe(200);
-    const result = JSON.parse(res.body);
-    expect(result.downloadUrl).toBeDefined();
-  });
-});
-
-// ── Legacy alias routes ───────────────────────────────────────────
-describe("Legacy alias routes", () => {
-  it("brightness-contrast alias works", async () => {
-    const res = await postTool("brightness-contrast", { brightness: 25, contrast: -10 });
-    expect(res.statusCode).toBe(200);
-    const result = JSON.parse(res.body);
-    expect(result.downloadUrl).toBeDefined();
-  });
-
-  it("saturation alias works", async () => {
-    const res = await postTool("saturation", { saturation: 50 });
-    expect(res.statusCode).toBe(200);
-    const result = JSON.parse(res.body);
-    expect(result.downloadUrl).toBeDefined();
-  });
-
-  it("color-channels alias works", async () => {
-    const res = await postTool("color-channels", { red: 150, green: 50, blue: 100 });
-    expect(res.statusCode).toBe(200);
-    const result = JSON.parse(res.body);
-    expect(result.downloadUrl).toBeDefined();
-  });
-
-  it("color-effects alias works", async () => {
-    const res = await postTool("color-effects", { effect: "sepia" });
     expect(res.statusCode).toBe(200);
     const result = JSON.parse(res.body);
     expect(result.downloadUrl).toBeDefined();

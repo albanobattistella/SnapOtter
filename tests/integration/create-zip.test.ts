@@ -47,7 +47,7 @@ describe("create-zip (pure JS, no skipIf)", () => {
     expect(dl.rawPayload.length).toBeGreaterThan(CSV_A.length + CSV_B.length - 50);
   }, 30_000);
 
-  it("rejects a single file with 422 'at least two'", async () => {
+  it("rejects a single file with 400 'at least two'", async () => {
     const { body, contentType } = createMultipartPayload([
       { name: "file", filename: "tiny-a.csv", contentType: "text/csv", content: CSV_A },
       { name: "settings", content: JSON.stringify({}) },
@@ -59,8 +59,8 @@ describe("create-zip (pure JS, no skipIf)", () => {
       body,
     });
 
-    expect(res.statusCode).toBe(422);
+    expect(res.statusCode).toBe(400);
     const parsed = JSON.parse(res.body);
-    expect(parsed.details).toMatch(/at least two/i);
+    expect(parsed.error).toMatch(/at least 2/i);
   }, 30_000);
 });

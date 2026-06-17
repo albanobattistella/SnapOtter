@@ -66,7 +66,7 @@ describe("merge-csvs (pure JS, no skipIf)", () => {
     expect(parsed.details).toMatch(/different columns/i);
   }, 30_000);
 
-  it("rejects a single file with 422", async () => {
+  it("rejects a single file with 400", async () => {
     const { body, contentType } = createMultipartPayload([
       { name: "file", filename: "tiny-a.csv", contentType: "text/csv", content: CSV_A },
       { name: "settings", content: JSON.stringify({}) },
@@ -78,8 +78,8 @@ describe("merge-csvs (pure JS, no skipIf)", () => {
       body,
     });
 
-    expect(res.statusCode).toBe(422);
+    expect(res.statusCode).toBe(400);
     const parsed = JSON.parse(res.body);
-    expect(parsed.details).toMatch(/at least two/i);
+    expect(parsed.error).toMatch(/at least 2/i);
   }, 30_000);
 });

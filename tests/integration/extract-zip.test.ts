@@ -101,7 +101,7 @@ describe("extract-zip (pure JS, no skipIf)", () => {
     expect(dl.payload).toBe("hello world from extract-zip test");
   }, 30_000);
 
-  it("rejects a zip with path traversal (../evil.txt) with 422", async () => {
+  it("rejects a zip with path traversal (../evil.txt) with 400", async () => {
     // Most zip libraries sanitize entry names, so we binary-patch
     // a placeholder to inject "../evil.txt" into the raw zip bytes.
     const zip = new AdmZip();
@@ -118,11 +118,11 @@ describe("extract-zip (pure JS, no skipIf)", () => {
     }
 
     const res = await runExtract("traversal.zip", zipBuf);
-    expect(res.statusCode).toBe(422);
+    expect(res.statusCode).toBe(400);
     const parsed = JSON.parse(res.body);
-    // yauzl itself rejects "../" paths with "invalid relative path" (defense in depth);
-    // our guard also catches them if yauzl's validation is bypassed
-    expect(parsed.details).toMatch(/unsafe entry path|invalid relative path/i);
+    // Path traversal is now rejected pre-enqueue with a clean 400 InputValidationError,
+    // whose message is surfaced in `error` (the legacy worker path used `details`/422).
+    expect(parsed.error).toMatch(/unsafe entry path|invalid relative path/i);
   }, 30_000);
 
   it("rejects a high-ratio zip bomb with 422", async () => {

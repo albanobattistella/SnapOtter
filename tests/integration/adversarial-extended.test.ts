@@ -620,7 +620,7 @@ describe("Batch edge cases — extended", () => {
 
     expect(res.statusCode).toBe(400);
     const json = JSON.parse(res.body);
-    expect(json.error).toMatch(/no image/i);
+    expect(json.error).toMatch(/no file/i);
   });
 
   it("handles batch with duplicate filenames", async () => {
@@ -729,7 +729,7 @@ describe("Batch edge cases — extended", () => {
     // The zero-byte file is skipped, resulting in 0 valid files
     expect(res.statusCode).toBe(400);
     const json = JSON.parse(res.body);
-    expect(json.error).toMatch(/no image/i);
+    expect(json.error).toMatch(/no file/i);
   });
 });
 
@@ -1282,7 +1282,7 @@ describe("Batch with only zero-byte files", () => {
     // Zero-byte files are skipped during parsing, so 0 valid files
     expect(res.statusCode).toBe(400);
     const json = JSON.parse(res.body);
-    expect(json.error).toMatch(/no image/i);
+    expect(json.error).toMatch(/no file/i);
   });
 });
 

@@ -7,6 +7,7 @@
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { TOOLS } from "@snapotter/shared";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { db, schema } from "../../apps/api/src/db/index.js";
@@ -47,17 +48,66 @@ preReadyHooks.push((app) => {
       contentType: "application/octet-stream",
     }),
   });
+  // Image-modality multi-input tool: used to verify per-file validation errors
+  // are prefixed with the filename. (multi-concat is "file" modality, which
+  // passes content through without validating, so it cannot exercise this path.)
+  createToolRoute(app, {
+    toolId: "multi-validate",
+    maxInputs: 2,
+    settingsSchema: emptySchema,
+    process: async () => {
+      throw new Error("legacy path must not run");
+    },
+    processV2: async (ctx) => ({
+      buffer: ctx.inputs[0].buffer,
+      filename: "out.png",
+      contentType: "image/png",
+    }),
+  });
 });
 
 let testApp: TestApp;
 let adminToken: string;
 
 beforeAll(async () => {
+  // multi-concat isn't a real catalog tool. resolveToolPool() routes unknown
+  // tool IDs to the "system" pool (whose worker only runs system jobs), and the
+  // factory would default it to image modality (which re-encodes inputs). Register
+  // it as a "file" tool so it routes to the docs pool with raw passthrough, like a
+  // real multi-input file tool. Removed again in afterAll.
+  TOOLS.push(
+    {
+      id: "multi-concat",
+      name: "Multi Concat (test)",
+      description: "Test-only tool that concatenates inputs",
+      category: "archives",
+      icon: "FolderArchive",
+      route: "/multi-concat",
+      modality: "file",
+      acceptedInputs: [],
+      executionHint: "fast",
+    } as (typeof TOOLS)[number],
+    {
+      id: "multi-validate",
+      name: "Multi Validate (test)",
+      description: "Test-only image multi-input tool",
+      category: "archives",
+      icon: "Image",
+      route: "/multi-validate",
+      modality: "image",
+      acceptedInputs: [],
+      executionHint: "fast",
+    } as (typeof TOOLS)[number],
+  );
   testApp = await buildTestApp();
   adminToken = await loginAsAdmin(testApp.app);
 }, 30_000);
 
 afterAll(async () => {
+  for (const id of ["multi-concat", "multi-validate"]) {
+    const idx = TOOLS.findIndex((t) => t.id === id);
+    if (idx !== -1) TOOLS.splice(idx, 1);
+  }
   await testApp.cleanup();
 }, 10_000);
 
@@ -161,7 +211,7 @@ describe("Factory multi-input (maxInputs)", () => {
 
     const res = await testApp.app.inject({
       method: "POST",
-      url: "/api/v1/tools/multi-concat",
+      url: "/api/v1/tools/multi-validate",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,

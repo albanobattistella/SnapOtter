@@ -291,7 +291,7 @@ describe("Dropzone", () => {
 
     it("filters out non-image files on drop", () => {
       const onFiles = vi.fn();
-      render(<Dropzone onFiles={onFiles} />);
+      render(<Dropzone onFiles={onFiles} fileFilter={isImageFile} />);
       const zone = screen.getByLabelText("File drop zone");
 
       const png = makeFile("a.png", "image/png");
@@ -303,7 +303,7 @@ describe("Dropzone", () => {
 
     it("does not call onFiles when all dropped files are non-image", () => {
       const onFiles = vi.fn();
-      render(<Dropzone onFiles={onFiles} />);
+      render(<Dropzone onFiles={onFiles} fileFilter={isImageFile} />);
       const zone = screen.getByLabelText("File drop zone");
 
       const pdf = makeFile("doc.pdf", "application/pdf");
@@ -428,7 +428,7 @@ describe("Dropzone", () => {
 
     it("filters out non-image files from paste", () => {
       const onFiles = vi.fn();
-      render(<Dropzone onFiles={onFiles} />);
+      render(<Dropzone onFiles={onFiles} fileFilter={isImageFile} />);
 
       const png = makeFile("a.png", "image/png");
       const txt = makeFile("notes.txt", "text/plain");
@@ -439,7 +439,7 @@ describe("Dropzone", () => {
 
     it("does not call onFiles when pasted content has no image files", () => {
       const onFiles = vi.fn();
-      render(<Dropzone onFiles={onFiles} />);
+      render(<Dropzone onFiles={onFiles} fileFilter={isImageFile} />);
 
       pasteViaItems([makeFile("doc.pdf", "application/pdf")]);
 
@@ -496,7 +496,7 @@ describe("Dropzone", () => {
 
     it("does not prevent default on paste when no image files", () => {
       const onFiles = vi.fn();
-      render(<Dropzone onFiles={onFiles} />);
+      render(<Dropzone onFiles={onFiles} fileFilter={isImageFile} />);
 
       const event = pasteViaItems([makeFile("doc.pdf", "application/pdf")]);
 
@@ -560,7 +560,7 @@ describe("Dropzone", () => {
 
     it("filters non-image files from Finder paste", () => {
       const onFiles = vi.fn();
-      render(<Dropzone onFiles={onFiles} />);
+      render(<Dropzone onFiles={onFiles} fileFilter={isImageFile} />);
 
       const png = makeFile("photo.png", "image/png");
       const pdf = makeFile("doc.pdf", "application/pdf");
@@ -571,7 +571,7 @@ describe("Dropzone", () => {
 
     it("ignores Finder paste with only non-image files", () => {
       const onFiles = vi.fn();
-      render(<Dropzone onFiles={onFiles} />);
+      render(<Dropzone onFiles={onFiles} fileFilter={isImageFile} />);
 
       pasteViaFiles([makeFile("doc.pdf", "application/pdf")]);
 

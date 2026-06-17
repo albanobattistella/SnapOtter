@@ -576,7 +576,10 @@ describe("File upload/download", () => {
       expect(JSON.parse(res.body).error).toMatch(/no valid files/i);
     });
 
-    it("returns 400 for a non-image file (text file disguised as upload)", async () => {
+    // Upload is modality-agnostic in 2.0: it accepts any file and defers content
+    // validation to per-tool processing (a disguised/invalid file fails when a
+    // tool actually runs on it). Stored files are never executed.
+    it("accepts a non-image file upload (content validated per-tool at process time)", async () => {
       const textContent = Buffer.from("This is not an image. Just plain text content.");
       const { body: payload, contentType } = createMultipartPayload([
         {
@@ -596,10 +599,10 @@ describe("File upload/download", () => {
         },
         payload,
       });
-      expect(res.statusCode).toBe(400);
+      expect(res.statusCode).toBe(200);
     });
 
-    it("rejects a file with image extension but non-image content", async () => {
+    it("accepts a file with image extension but non-image content (validated at process time)", async () => {
       const fakeImage = Buffer.from("#!/bin/bash\necho 'gotcha'");
       const { body: payload, contentType } = createMultipartPayload([
         {
@@ -619,7 +622,7 @@ describe("File upload/download", () => {
         },
         payload,
       });
-      expect(res.statusCode).toBe(400);
+      expect(res.statusCode).toBe(200);
     });
 
     it("sanitizes path traversal in filename", async () => {
@@ -830,7 +833,7 @@ describe("Tool processing", () => {
         payload,
       });
       expect(res.statusCode).toBe(400);
-      expect(JSON.parse(res.body).error).toMatch(/no image/i);
+      expect(JSON.parse(res.body).error).toMatch(/no file/i);
     });
 
     it("returns 400 for malformed settings JSON", async () => {
@@ -3428,7 +3431,7 @@ describe("Crop format preservation", () => {
 // COLOR ADJUSTMENTS FORMAT PRESERVATION
 // ═══════════════════════════════════════════════════════════════════════════
 describe("Color adjustments format preservation", () => {
-  it("preserves JPEG format for JPEG input via brightness-contrast", async () => {
+  it("preserves JPEG format for JPEG input via adjust-colors", async () => {
     const { body: payload, contentType } = createMultipartPayload([
       { name: "file", filename: "photo.jpg", contentType: "image/jpeg", content: JPG_100x100 },
       { name: "settings", content: JSON.stringify({ brightness: 10 }) },
@@ -3436,7 +3439,7 @@ describe("Color adjustments format preservation", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/brightness-contrast",
+      url: "/api/v1/tools/adjust-colors",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -3455,7 +3458,7 @@ describe("Color adjustments format preservation", () => {
     expect(meta.format).toBe("jpeg");
   });
 
-  it("preserves PNG format for PNG input via saturation", async () => {
+  it("preserves PNG format for PNG input via adjust-colors", async () => {
     const { body: payload, contentType } = createMultipartPayload([
       { name: "file", filename: "image.png", contentType: "image/png", content: PNG_200x150 },
       { name: "settings", content: JSON.stringify({ saturation: 20 }) },
@@ -3463,7 +3466,7 @@ describe("Color adjustments format preservation", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/saturation",
+      url: "/api/v1/tools/adjust-colors",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -3529,7 +3532,9 @@ describe("Edge cases & adversarial inputs", () => {
       },
       payload,
     });
-    expect(res.statusCode).toBe(400);
+    // Upload accepts the bytes (2.0 multimodal); a null-byte "image" is rejected
+    // later when a tool tries to decode it, not at upload time.
+    expect(res.statusCode).toBe(200);
   });
 
   it("handles concurrent requests without corruption", async () => {

@@ -136,7 +136,7 @@ describe("POST /api/v1/fetch-urls", () => {
     expect(body.results[0].error).toContain("404");
   });
 
-  it("returns failure for non-image content", async () => {
+  it("accepts non-image content (multimodal)", async () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/v1/fetch-urls",
@@ -147,8 +147,8 @@ describe("POST /api/v1/fetch-urls", () => {
     expect(res.statusCode).toBe(200);
     const body = JSON.parse(res.body);
     expect(body.results).toHaveLength(1);
-    expect(body.results[0].success).toBe(false);
-    expect(body.results[0].error).toBeTruthy();
+    expect(body.results[0].success).toBe(true);
+    expect(body.results[0].downloadUrl).toBeDefined();
   });
 
   it("handles mixed batch with successes and failures", async () => {
@@ -173,7 +173,7 @@ describe("POST /api/v1/fetch-urls", () => {
     expect(body.results[0].filename).toBe("photo.jpg");
     expect(body.results[1].success).toBe(false);
     expect(body.results[1].error).toContain("404");
-    expect(body.results[2].success).toBe(false);
+    expect(body.results[2].success).toBe(true);
   });
 
   it("returns 400 for an empty URL array", async () => {

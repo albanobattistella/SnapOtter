@@ -630,7 +630,7 @@ describe("Missing file part in multipart request", () => {
 
     expect(res.statusCode).toBe(400);
     const json = JSON.parse(res.body);
-    expect(json.error).toMatch(/no image/i);
+    expect(json.error).toMatch(/no file/i);
   });
 
   it("rejects pipeline execute with only pipeline definition and no file", async () => {
@@ -651,7 +651,7 @@ describe("Missing file part in multipart request", () => {
 
     expect(res.statusCode).toBe(400);
     const json = JSON.parse(res.body);
-    expect(json.error).toMatch(/no image/i);
+    expect(json.error).toMatch(/no file/i);
   });
 });
 

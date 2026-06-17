@@ -48,11 +48,22 @@ describe("xml-to-csv (pure JS, no skipIf)", () => {
     expect(text).toContain("Grace");
   }, 30_000);
 
-  it("rejects XML with no repeating elements", async () => {
+  it("converts single non-repeating record to a 1-row CSV", async () => {
     const xml = Buffer.from('<?xml version="1.0"?><root><single>value</single></root>');
     const res = await runTool("flat.xml", xml);
-    expect(res.statusCode).toBe(422);
-    const parsed = JSON.parse(res.body);
-    expect(parsed.details).toMatch(/no repeating elements/i);
+    expect(res.statusCode).toBe(200);
+    const envelope = JSON.parse(res.body);
+    expect(envelope.downloadUrl).toBeDefined();
+    expect(envelope.rows).toBe(1);
+
+    const dl = await testApp.app.inject({ method: "GET", url: envelope.downloadUrl });
+    expect(dl.statusCode).toBe(200);
+
+    const text = dl.payload;
+    const lines = text.trim().split("\n");
+    // header + 1 data row
+    expect(lines.length).toBe(2);
+    expect(text).toContain("single");
+    expect(text).toContain("value");
   }, 30_000);
 });

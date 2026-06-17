@@ -309,7 +309,7 @@ describe("createToolRoute", () => {
 
       expect(reply.status).toHaveBeenCalledWith(400);
       expect(reply.send).toHaveBeenCalledWith(
-        expect.objectContaining({ error: "No image file provided" }),
+        expect.objectContaining({ error: "No file provided" }),
       );
     });
 

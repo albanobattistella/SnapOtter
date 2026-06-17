@@ -297,7 +297,7 @@ describe("Border", () => {
 
     expect(res.statusCode).toBe(400);
     const result = JSON.parse(res.body);
-    expect(result.error).toMatch(/no image/i);
+    expect(result.error).toMatch(/no file/i);
   });
 
   it("rejects invalid border color format", async () => {

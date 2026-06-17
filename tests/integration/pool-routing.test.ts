@@ -8,8 +8,8 @@ describe("pool routing", () => {
   it("ai tools route to the ai pool regardless of modality", () => {
     expect(resolveToolPool("remove-background")).toBe("ai");
   });
-  it("unknown tools default to image", () => {
-    expect(resolveToolPool("not-a-tool")).toBe("image");
+  it("unknown tools default to system", () => {
+    expect(resolveToolPool("not-a-tool")).toBe("system");
   });
   it("long hint skips the sync window", () => {
     expect(shouldSkipSyncWindow("long")).toBe(true);
