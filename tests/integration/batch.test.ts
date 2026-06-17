@@ -309,7 +309,9 @@ describe("Batch error handling", () => {
 
     expect(res.statusCode).toBe(400);
     const result = JSON.parse(res.body);
-    expect(result.error).toMatch(/no image/i);
+    // Batch is modality-aware now, so the empty-input error is generic
+    // ("No files provided") rather than the legacy image-specific message.
+    expect(result.error).toMatch(/no files/i);
   });
 
   it("returns 400 for invalid settings JSON", async () => {
