@@ -240,7 +240,7 @@ Analyzes the image and applies automatic corrections for exposure, contrast, whi
 | `corrections.sharpness` | boolean | true | Apply sharpness correction |
 | `corrections.denoise` | boolean | true | Apply denoising |
 
-An additional analysis endpoint is available at `POST /api/v1/tools/image-enhancement/analyze` which returns the detected corrections without applying them.
+An additional analysis endpoint is available at `POST /api/v1/tools/image/image-enhancement/analyze` which returns the detected corrections without applying them.
 
 ## Content-Aware Resize (Seam Carving)
 
@@ -279,7 +279,7 @@ Fixes "fake transparent" PNGs where the background was removed but left behind f
 | `outputFormat` | `"png"` \| `"webp"` | `"png"` | Output image format |
 
 ```bash
-curl -X POST http://localhost:1349/api/v1/tools/transparency-fixer \
+curl -X POST http://localhost:1349/api/v1/tools/image/transparency-fixer \
   -H "Authorization: Bearer <token>" \
   -F "file=@fake-transparent.png" \
   -F 'settings={"defringe":30,"outputFormat":"png"}'
