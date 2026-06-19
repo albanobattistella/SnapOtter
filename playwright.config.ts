@@ -32,7 +32,7 @@ const VISUAL_SPECS = /visual-regression|gui-visual-/;
 
 // Device-emulated specs (real touch, UA, DPR). Tagged @mobile or @tablet
 // and routed to the dedicated device projects below.
-const DEVICE_SPECS = /device-mobile|device-tablet/;
+const DEVICE_SPECS = /device-mobile|device-tablet|device-visual|device-a11y/;
 
 export default defineConfig({
   testDir: "./tests/e2e",

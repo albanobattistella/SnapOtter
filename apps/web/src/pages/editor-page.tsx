@@ -143,16 +143,16 @@ export function EditorPage() {
 
   if (isMobile) {
     return (
-      <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+      <main className="flex flex-col items-center justify-center h-full p-8 text-center">
         <Monitor size={48} className="text-muted-foreground mb-4" />
         <h2 className="text-lg font-semibold text-foreground mb-2">{t.editor.mobile.heading}</h2>
         <p className="text-sm text-muted-foreground max-w-sm">{t.editor.mobile.description}</p>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground">
+    <main className="flex flex-col h-screen overflow-hidden bg-background text-foreground">
       <h1 className="sr-only">{t.editor.welcome.heading}</h1>
       <EditorMenuBar
         onNewDocument={() => setShowNewDocument(true)}
@@ -195,6 +195,6 @@ export function EditorPage() {
       <ImageResizeDialog open={showImageResize} onClose={() => setShowImageResize(false)} />
       <FillDialog open={fillDialogOpen} onClose={() => setFillDialogOpen(false)} />
       <NewDocumentDialog open={showNewDocument} onClose={() => setShowNewDocument(false)} />
-    </div>
+    </main>
   );
 }
