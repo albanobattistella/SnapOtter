@@ -12,7 +12,7 @@ describe("fixture manifest is consistent with disk", () => {
 
   // Phase 1 hard-checks bytes + sha256; license may be "UNVERIFIED" (tracked in
   // LICENSES.md). Phase 2 does the real provenance audit and removes that tolerance.
-  const ALLOWED = ["CC0", "CC-BY", "CC-BY-SA", "public-domain", "UNVERIFIED"];
+  const ALLOWED = ["CC0", "CC-BY", "CC-BY-SA", "public-domain", "UNVERIFIED", "UNVERIFIED-REVIEW"];
   it.each(manifest.assets)("$path matches sha256 + bytes and declares a license", (asset: {
     path: string;
     bytes: number;

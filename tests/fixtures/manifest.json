@@ -2,240 +2,240 @@
   "assets": [
     {
       "path": "content/alt-2page.pdf",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "gen-synthetic-content.mjs",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "494c52ff3883d4fb6b019be71e0e29c4b27c5d5c48ba27e22d86295797114658",
-      "bytes": 1075
+      "sha256": "be8a827f8c4afee32b2c5d4339f039e3c24887284f220c3bf849210095899e75",
+      "bytes": 854
     },
     {
       "path": "content/animated-simpsons.gif",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "gen-synthetic-content.mjs (ffmpeg testsrc, replaces copyrighted Simpsons clip)",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "34cb66ae913c928293af2b7d6ca159eb245bd8c2fa92c208ca6975758246b0ca",
-      "bytes": 109693
+      "sha256": "738a6c04c1744c32bd9889372a4754dcb2d7af84586a33c9aa67e09ada8bdeb8",
+      "bytes": 193823
     },
     {
       "path": "content/audio-with-tags.mp3",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "gen-synthetic-content.mjs (ffmpeg 440Hz sine + ID3 tags)",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "882c35013d3554cf32e37b0912abe14d88415efd28ade2be39e7935d7ce71a47",
-      "bytes": 9956
+      "sha256": "69103f0acb5b347e9a72618b531da0c1702d9bfbc5aee852b256634300ec50fb",
+      "bytes": 11684
     },
     {
       "path": "content/barcode.avif",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "gen-synthetic-content.mjs (Code 128B via Sharp)",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "870b71dcb8eea7cc69a612cd0dcd259f7a402220fcc3467c17ebf76dc9f52826",
-      "bytes": 1152
+      "sha256": "aa850fa40da9180bf493702d999e674f75942b1dbcf78f1d8c453ee6a096f375",
+      "bytes": 2631
     },
     {
       "path": "content/barcode.png",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "gen-synthetic-content.mjs (Code 128B via Sharp)",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "50bf07d3d746c63ccdcd87f40989b5f35b1e1a6e1f6e75b6851d550574b3f5b2",
-      "bytes": 12576
+      "sha256": "84fafbaba2c80c347ef774530fe7def02e5555691e613a633867a7ef94fbdc6d",
+      "bytes": 5980
     },
     {
       "path": "content/cross-format-chat.webp",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "Unknown; added in babca4cf (test coverage expansion). Chat app screenshot.",
+      "license": "UNVERIFIED-REVIEW",
       "toolsServed": [],
       "sha256": "de010e4433f6b20e9e7834bf8608f9a946971af5920d4fc53658194844686285",
       "bytes": 181960
     },
     {
       "path": "content/media-30s.mp4",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "gen-synthetic-content.mjs (ffmpeg testsrc2 + 440Hz sine, 30s)",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "b4504e28ddda52ee3cb9152bf32b8695f0a61f6f585042c293d3e13645aeb338",
-      "bytes": 6768813
+      "sha256": "0313fc9ef2d763f057e53fadf047eb2876b9f3ba001f971b7a0eda3883e19af1",
+      "bytes": 7007619
     },
     {
       "path": "content/media-30s.wav",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "gen-synthetic-content.mjs (ffmpeg 440Hz sine PCM, 30s)",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "92ac8e1dcb67e1601c92cef8c9da7118e03340e17645efe9e387db63af7968ff",
+      "sha256": "e77501db91d7d1dd6c9006a2e9b559767072e724c60fefddea6ddd3298ac809a",
       "bytes": 2646078
     },
     {
       "path": "content/motorcycle.heif",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "Unknown; added in babca4cf (test coverage expansion). HEIF photo, content unverifiable.",
+      "license": "UNVERIFIED-REVIEW",
       "toolsServed": [],
       "sha256": "90f3ae39a6ea1355f148712cd013f71111b2d74451ca07bcf8442489b0d1995e",
       "bytes": 224154
     },
     {
       "path": "content/multi-face.webp",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "gen-synthetic-content.mjs (Sharp oval grid, replaces Shutterstock #199321457)",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "a2b634fc99014bf08e924848790fe5bddff825fa56dcbd20ea71176fa3fcf334",
-      "bytes": 30040
+      "sha256": "58a3e4acf5d9d12612a05e19098f5ed7d122789721828a30dc01d1eecf2754c8",
+      "bytes": 5194
     },
     {
       "path": "content/multipage-6.pdf",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "gen-synthetic-content.mjs",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "f26d8cfff5ce1895a1e877bacd5bff024692085d8f30f378d7bc50d214e3fd72",
-      "bytes": 2239
+      "sha256": "ef047cf125592eaa857f0f1f1d1001d7575dfcf03af5f7c20038050178fa4160",
+      "bytes": 1913
     },
     {
       "path": "content/ocr-chat.jpeg",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "Unknown; added in babca4cf (test coverage expansion). Chat app screenshot with personal content.",
+      "license": "UNVERIFIED-REVIEW",
       "toolsServed": [],
       "sha256": "97798605609879cbbefb4bdc94d4c8e47ac1e122d22d7951c33d37e63c5f4238",
       "bytes": 1048725
     },
     {
       "path": "content/ocr-clean.png",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "gen-synthetic-content.mjs (Sharp SVG text render)",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "a07ea2e0c88f2765eb48bd6f261bf146581fc7d1a38b6d1a0384aeb0c4a7b5e7",
-      "bytes": 9176
+      "sha256": "b75f19fae28ac01cf9126299a68917a3d60668b831156d9600a8b4a403f9e43d",
+      "bytes": 8187
     },
     {
       "path": "content/ocr-japanese.png",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "gen-synthetic-content.mjs (Sharp SVG Japanese text render)",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "d2bed03fd01e7a327d49a4abaa6b13c2507b585ba23a66f877ea78d68b022417",
-      "bytes": 10104
+      "sha256": "0203ea5fabc9a6965103d64136b17fb8abe33f6def99b8da97cf47c2091ec639",
+      "bytes": 25932
     },
     {
       "path": "content/ocr-scanned.pdf",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "Unknown; added in babca4cf/d8cf979d. Scanned PDF, content unverifiable.",
+      "license": "UNVERIFIED-REVIEW",
       "toolsServed": [],
       "sha256": "28d33f9f30a450943d59489345bf475b42ca0f73deffeb883df1d117d97e5d90",
       "bytes": 1049673
     },
     {
       "path": "content/portrait-bw.jpeg",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "Unknown; added in babca4cf (test coverage expansion). B&W portrait, unverifiable origin.",
+      "license": "UNVERIFIED-REVIEW",
       "toolsServed": [],
       "sha256": "0ca77a23c1af40d107f4f34eef048adef98f8b36c475723c6fe921ed3dec81bc",
       "bytes": 2731390
     },
     {
       "path": "content/portrait-color-dup.jpg",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "Identical to portrait-color.jpg (deliberate duplicate for dedup tests).",
+      "license": "UNVERIFIED-REVIEW",
       "toolsServed": [],
       "sha256": "908893cc7c816e977f84af59237a1af29bab6e3ed801879cbe992f698161397e",
       "bytes": 89084
     },
     {
       "path": "content/portrait-color.jpg",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "Unknown; added in babca4cf (test coverage expansion). Portrait photo, likely AI-generated, unverifiable.",
+      "license": "UNVERIFIED-REVIEW",
       "toolsServed": [],
       "sha256": "908893cc7c816e977f84af59237a1af29bab6e3ed801879cbe992f698161397e",
       "bytes": 89084
     },
     {
       "path": "content/portrait-headshot.heic",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "Unknown; added in babca4cf (test coverage expansion). HEIC portrait, unverifiable origin.",
+      "license": "UNVERIFIED-REVIEW",
       "toolsServed": [],
       "sha256": "1f59692ec10d5372e69ebc789c53ebe752f665ff87ede4d15817ce512e769732",
       "bytes": 1489644
     },
     {
       "path": "content/portrait-isolated.png",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "Unknown; added in babca4cf (test coverage expansion). Portrait with bg removed, same subject as portrait-color.jpg.",
+      "license": "UNVERIFIED-REVIEW",
       "toolsServed": [],
       "sha256": "8d53453a5adaecfc3b6db83e85f732cbe67adc42e7c719d4c3ae8eb7777e0a8f",
       "bytes": 80745
     },
     {
       "path": "content/qr-code.avif",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "gen-synthetic-content.mjs (qrcode lib + Sharp AVIF)",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "7d7d93d1f9221c434b99a8262d68aea94acd2de88d13a729eb3af1e3bf4f35c5",
-      "bytes": 1487
+      "sha256": "93c8268e6fe3e8a16f3c1cc028885e6b4a90887f27a2fe4525e4a928703fcdb3",
+      "bytes": 1924
     },
     {
       "path": "content/qr-code.png",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "gen-synthetic-content.mjs (qrcode lib, encodes https://snapotter.com)",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "a526c26245a3caab564fab64fde7f2d75d5f7c9dff53fcfe784d9119ebe5074f",
-      "bytes": 2438
-    },
-    {
-      "path": "content/qr-code.svg",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
-      "toolsServed": [],
-      "sha256": "23ae3e41f61df60db35cd65aa06b8842c19fc06857f0711d97a42fad496b6577",
+      "sha256": "97506d778ea20d9a42b303071f280b4f31109fcff7af00bd9e284436a0e51155",
       "bytes": 2191
     },
     {
+      "path": "content/qr-code.svg",
+      "sourceUrl": "gen-synthetic-content.mjs (qrcode lib SVG output)",
+      "license": "CC0",
+      "toolsServed": [],
+      "sha256": "bd3128ae46d994fa5dda1345a93f17782b1d906e871b9f318e6fd0d032cc9f50",
+      "bytes": 1255
+    },
+    {
       "path": "content/red-eye.jpg",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "Unknown; added in babca4cf (test coverage expansion). Canon EOS 400D DIGITAL EXIF from 2007, red-eye portrait.",
+      "license": "UNVERIFIED-REVIEW",
       "toolsServed": [],
       "sha256": "04a993def90ffb471cbb0b4bbe46bd2aa9a2d344a9ab7ad187dc22f5feca23ed",
       "bytes": 368937
     },
     {
       "path": "content/speech-10s.mp4",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "Unknown; added in d8cf979d (QA bug fixes). 10s video, likely contains speech for transcription tests.",
+      "license": "UNVERIFIED-REVIEW",
       "toolsServed": [],
       "sha256": "e3196b8eb044feb7eba7ae55d931f5be31f6694186e8d67d6fb6d412a89f25e8",
       "bytes": 2254674
     },
     {
       "path": "content/speech-10s.wav",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "Unknown; added in d8cf979d (QA bug fixes). 10s audio, likely contains speech for transcription tests.",
+      "license": "UNVERIFIED-REVIEW",
       "toolsServed": [],
       "sha256": "dde7726a10dc469dea2e306b94462b5fd4ec9b2f62e0b22401a018c6b27270fa",
       "bytes": 320390
     },
     {
       "path": "content/stress-large.jpg",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "Unknown; added in babca4cf (test coverage expansion). Samsung Galaxy S24 Ultra photo (EXIF 2026-04-11), Muay Thai event.",
+      "license": "UNVERIFIED-REVIEW",
       "toolsServed": [],
       "sha256": "53610a10526e1a4f42036a08091cbe8a79781f4522915f98f423cab14f6bca10",
       "bytes": 6678906
     },
     {
       "path": "content/svg-logo.svg",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "gen-synthetic-content.mjs (geometric test SVG, replaces ConvertICO brand logo)",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "7a8f5e99e26fd660babe7084290827ed8faac053ec089cce31687307d736a6ca",
-      "bytes": 2906
+      "sha256": "dae7668c0db8688e93cd7d6fedfd7f7121c3bfa563eee19e4492bc0dbfc73a0b",
+      "bytes": 1426
     },
     {
       "path": "content/video-with-meta.mp4",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "gen-synthetic-content.mjs (ffmpeg color frame, 64x64, 1s)",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "77b567b9e43b15d6edac80a445f29ee3f8affa77d7835442309cb9b0417cab5b",
-      "bytes": 13444
+      "sha256": "f8ad87da046cd641995e86067130976a65ae99c26a8277d41ac5aadd66b08fe4",
+      "bytes": 2001
     },
     {
       "path": "content/watermark.jpg",
-      "sourceUrl": "UNVERIFIED",
-      "license": "UNVERIFIED",
+      "sourceUrl": "Unknown; added in babca4cf (test coverage expansion). Landscape photo with text watermark overlay.",
+      "license": "UNVERIFIED-REVIEW",
       "toolsServed": [],
       "sha256": "b8ddbceea01513f4a9ac6b0903b8071d8466ae88a8d5ef6fd84c33644ce22a4d",
       "bytes": 87064
