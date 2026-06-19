@@ -26,9 +26,9 @@ import {
 // ── Env defaults ─────────────────────────────────────────────────────────────
 
 describe("Security: env defaults", () => {
-  it("LOGIN_ATTEMPT_LIMIT defaults to 30", () => {
+  it("LOGIN_ATTEMPT_LIMIT defaults to 10", () => {
     const env = loadEnv();
-    expect(env.LOGIN_ATTEMPT_LIMIT).toBe(30);
+    expect(env.LOGIN_ATTEMPT_LIMIT).toBe(10);
   });
 
   it("RATE_LIMIT_PER_MIN is parsed correctly (test env overrides to 10000)", () => {

@@ -20,6 +20,7 @@ import { closeWorkers, startWorkers } from "./jobs/worker.js";
 import { captureException, initAnalytics, shutdownAnalytics } from "./lib/analytics.js";
 import { shouldRunStartupCleanup } from "./lib/cleanup.js";
 import { buildCsp } from "./lib/csp.js";
+import { stripInternalPaths } from "./lib/errors.js";
 import { ensureAiDirs, recoverInterruptedInstalls } from "./lib/feature-status.js";
 import { logger } from "./lib/logger.js";
 import { requestDuration } from "./lib/metrics.js";
@@ -229,8 +230,8 @@ app.setErrorHandler((error: Error & { statusCode?: number }, request, reply) => 
     request.log.warn({ err: error, url: request.url, method: request.method }, "Request error");
   }
   reply.status(statusCode).send({
-    error: statusCode >= 500 ? "Internal server error" : error.message,
-    ...(statusCode < 500 && { details: error.message }),
+    error: statusCode >= 500 ? "Internal server error" : stripInternalPaths(error.message),
+    ...(statusCode < 500 && { details: stripInternalPaths(error.message) }),
   });
 });
 
