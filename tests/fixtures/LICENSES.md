@@ -19,15 +19,48 @@ carry no third-party copyright. They are deterministic and reproducible.
 | `content/barcode.avif` | A | Code 128B encoder + Sharp | Same barcode, AVIF format |
 | `content/ocr-clean.png` | A | Sharp SVG text | "The quick brown fox 12345", 800x200 |
 | `content/ocr-japanese.png` | A | Sharp SVG text | Japanese writing passage, 480x172 |
+| `content/ocr-chat.jpeg` | A | Sharp SVG render | Mock chat UI with legible text bubbles, 480x640 |
+| `content/cross-format-chat.webp` | A | Sharp SVG render | Same mock chat UI as ocr-chat.jpeg, WebP format |
 | `content/alt-2page.pdf` | A | PDF byte generator | Minimal 2-page PDF with text |
 | `content/multipage-6.pdf` | A | PDF byte generator | Minimal 6-page PDF with text |
 | `content/audio-with-tags.mp3` | A | ffmpeg sine 440Hz | 1.2s MP3, ID3: "Test Song" / "Test Artist" |
 | `content/video-with-meta.mp4` | A | ffmpeg color frame | 1s, 64x64, solid orange H.264 |
-| `content/media-30s.mp4` | A | ffmpeg testsrc2 + sine | 30s, 640x360, test pattern + 440Hz tone |
 | `content/media-30s.wav` | A | ffmpeg sine 440Hz | 30s, 44100Hz, mono PCM |
 | `content/animated-simpsons.gif` | B | ffmpeg testsrc | 3s test pattern GIF; **replaced** Homer Simpson clip (Fox/Disney copyright) |
 | `content/svg-logo.svg` | B | hand-written SVG | Geometric test fixture; **replaced** ConvertICO brand logo (third-party trademark) |
 | `content/multi-face.webp` | B | Sharp oval grid | Face-placeholder grid; **replaced** Shutterstock stock photo #199321457 (watermarked, copyrighted) |
+
+## Verified CC-BY Assets (Big Buck Bunny, Blender Foundation)
+
+Source: Big Buck Bunny (c) 2008 Blender Foundation, www.bigbuckbunny.org.
+Downloaded from archive.org item `BigBuckBunny_124`. License: CC-BY 3.0.
+All derived from an 8-second segment (30s-38s) of the 720p surround version,
+scaled to 480x270 with H.264+AAC, then transcoded to each container format.
+
+| Path | Format | Notes |
+|------|--------|-------|
+| `content/media-30s.mp4` | H.264 + AAC, MP4 | Primary hero video (247 KB) |
+| `content/hero.mov` | H.264 + AAC, MOV | QuickTime container variant |
+| `content/hero.webm` | VP9 + Opus, WebM | Web container variant |
+| `content/hero.mkv` | H.264 + AAC, MKV | Matroska container variant |
+| `content/hero.avi` | MPEG-4 + MP3, AVI | Legacy container variant |
+
+## Verified CC0 Speech Assets (macOS TTS, locally generated)
+
+Generated via `say -v Samantha` on macOS, then converted with ffmpeg. No
+third-party content or copyright. Transcript: "The quick brown fox jumps over
+the lazy dog. SnapOtter converts and transcribes audio files quickly and
+reliably."
+
+| Path | Format | Notes |
+|------|--------|-------|
+| `content/speech-10s.wav` | 16kHz mono PCM WAV | Primary speech fixture (~6.7s) |
+| `content/speech-10s.mp4` | AAC in MP4 container | Speech for video transcription tests |
+| `content/speech.flac` | FLAC lossless | Audio format variant |
+| `content/speech.ogg` | Ogg Vorbis | Audio format variant |
+| `content/speech.m4a` | AAC in M4A container | Audio format variant |
+| `content/speech.aac` | AAC raw ADTS | Audio format variant |
+| `content/speech.opus` | Opus | Audio format variant |
 
 ## Synthetic / Project-Generated Assets (pre-existing, not in content/)
 
@@ -46,40 +79,42 @@ no third-party copyright concern:
 ## NEEDS HUMAN LICENSE SIGN-OFF (Category C: UNVERIFIED-REVIEW)
 
 The following `content/` assets have unverifiable provenance. They were added
-during the test coverage expansion (commit `babca4cf`) or QA bug fixes (commit
-`d8cf979d`) without recorded source URLs. They are real-world photos, audio, or
-video that require human review to either:
+during the test coverage expansion (commit `babca4cf`) without recorded source
+URLs. They are real-world photos containing faces or identifiable people that
+require human review to either:
 
 1. Verify they are CC0/CC-BY and record the source, OR
 2. Replace them with properly-licensed alternatives.
 
 **Do NOT delete these.** Depth tests (face detection, colorization, red-eye
-removal, transcription, stress testing) depend on real-world content.
+removal, stress testing) depend on real-world content.
 
 | Path | Size | Content Description | Why Review Is Needed |
 |------|------|---------------------|---------------------|
 | `content/portrait-bw.jpeg` | 2.7 MB | B&W portrait of a woman (3775x5662) | Real photo, no EXIF source. Used for colorization tests. |
-| `content/portrait-color.jpg` | 89 KB | Business portrait, man in suit (572x1024) | Likely AI-generated (has characteristic artifacts) but unconfirmed. Used for face/portrait tests. |
+| `content/portrait-color.jpg` | 89 KB | Business portrait, man in suit (572x1024) | Likely AI-generated but unconfirmed. Used for face/portrait tests. |
 | `content/portrait-color-dup.jpg` | 89 KB | Identical to portrait-color.jpg | Deliberate duplicate for dedup testing. Same license concern. |
 | `content/portrait-headshot.heic` | 1.5 MB | HEIC portrait headshot | No EXIF source. Used for HEIC format tests with face content. |
 | `content/portrait-isolated.png` | 81 KB | Same subject as portrait-color, background removed | Derived from portrait-color.jpg. Same license concern. |
-| `content/red-eye.jpg` | 369 KB | Woman with red-eye effect (800x460) | Canon EOS 400D DIGITAL, Adobe Photoshop CS2 (2007). Real photo, no source URL. Used for red-eye removal tool. |
-| `content/cross-format-chat.webp` | 182 KB | Mobile chat app screenshot (1440x3120) | Screenshot of "HeartCode" bot. Contains personal/third-party UI. Used in color-palette extraction test. |
-| `content/ocr-chat.jpeg` | 1.0 MB | Same chat screenshot as above (JPEG) | Same content as cross-format-chat.webp, different format. Used for OCR tests. |
+| `content/red-eye.jpg` | 369 KB | Woman with red-eye effect (800x460) | Canon EOS 400D DIGITAL, 2007. Real photo, no source URL. |
 | `content/ocr-scanned.pdf` | 1.0 MB | Scanned document PDF | Unknown scanned content. Used for OCR-on-PDF tests. |
-| `content/stress-large.jpg` | 6.7 MB | Muay Thai boxing match (4000x3000) | Samsung Galaxy S24 Ultra photo (2026-04-11). Likely personal photo but contains identifiable people and event branding. Used for large-image stress tests. |
-| `content/watermark.jpg` | 87 KB | Mountain lake landscape with text watermark (720x480) | Real landscape photo with "Text Watermark Sample" overlay. Unknown source. Used for watermark removal tests. |
-| `content/motorcycle.heif` | 224 KB | HEIF image | Content not inspectable without HEIF decoder. Used for HEIC/HEIF format processing tests. |
-| `content/speech-10s.mp4` | 2.3 MB | 10-second video (640x360) | Likely contains speech for transcription tests. Content unverifiable without playback. |
-| `content/speech-10s.wav` | 320 KB | 10-second audio (16kHz mono) | Likely contains speech for transcription tests. Content unverifiable without playback. |
+| `content/stress-large.jpg` | 6.7 MB | Muay Thai boxing match (4000x3000) | Samsung Galaxy S24 Ultra photo. Contains identifiable people. |
+| `content/watermark.jpg` | 87 KB | Mountain lake landscape with text watermark (720x480) | Real landscape photo. Unknown source. |
+| `content/motorcycle.heif` | 224 KB | HEIF image | Content not inspectable without HEIF decoder. |
 
-### Recommended Actions for Sign-Off
+### Resolved in This Phase
+
+The following were previously in this section and have been resolved:
+
+- **`content/cross-format-chat.webp`** and **`content/ocr-chat.jpeg`**: Replaced with CC0 mock chat-bubble images (Sharp SVG render). No third-party UI content.
+- **`content/speech-10s.wav`** and **`content/speech-10s.mp4`**: Replaced with macOS TTS-generated speech (CC0). Transcribable text for Whisper tests.
+- **`content/media-30s.mp4`**: Replaced with Big Buck Bunny (CC-BY 3.0, Blender Foundation). Real video with motion + audio.
+
+### Recommended Actions for Remaining Sign-Off
 
 - **Portraits** (5 files): If AI-generated, confirm the generator and its license terms. If stock photos, identify the source. Consider replacing with CC0 portraits from a known source.
-- **Chat screenshots** (2 files): Replace with a project-generated screenshot or a CC0 text image. The chat UI belongs to a third-party app.
 - **Red-eye photo**: Source the original from the photographer or replace with a CC0 red-eye portrait.
 - **Stress-large photo**: If this is a project contributor's personal photo, have them release it under CC0. Otherwise replace.
 - **Watermark landscape**: Source the underlying landscape photo. The watermark overlay was likely added by the project.
-- **Speech files** (2 files): Confirm content via playback. If synthetic (ffmpeg-generated), mark CC0. If real speech, identify speaker and get consent or replace.
 - **Motorcycle HEIF**: Inspect via HEIF viewer and determine source.
 - **OCR-scanned PDF**: Inspect document content and determine source.

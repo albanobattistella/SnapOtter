@@ -23,7 +23,16 @@ describe("real fixtures decode through their real tools", () => {
 
   it.each([
     fixtures.video.hero.mp4,
+    fixtures.video.hero.mov,
+    fixtures.video.hero.webm,
+    fixtures.video.hero.mkv,
+    fixtures.video.hero.avi,
     fixtures.audio.speech.wav,
+    fixtures.audio.speech.flac,
+    fixtures.audio.speech.ogg,
+    fixtures.audio.speech.m4a,
+    fixtures.audio.speech.aac,
+    fixtures.audio.speech.opus,
     fixtures.audio.tagged,
   ])("ffprobe reads a positive duration from %s", (path) => {
     const out = execFileSync(

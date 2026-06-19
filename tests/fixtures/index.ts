@@ -58,7 +58,13 @@ export const fixtures = {
     hostileEmpty: { zeroByte: p("hostile/zero-byte.png") },
   },
   video: {
-    hero: { mp4: p("content/media-30s.mp4") },
+    hero: {
+      mp4: p("content/media-30s.mp4"),
+      mov: p("content/hero.mov"),
+      webm: p("content/hero.webm"),
+      mkv: p("content/hero.mkv"),
+      avi: p("content/hero.avi"),
+    },
     speech: { mp4: p("content/speech-10s.mp4") },
     withMeta: p("content/video-with-meta.mp4"),
     tiny: (ext: string) => p(`media/tiny.${ext}`),
@@ -71,7 +77,14 @@ export const fixtures = {
     hostile: { truncated: p("hostile/truncated.mp4") },
   },
   audio: {
-    speech: { wav: p("content/speech-10s.wav") },
+    speech: {
+      wav: p("content/speech-10s.wav"),
+      flac: p("content/speech.flac"),
+      ogg: p("content/speech.ogg"),
+      m4a: p("content/speech.m4a"),
+      aac: p("content/speech.aac"),
+      opus: p("content/speech.opus"),
+    },
     music: { wav: p("content/media-30s.wav") },
     tagged: p("content/audio-with-tags.mp3"),
     stereo: p("media/tone-stereo.wav"),

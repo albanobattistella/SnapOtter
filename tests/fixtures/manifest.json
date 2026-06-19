@@ -42,19 +42,51 @@
     },
     {
       "path": "content/cross-format-chat.webp",
-      "sourceUrl": "Unknown; added in babca4cf (test coverage expansion). Chat app screenshot.",
-      "license": "UNVERIFIED-REVIEW",
+      "sourceUrl": "generated (mock chat UI, Sharp SVG render)",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "de010e4433f6b20e9e7834bf8608f9a946971af5920d4fc53658194844686285",
-      "bytes": 181960
+      "sha256": "f45457826da776b4a7986eddd98dc0993295134e4f960a00d78c627f11c26dad",
+      "bytes": 11538
+    },
+    {
+      "path": "content/hero.avi",
+      "sourceUrl": "Big Buck Bunny (Blender Foundation, www.bigbuckbunny.org) via archive.org, transcoded to AVI",
+      "license": "CC-BY",
+      "toolsServed": [],
+      "sha256": "c56b0e01e4408846c3d040034b85aeeade17a25534771c7f5712e0e0dc5e45cc",
+      "bytes": 681052
+    },
+    {
+      "path": "content/hero.mkv",
+      "sourceUrl": "Big Buck Bunny (Blender Foundation, www.bigbuckbunny.org) via archive.org, transcoded to MKV",
+      "license": "CC-BY",
+      "toolsServed": [],
+      "sha256": "41b5d042000446882a3ae562ab262b62ffab8702ba9097424e344d603ae034fe",
+      "bytes": 241665
+    },
+    {
+      "path": "content/hero.mov",
+      "sourceUrl": "Big Buck Bunny (Blender Foundation, www.bigbuckbunny.org) via archive.org, transcoded to MOV",
+      "license": "CC-BY",
+      "toolsServed": [],
+      "sha256": "24e2107d9c642bd8c06f1c8ccbb52c9bf8aa177405c1eb274216289d5ed32d75",
+      "bytes": 244646
+    },
+    {
+      "path": "content/hero.webm",
+      "sourceUrl": "Big Buck Bunny (Blender Foundation, www.bigbuckbunny.org) via archive.org, transcoded to WebM",
+      "license": "CC-BY",
+      "toolsServed": [],
+      "sha256": "14435ede8e4e2cb7eca91a788647771ca051b04cf1c6ca58b1ad50dec6b5be1f",
+      "bytes": 226183
     },
     {
       "path": "content/media-30s.mp4",
-      "sourceUrl": "gen-synthetic-content.mjs (ffmpeg testsrc2 + 440Hz sine, 30s)",
-      "license": "CC0",
+      "sourceUrl": "Big Buck Bunny (Blender Foundation, www.bigbuckbunny.org) via archive.org, 8s segment at 30s, 480x270",
+      "license": "CC-BY",
       "toolsServed": [],
-      "sha256": "0313fc9ef2d763f057e53fadf047eb2876b9f3ba001f971b7a0eda3883e19af1",
-      "bytes": 7007619
+      "sha256": "6ad37435eeb01cc694b918f8588255fead60eb01f2a06ca0dc904070064e9136",
+      "bytes": 247284
     },
     {
       "path": "content/media-30s.wav",
@@ -90,11 +122,11 @@
     },
     {
       "path": "content/ocr-chat.jpeg",
-      "sourceUrl": "Unknown; added in babca4cf (test coverage expansion). Chat app screenshot with personal content.",
-      "license": "UNVERIFIED-REVIEW",
+      "sourceUrl": "generated (mock chat UI, Sharp SVG render)",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "97798605609879cbbefb4bdc94d4c8e47ac1e122d22d7951c33d37e63c5f4238",
-      "bytes": 1048725
+      "sha256": "41602713616187b97ba64fb0ce97f2ac06bfbef193690f757d622e6d624e87a7",
+      "bytes": 20462
     },
     {
       "path": "content/ocr-clean.png",
@@ -194,19 +226,59 @@
     },
     {
       "path": "content/speech-10s.mp4",
-      "sourceUrl": "Unknown; added in d8cf979d (QA bug fixes). 10s video, likely contains speech for transcription tests.",
-      "license": "UNVERIFIED-REVIEW",
+      "sourceUrl": "macOS say TTS (locally generated, Samantha voice), converted to AAC MP4",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "e3196b8eb044feb7eba7ae55d931f5be31f6694186e8d67d6fb6d412a89f25e8",
-      "bytes": 2254674
+      "sha256": "2f8d3a93f01645af5b14859366d8d0aa59c10e79fca23bf56ab94cc8634bfe50",
+      "bytes": 92269
     },
     {
       "path": "content/speech-10s.wav",
-      "sourceUrl": "Unknown; added in d8cf979d (QA bug fixes). 10s audio, likely contains speech for transcription tests.",
-      "license": "UNVERIFIED-REVIEW",
+      "sourceUrl": "macOS say TTS (locally generated, Samantha voice), 16kHz mono PCM",
+      "license": "CC0",
       "toolsServed": [],
-      "sha256": "dde7726a10dc469dea2e306b94462b5fd4ec9b2f62e0b22401a018c6b27270fa",
-      "bytes": 320390
+      "sha256": "7be6bb102d39699ab6eaf3361a05d8c37f636551dd6527101b7b59ef7ae48efb",
+      "bytes": 213346
+    },
+    {
+      "path": "content/speech.aac",
+      "sourceUrl": "macOS say TTS (locally generated, Samantha voice), converted to AAC ADTS",
+      "license": "CC0",
+      "toolsServed": [],
+      "sha256": "d3126934729aa997ae77528c0f32b393ee06e5435bf544f2b16c905269209248",
+      "bytes": 68336
+    },
+    {
+      "path": "content/speech.flac",
+      "sourceUrl": "macOS say TTS (locally generated, Samantha voice), converted to FLAC",
+      "license": "CC0",
+      "toolsServed": [],
+      "sha256": "2aa38548cd52093be747fde14f88129e63c22dd489d0b4a5c9f98fc488ea5872",
+      "bytes": 142669
+    },
+    {
+      "path": "content/speech.m4a",
+      "sourceUrl": "macOS say TTS (locally generated, Samantha voice), converted to M4A",
+      "license": "CC0",
+      "toolsServed": [],
+      "sha256": "a952060a2a4e061062d8efbfb170ce0623143db54b5e3e15d80fd2b3a0401b49",
+      "bytes": 68824
+    },
+    {
+      "path": "content/speech.ogg",
+      "sourceUrl": "macOS say TTS (locally generated, Samantha voice), converted to Ogg Vorbis",
+      "license": "CC0",
+      "toolsServed": [],
+      "sha256": "d4ef00c1311bac6215b7ab2aedf05d096922cecb3859d208ebeb77f24c027524",
+      "bytes": 39607
+    },
+    {
+      "path": "content/speech.opus",
+      "sourceUrl": "macOS say TTS (locally generated, Samantha voice), converted to Opus",
+      "license": "CC0",
+      "toolsServed": [],
+      "sha256": "fcc32c30c77f95a18ef8947ec05c0778347012e5d77bd73bbc520337f83667ea",
+      "bytes": 63103
     },
     {
       "path": "content/stress-large.jpg",
