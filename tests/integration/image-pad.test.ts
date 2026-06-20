@@ -55,7 +55,7 @@ describe("Image Pad", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/image-pad",
+      url: "/api/v1/tools/image/image-pad",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -88,7 +88,7 @@ describe("Image Pad", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/image-pad",
+      url: "/api/v1/tools/image/image-pad",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -125,7 +125,7 @@ describe("Image Pad", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/image-pad",
+      url: "/api/v1/tools/image/image-pad",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -144,7 +144,7 @@ describe("Image Pad", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/image-pad",
+      url: "/api/v1/tools/image/image-pad",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -177,7 +177,7 @@ describe("Image Pad", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/image-pad",
+      url: "/api/v1/tools/image/image-pad",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -213,7 +213,7 @@ describe("Image Pad", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/image-pad",
+      url: "/api/v1/tools/image/image-pad",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -246,7 +246,7 @@ describe("Image Pad", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/image-pad",
+      url: "/api/v1/tools/image/image-pad",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,

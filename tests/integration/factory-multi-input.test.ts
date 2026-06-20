@@ -163,7 +163,7 @@ describe("Factory multi-input (maxInputs)", () => {
 
     const res = await testApp.app.inject({
       method: "POST",
-      url: "/api/v1/tools/resize",
+      url: "/api/v1/tools/image/resize",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,

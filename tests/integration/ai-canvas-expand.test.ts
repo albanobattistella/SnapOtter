@@ -48,7 +48,7 @@ describe("AI Canvas Expand", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/ai-canvas-expand",
+      url: "/api/v1/tools/image/ai-canvas-expand",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -75,7 +75,7 @@ describe("AI Canvas Expand", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/ai-canvas-expand",
+      url: "/api/v1/tools/image/ai-canvas-expand",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -98,7 +98,7 @@ describe("AI Canvas Expand", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/ai-canvas-expand",
+      url: "/api/v1/tools/image/ai-canvas-expand",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -126,7 +126,7 @@ describe("AI Canvas Expand", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/ai-canvas-expand",
+      url: "/api/v1/tools/image/ai-canvas-expand",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -157,7 +157,7 @@ describe("AI Canvas Expand", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/ai-canvas-expand",
+      url: "/api/v1/tools/image/ai-canvas-expand",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -188,7 +188,7 @@ describe("AI Canvas Expand", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/ai-canvas-expand",
+      url: "/api/v1/tools/image/ai-canvas-expand",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -220,7 +220,7 @@ describe("AI Canvas Expand", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/ai-canvas-expand",
+      url: "/api/v1/tools/image/ai-canvas-expand",
       headers: { "content-type": contentType },
       body,
     });
@@ -248,7 +248,7 @@ describe("AI Canvas Expand", () => {
 
       const res = await app.inject({
         method: "POST",
-        url: "/api/v1/tools/ai-canvas-expand",
+        url: "/api/v1/tools/image/ai-canvas-expand",
         headers: {
           authorization: `Bearer ${adminToken}`,
           "content-type": contentType,
@@ -277,7 +277,7 @@ describe("AI Canvas Expand", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/ai-canvas-expand",
+      url: "/api/v1/tools/image/ai-canvas-expand",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -308,7 +308,7 @@ describe("AI Canvas Expand", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/ai-canvas-expand",
+      url: "/api/v1/tools/image/ai-canvas-expand",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,

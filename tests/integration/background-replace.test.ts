@@ -43,7 +43,7 @@ describe("background-replace", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/background-replace",
+      url: "/api/v1/tools/image/background-replace",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -69,7 +69,7 @@ describe("background-replace", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/background-replace",
+      url: "/api/v1/tools/image/background-replace",
       headers: { "content-type": contentType },
       body,
     });
@@ -87,7 +87,7 @@ describe("background-replace", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/background-replace",
+      url: "/api/v1/tools/image/background-replace",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -117,7 +117,7 @@ describe("background-replace", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/background-replace",
+      url: "/api/v1/tools/image/background-replace",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -146,7 +146,7 @@ describe("background-replace", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/background-replace",
+      url: "/api/v1/tools/image/background-replace",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -173,7 +173,7 @@ describe("background-replace", () => {
 
       const res = await app.inject({
         method: "POST",
-        url: "/api/v1/tools/background-replace",
+        url: "/api/v1/tools/image/background-replace",
         headers: {
           authorization: `Bearer ${adminToken}`,
           "content-type": contentType,
@@ -205,7 +205,7 @@ describe("background-replace", () => {
 
       const res = await app.inject({
         method: "POST",
-        url: "/api/v1/tools/background-replace",
+        url: "/api/v1/tools/image/background-replace",
         headers: {
           authorization: `Bearer ${adminToken}`,
           "content-type": contentType,

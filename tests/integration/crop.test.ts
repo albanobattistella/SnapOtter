@@ -46,7 +46,7 @@ async function cropAndMeta(
 
   const res = await app.inject({
     method: "POST",
-    url: "/api/v1/tools/crop",
+    url: "/api/v1/tools/image/crop",
     headers: {
       authorization: `Bearer ${adminToken}`,
       "content-type": contentType,
@@ -82,7 +82,7 @@ describe("Crop", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/crop",
+      url: "/api/v1/tools/image/crop",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -140,7 +140,7 @@ describe("Crop", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/crop",
+      url: "/api/v1/tools/image/crop",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -175,7 +175,7 @@ describe("Crop", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/crop",
+      url: "/api/v1/tools/image/crop",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -211,7 +211,7 @@ describe("Crop", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/crop",
+      url: "/api/v1/tools/image/crop",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -232,7 +232,7 @@ describe("Crop", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/crop",
+      url: "/api/v1/tools/image/crop",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -253,7 +253,7 @@ describe("Crop", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/crop",
+      url: "/api/v1/tools/image/crop",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -277,7 +277,7 @@ describe("Crop", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/crop",
+      url: "/api/v1/tools/image/crop",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -301,7 +301,7 @@ describe("Crop", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/crop",
+      url: "/api/v1/tools/image/crop",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -325,7 +325,7 @@ describe("Crop", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/crop",
+      url: "/api/v1/tools/image/crop",
       headers: { "content-type": contentType },
       body,
     });

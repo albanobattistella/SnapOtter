@@ -11,6 +11,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { apiToolPath } from "@snapotter/shared";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildTestApp, createMultipartPayload, loginAsAdmin, type TestApp } from "./test-server.js";
 
@@ -53,7 +54,7 @@ function postTool(
   const { body, contentType } = createMultipartPayload(fields);
   return app.inject({
     method: "POST",
-    url: `/api/v1/tools/${toolId}`,
+    url: apiToolPath(toolId),
     headers: {
       "content-type": contentType,
       authorization: `Bearer ${adminToken}`,
@@ -75,7 +76,7 @@ function postBatch(
   const { body, contentType } = createMultipartPayload(fields);
   return app.inject({
     method: "POST",
-    url: `/api/v1/tools/${toolId}/batch`,
+    url: `${apiToolPath(toolId)}/batch`,
     headers: {
       "content-type": contentType,
       authorization: `Bearer ${adminToken}`,
@@ -120,7 +121,7 @@ function buildToolRequest(
   ]);
   return {
     method: "POST" as const,
-    url: `/api/v1/tools/${toolId}`,
+    url: apiToolPath(toolId),
     headers: {
       "content-type": contentType,
       authorization: `Bearer ${adminToken}`,
@@ -135,7 +136,7 @@ function buildToolRequest(
 describe("Zero-byte file uploads across tools", () => {
   const zeroBuffer = Buffer.alloc(0);
 
-  it("rejects a 0-byte file to /api/v1/tools/resize with 400", async () => {
+  it("rejects a 0-byte file to /api/v1/tools/image/resize with 400", async () => {
     const res = await postTool("resize", [
       {
         name: "file",
@@ -151,7 +152,7 @@ describe("Zero-byte file uploads across tools", () => {
     expect(json.error).toBeDefined();
   });
 
-  it("rejects a 0-byte file to /api/v1/tools/compress with 400", async () => {
+  it("rejects a 0-byte file to /api/v1/tools/image/compress with 400", async () => {
     const res = await postTool("compress", [
       {
         name: "file",
@@ -167,7 +168,7 @@ describe("Zero-byte file uploads across tools", () => {
     expect(json.error).toBeDefined();
   });
 
-  it("rejects a 0-byte file to /api/v1/tools/convert with 400", async () => {
+  it("rejects a 0-byte file to /api/v1/tools/image/convert with 400", async () => {
     const res = await postTool("convert", [
       {
         name: "file",
@@ -183,7 +184,7 @@ describe("Zero-byte file uploads across tools", () => {
     expect(json.error).toBeDefined();
   });
 
-  it("rejects a 0-byte file to /api/v1/tools/rotate with 400", async () => {
+  it("rejects a 0-byte file to /api/v1/tools/image/rotate with 400", async () => {
     const res = await postTool("rotate", [
       {
         name: "file",
@@ -199,7 +200,7 @@ describe("Zero-byte file uploads across tools", () => {
     expect(json.error).toBeDefined();
   });
 
-  it("rejects a 0-byte file to /api/v1/tools/crop with 400", async () => {
+  it("rejects a 0-byte file to /api/v1/tools/image/crop with 400", async () => {
     const res = await postTool("crop", [
       {
         name: "file",
@@ -223,7 +224,7 @@ describe("Zero-byte file uploads across tools", () => {
     expect(json.error).toBeDefined();
   });
 
-  it("rejects a 0-byte file to /api/v1/tools/border with 400", async () => {
+  it("rejects a 0-byte file to /api/v1/tools/image/border with 400", async () => {
     const res = await postTool("border", [
       {
         name: "file",
@@ -933,7 +934,7 @@ describe("Concurrent adversarial and valid requests", () => {
         ]);
         return app.inject({
           method: "POST",
-          url: "/api/v1/tools/resize",
+          url: "/api/v1/tools/image/resize",
           headers: {
             "content-type": contentType,
             authorization: `Bearer ${adminToken}`,

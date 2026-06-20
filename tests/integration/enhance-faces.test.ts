@@ -41,7 +41,7 @@ describe("enhance-faces", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/enhance-faces",
+      url: "/api/v1/tools/image/enhance-faces",
       headers: { authorization: `Bearer ${adminToken}`, "content-type": contentType },
       body,
     });
@@ -56,7 +56,7 @@ describe("enhance-faces", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/enhance-faces",
+      url: "/api/v1/tools/image/enhance-faces",
       headers: { authorization: `Bearer ${adminToken}`, "content-type": contentType },
       body,
     });
@@ -80,7 +80,7 @@ describe("enhance-faces", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/enhance-faces",
+      url: "/api/v1/tools/image/enhance-faces",
       headers: { authorization: `Bearer ${adminToken}`, "content-type": contentType },
       body,
     });
@@ -99,7 +99,7 @@ describe("enhance-faces", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/enhance-faces",
+      url: "/api/v1/tools/image/enhance-faces",
       headers: { authorization: `Bearer ${adminToken}`, "content-type": contentType },
       body,
     });
@@ -118,7 +118,7 @@ describe("enhance-faces", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/enhance-faces",
+      url: "/api/v1/tools/image/enhance-faces",
       headers: { authorization: `Bearer ${adminToken}`, "content-type": contentType },
       body,
     });
@@ -137,7 +137,7 @@ describe("enhance-faces", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/enhance-faces",
+      url: "/api/v1/tools/image/enhance-faces",
       headers: { authorization: `Bearer ${adminToken}`, "content-type": contentType },
       body,
     });
@@ -156,7 +156,7 @@ describe("enhance-faces", () => {
 
       const res = await app.inject({
         method: "POST",
-        url: "/api/v1/tools/enhance-faces",
+        url: "/api/v1/tools/image/enhance-faces",
         headers: { authorization: `Bearer ${adminToken}`, "content-type": contentType },
         body,
       });
@@ -174,7 +174,7 @@ describe("enhance-faces", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/enhance-faces",
+      url: "/api/v1/tools/image/enhance-faces",
       headers: { authorization: `Bearer ${adminToken}`, "content-type": contentType },
       body,
     });
@@ -191,7 +191,7 @@ describe("enhance-faces", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/enhance-faces",
+      url: "/api/v1/tools/image/enhance-faces",
       headers: { authorization: `Bearer ${adminToken}`, "content-type": contentType },
       body,
     });
@@ -212,7 +212,7 @@ describe("enhance-faces", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/enhance-faces",
+      url: "/api/v1/tools/image/enhance-faces",
       headers: { authorization: `Bearer ${adminToken}`, "content-type": contentType },
       body,
     });
@@ -231,7 +231,7 @@ describe("enhance-faces", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/enhance-faces",
+      url: "/api/v1/tools/image/enhance-faces",
       headers: { authorization: `Bearer ${adminToken}`, "content-type": contentType },
       body,
     });
@@ -250,7 +250,7 @@ describe("enhance-faces", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/enhance-faces",
+      url: "/api/v1/tools/image/enhance-faces",
       headers: { authorization: `Bearer ${adminToken}`, "content-type": contentType },
       body,
     });
@@ -266,7 +266,7 @@ describe("enhance-faces", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/enhance-faces",
+      url: "/api/v1/tools/image/enhance-faces",
       headers: { "content-type": contentType },
       body,
     });

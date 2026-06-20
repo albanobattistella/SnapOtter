@@ -57,7 +57,7 @@ describe("Duotone", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/duotone",
+      url: "/api/v1/tools/image/duotone",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -108,7 +108,7 @@ describe("Duotone", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/duotone",
+      url: "/api/v1/tools/image/duotone",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -144,7 +144,7 @@ describe("Duotone", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/duotone",
+      url: "/api/v1/tools/image/duotone",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -195,7 +195,7 @@ describe("Duotone", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/duotone",
+      url: "/api/v1/tools/image/duotone",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,

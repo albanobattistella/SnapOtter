@@ -47,7 +47,7 @@ async function resizeAndMeta(
 
   const res = await app.inject({
     method: "POST",
-    url: "/api/v1/tools/resize",
+    url: "/api/v1/tools/image/resize",
     headers: {
       authorization: `Bearer ${adminToken}`,
       "content-type": contentType,
@@ -80,7 +80,7 @@ describe("Resize", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/resize",
+      url: "/api/v1/tools/image/resize",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -165,7 +165,7 @@ describe("Resize", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/resize",
+      url: "/api/v1/tools/image/resize",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -198,7 +198,7 @@ describe("Resize", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/resize",
+      url: "/api/v1/tools/image/resize",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -219,7 +219,7 @@ describe("Resize", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/resize",
+      url: "/api/v1/tools/image/resize",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -243,7 +243,7 @@ describe("Resize", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/resize",
+      url: "/api/v1/tools/image/resize",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -264,7 +264,7 @@ describe("Resize", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/resize",
+      url: "/api/v1/tools/image/resize",
       headers: { "content-type": contentType },
       body,
     });

@@ -40,7 +40,7 @@ describe("GIF/WebP Converter", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/gif-webp",
+      url: "/api/v1/tools/image/gif-webp",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -70,7 +70,7 @@ describe("GIF/WebP Converter", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/gif-webp",
+      url: "/api/v1/tools/image/gif-webp",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -109,7 +109,7 @@ describe("GIF/WebP Converter", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/gif-webp",
+      url: "/api/v1/tools/image/gif-webp",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -139,7 +139,7 @@ describe("GIF/WebP Converter", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/gif-webp",
+      url: "/api/v1/tools/image/gif-webp",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -160,7 +160,7 @@ describe("GIF/WebP Converter", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/gif-webp",
+      url: "/api/v1/tools/image/gif-webp",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,

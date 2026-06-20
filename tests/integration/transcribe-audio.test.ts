@@ -46,7 +46,7 @@ describe("transcribe-audio", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/transcribe-audio",
+      url: "/api/v1/tools/audio/transcribe-audio",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -80,7 +80,7 @@ describe("transcribe-audio", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/transcribe-audio",
+      url: "/api/v1/tools/audio/transcribe-audio",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -107,7 +107,7 @@ describe("transcribe-audio", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/transcribe-audio",
+      url: "/api/v1/tools/audio/transcribe-audio",
       headers: { "content-type": contentType },
       body,
     });
@@ -137,7 +137,7 @@ describe("transcribe-audio", () => {
 
       const res = await app.inject({
         method: "POST",
-        url: "/api/v1/tools/transcribe-audio",
+        url: "/api/v1/tools/audio/transcribe-audio",
         headers: {
           authorization: `Bearer ${adminToken}`,
           "content-type": contentType,
@@ -167,7 +167,7 @@ describe("transcribe-audio", () => {
 
       const res = await app.inject({
         method: "POST",
-        url: "/api/v1/tools/transcribe-audio",
+        url: "/api/v1/tools/audio/transcribe-audio",
         headers: {
           authorization: `Bearer ${adminToken}`,
           "content-type": contentType,

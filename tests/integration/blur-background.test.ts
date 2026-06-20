@@ -43,7 +43,7 @@ describe("blur-background", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/blur-background",
+      url: "/api/v1/tools/image/blur-background",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -69,7 +69,7 @@ describe("blur-background", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/blur-background",
+      url: "/api/v1/tools/image/blur-background",
       headers: { "content-type": contentType },
       body,
     });
@@ -87,7 +87,7 @@ describe("blur-background", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/blur-background",
+      url: "/api/v1/tools/image/blur-background",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -111,7 +111,7 @@ describe("blur-background", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/blur-background",
+      url: "/api/v1/tools/image/blur-background",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -134,7 +134,7 @@ describe("blur-background", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/blur-background",
+      url: "/api/v1/tools/image/blur-background",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -164,7 +164,7 @@ describe("blur-background", () => {
 
       const res = await app.inject({
         method: "POST",
-        url: "/api/v1/tools/blur-background",
+        url: "/api/v1/tools/image/blur-background",
         headers: {
           authorization: `Bearer ${adminToken}`,
           "content-type": contentType,

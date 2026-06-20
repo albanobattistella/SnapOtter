@@ -40,7 +40,7 @@ describe("Sprite Sheet", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/sprite-sheet",
+      url: "/api/v1/tools/image/sprite-sheet",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -75,7 +75,7 @@ describe("Sprite Sheet", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/sprite-sheet",
+      url: "/api/v1/tools/image/sprite-sheet",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -109,7 +109,7 @@ describe("Sprite Sheet", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/sprite-sheet",
+      url: "/api/v1/tools/image/sprite-sheet",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -138,7 +138,7 @@ describe("Sprite Sheet", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/sprite-sheet",
+      url: "/api/v1/tools/image/sprite-sheet",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,

@@ -37,7 +37,7 @@ describe("Histogram", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/histogram",
+      url: "/api/v1/tools/image/histogram",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,
@@ -99,7 +99,7 @@ describe("Histogram", () => {
 
     const res = await app.inject({
       method: "POST",
-      url: "/api/v1/tools/histogram",
+      url: "/api/v1/tools/image/histogram",
       headers: {
         authorization: `Bearer ${adminToken}`,
         "content-type": contentType,

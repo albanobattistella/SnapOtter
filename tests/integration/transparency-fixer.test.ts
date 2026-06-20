@@ -22,7 +22,7 @@ const SVG = readFileSync(join(FIXTURES, "test-100x100.svg"));
 const HEIC = readFileSync(join(FIXTURES, "test-200x150.heic"));
 const TINY = readFileSync(join(FIXTURES, "test-1x1.png"));
 
-const TOOL_URL = "/api/v1/tools/transparency-fixer";
+const TOOL_URL = "/api/v1/tools/image/transparency-fixer";
 
 let testApp: TestApp;
 let app: TestApp["app"];
