@@ -11,7 +11,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { apiToolPath } from "@snapotter/shared";
+import { apiToolPath, TOOLS } from "@snapotter/shared";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildTestApp, createMultipartPayload, loginAsAdmin, type TestApp } from "./test-server.js";
 
@@ -41,6 +41,12 @@ afterAll(async () => {
   await testApp.cleanup();
 }, 10_000);
 
+// Real catalog tools resolve to their section-prefixed path; unknown ids
+// (used by the non-existent/injection negative tests below) fall back to a
+// raw path that matches no route and 404s, instead of throwing in apiToolPath.
+const toolUrl = (toolId: string): string =>
+  TOOLS.some((t) => t.id === toolId) ? apiToolPath(toolId) : `/api/v1/tools/${toolId}`;
+
 /** Helper to POST a multipart payload to a tool endpoint. */
 function postTool(
   toolId: string,
@@ -54,7 +60,7 @@ function postTool(
   const { body, contentType } = createMultipartPayload(fields);
   return app.inject({
     method: "POST",
-    url: apiToolPath(toolId),
+    url: toolUrl(toolId),
     headers: {
       "content-type": contentType,
       authorization: `Bearer ${adminToken}`,
@@ -76,7 +82,7 @@ function postBatch(
   const { body, contentType } = createMultipartPayload(fields);
   return app.inject({
     method: "POST",
-    url: `${apiToolPath(toolId)}/batch`,
+    url: `${toolUrl(toolId)}/batch`,
     headers: {
       "content-type": contentType,
       authorization: `Bearer ${adminToken}`,
