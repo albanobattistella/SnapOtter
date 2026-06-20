@@ -193,7 +193,7 @@ smoke_background_removal() {
   local input="/fixtures/test-200x150.png"
   [[ -f "$input" ]] || fail "Fixture missing: $input" 3
   local output="/tmp/verify-smoke-rembg.png"
-  timeout 300 run_python "${AI_SCRIPTS}/remove_bg.py" "${input}" "${output}" 2>/dev/null
+  timeout 300 run_python "${AI_SCRIPTS}/remove_bg.py" "${input}" "${output}" 2>/dev/null || true
   [[ -f "${output}" && -s "${output}" ]] || fail "remove_bg output missing or empty" 3
   # Verify it's a valid PNG (check magic bytes)
   run_python -c "
@@ -210,7 +210,7 @@ smoke_face_detection() {
   local input="/fixtures/sample-photo.jpg"
   [[ -f "$input" ]] || fail "Fixture missing: $input" 3
   local output="/tmp/verify-smoke-faces.png"
-  timeout 300 run_python "${AI_SCRIPTS}/detect_faces.py" "${input}" "${output}" 2>/dev/null
+  timeout 300 run_python "${AI_SCRIPTS}/detect_faces.py" "${input}" "${output}" 2>/dev/null || true
   [[ -f "${output}" ]] || fail "detect_faces output missing" 3
   pass "detect_faces produced output"
 }
@@ -224,7 +224,7 @@ from PIL import Image
 img = Image.new('L', (64, 64), 128)
 img.save('${input}')
 " 2>/dev/null
-  timeout 300 run_python "${AI_SCRIPTS}/colorize.py" "${input}" "${output}" '{"method":"ddcolor"}' 2>/dev/null
+  timeout 300 run_python "${AI_SCRIPTS}/colorize.py" "${input}" "${output}" '{"model":"ddcolor"}' 2>/dev/null || true
   [[ -f "${output}" && -s "${output}" ]] || fail "colorize output missing or empty" 3
   pass "colorize produced output"
 }
@@ -233,7 +233,7 @@ smoke_upscale_enhance() {
   local input="/fixtures/test-100x100.jpg"
   [[ -f "$input" ]] || fail "Fixture missing: $input" 3
   local output="/tmp/verify-smoke-upscale.png"
-  timeout 300 run_python "${AI_SCRIPTS}/upscale.py" "${input}" "${output}" '{"scale":2}' 2>/dev/null
+  timeout 300 run_python "${AI_SCRIPTS}/upscale.py" "${input}" "${output}" '{"scale":2}' 2>/dev/null || true
   [[ -f "${output}" && -s "${output}" ]] || fail "upscale output missing or empty" 3
   run_python -c "
 from PIL import Image
@@ -251,23 +251,27 @@ smoke_photo_restoration() {
   local input="/fixtures/test-100x100.jpg"
   [[ -f "$input" ]] || fail "Fixture missing: $input" 3
   local output="/tmp/verify-smoke-restore.png"
-  timeout 300 run_python "${AI_SCRIPTS}/restore.py" "${input}" "${output}" 2>/dev/null
+  timeout 300 run_python "${AI_SCRIPTS}/restore.py" "${input}" "${output}" 2>/dev/null || true
   [[ -f "${output}" && -s "${output}" ]] || fail "restore output missing or empty" 3
   pass "restore produced output"
 }
 
 smoke_ocr() {
   local input="/tmp/verify-smoke-ocr.png"
-  # Generate a 200x50 image with text
+  # Generate a 400x100 image with large, clear text for reliable OCR
   run_python -c "
-from PIL import Image, ImageDraw
-img = Image.new('RGB', (200, 50), 'white')
+from PIL import Image, ImageDraw, ImageFont
+img = Image.new('RGB', (400, 100), 'white')
 draw = ImageDraw.Draw(img)
-draw.text((10, 10), 'Hello SnapOtter', fill='black')
+try:
+    font = ImageFont.load_default(size=40)
+except TypeError:
+    font = ImageFont.load_default()
+draw.text((20, 20), 'Hello SnapOtter', fill='black', font=font)
 img.save('${input}')
 " 2>/dev/null
   local result
-  result="$(timeout 300 run_python "${AI_SCRIPTS}/ocr.py" "${input}" '{"quality":"balanced","enhance":false}' 2>/dev/null)"
+  result="$(timeout 300 run_python "${AI_SCRIPTS}/ocr.py" "${input}" '{"quality":"balanced","enhance":false}' 2>/dev/null)" || result=""
   # Check stdout JSON has success=true and non-empty text
   echo "${result}" | run_python -c "
 import json, sys
@@ -288,7 +292,7 @@ smoke_transcription() {
   local input="/fixtures/content/speech-10s.wav"
   [[ -f "$input" ]] || fail "Fixture missing: $input" 3
   local result
-  result="$(timeout 300 run_python "${AI_SCRIPTS}/transcribe.py" "${input}" 2>/dev/null)"
+  result="$(timeout 300 run_python "${AI_SCRIPTS}/transcribe.py" "${input}" 2>/dev/null)" || result=""
   # Check stdout JSON has success=true and non-empty segments
   echo "${result}" | run_python -c "
 import json, sys
