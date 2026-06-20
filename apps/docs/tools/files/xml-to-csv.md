@@ -8,7 +8,7 @@ Extract repeating elements from an XML file into a flat CSV table. The tool auto
 
 ## API Endpoint
 
-`POST /api/v1/tools/xml-to-csv`
+`POST /api/v1/tools/files/xml-to-csv`
 
 Accepts multipart form data with an XML file. No settings field is required.
 
@@ -19,7 +19,7 @@ This tool has no configurable parameters. The repeating element is auto-detected
 ## Example Request
 
 ```bash
-curl -X POST http://localhost:1349/api/v1/tools/xml-to-csv \
+curl -X POST http://localhost:1349/api/v1/tools/files/xml-to-csv \
   -H "Authorization: Bearer si_your-api-key" \
   -F "file=@catalog.xml"
 ```
