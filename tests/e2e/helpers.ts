@@ -103,7 +103,7 @@ export function getTestImagePath(): string {
 // getTestHeicPath() — return a small HEIC test image (from fixtures)
 // ---------------------------------------------------------------------------
 export function getTestHeicPath(): string {
-  return path.join(process.cwd(), "tests", "fixtures", "test-200x150.heic");
+  return path.join(process.cwd(), "tests", "fixtures", "image", "valid", "test-200x150.heic");
 }
 
 // ---------------------------------------------------------------------------

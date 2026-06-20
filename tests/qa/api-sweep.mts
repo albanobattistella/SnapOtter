@@ -16,10 +16,11 @@ import { join } from "node:path";
 // ── Config ────────────────────────────────────────────────────────
 const BASE = "http://localhost:13499";
 const REPO = join(import.meta.dirname, "..", "..");
-const FIXTURES_FORMATS = join(REPO, "tests", "fixtures", "formats");
-const FIXTURES_MEDIA = join(REPO, "tests", "fixtures", "media");
-const FIXTURES_DOCS = join(REPO, "tests", "fixtures", "documents");
-const FIXTURES_DATA = join(REPO, "tests", "fixtures", "data");
+const FIXTURES_FORMATS = join(REPO, "tests", "fixtures", "image", "formats");
+const FIXTURES_MEDIA_VIDEO = join(REPO, "tests", "fixtures", "video", "formats");
+const FIXTURES_MEDIA_AUDIO = join(REPO, "tests", "fixtures", "audio", "formats");
+const FIXTURES_DOCS = join(REPO, "tests", "fixtures", "document", "formats");
+const FIXTURES_DATA = join(REPO, "tests", "fixtures", "data", "valid");
 const OUT_DIR = join(REPO, "docs", "qa");
 
 const FAST_TIMEOUT_MS = 60_000;
@@ -115,8 +116,12 @@ function resolveFixture(ext: string, modality: string): string | null {
     }
   }
 
-  if (modality === "video" || modality === "audio") {
-    const p = join(FIXTURES_MEDIA, `tiny.${bare}`);
+  if (modality === "video") {
+    const p = join(FIXTURES_MEDIA_VIDEO, `tiny.${bare}`);
+    if (existsSync(p)) return p;
+  }
+  if (modality === "audio") {
+    const p = join(FIXTURES_MEDIA_AUDIO, `tiny.${bare}`);
     if (existsSync(p)) return p;
   }
 
@@ -131,7 +136,7 @@ function resolveFixture(ext: string, modality: string): string | null {
   }
 
   // Fallback: try all dirs
-  for (const dir of [FIXTURES_FORMATS, FIXTURES_MEDIA, FIXTURES_DOCS, FIXTURES_DATA]) {
+  for (const dir of [FIXTURES_FORMATS, FIXTURES_MEDIA_VIDEO, FIXTURES_MEDIA_AUDIO, FIXTURES_DOCS, FIXTURES_DATA]) {
     for (const prefix of ["sample", "tiny"]) {
       const p = join(dir, `${prefix}.${bare}`);
       if (existsSync(p)) return p;
