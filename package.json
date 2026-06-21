@@ -115,8 +115,7 @@
       "uuid": ">=11.1.1",
       "yaml": ">=2.8.3",
       "dompurify": ">=3.4.11",
-      "nanoid@4": ">=5.0.9",
-      "undici": ">=8.5.0"
+      "nanoid@4": ">=5.0.9"
     }
   },
   "dependencies": {
