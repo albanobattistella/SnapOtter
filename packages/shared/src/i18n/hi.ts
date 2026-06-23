@@ -3194,6 +3194,9 @@ export const hi: TranslationKeys = {
     noStepsHeading: "अभी तक कोई चरण नहीं",
     searchToolsPlaceholder: "टूल खोजें...",
     step: "स्टेप",
+    modalityWarning: "मोडैलिटी मेल नहीं खाती",
+    modalityWarningTooltip:
+      "यह चरण {expected} की अपेक्षा करता है लेकिन {received} प्राप्त करता है; पाइपलाइन चलाने पर यह विफल हो सकता है।",
   },
   nav: {
     tools: "टूल्स",

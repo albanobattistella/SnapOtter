@@ -3232,6 +3232,9 @@ export const it: TranslationKeys = {
     noStepsHeading: "Nessun passaggio",
     searchToolsPlaceholder: "Cerca strumenti...",
     step: "Passaggio",
+    modalityWarning: "Incompatibilità di modalità",
+    modalityWarningTooltip:
+      "Questo passaggio prevede {expected} ma riceve {received}; potrebbe non riuscire durante l'esecuzione della pipeline.",
   },
   nav: {
     tools: "Strumenti",

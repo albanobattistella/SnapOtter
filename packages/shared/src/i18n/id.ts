@@ -3220,6 +3220,9 @@ export const id: TranslationKeys = {
     noStepsHeading: "Belum ada langkah",
     searchToolsPlaceholder: "Cari alat...",
     step: "Langkah",
+    modalityWarning: "Ketidakcocokan modalitas",
+    modalityWarningTooltip:
+      "Langkah ini mengharapkan {expected} tetapi menerima {received}; mungkin gagal saat Anda menjalankan pipeline.",
   },
   nav: {
     tools: "Alat",

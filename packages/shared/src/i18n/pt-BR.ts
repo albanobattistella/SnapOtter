@@ -3227,6 +3227,9 @@ export const ptBR: TranslationKeys = {
     noStepsHeading: "Nenhuma etapa ainda",
     searchToolsPlaceholder: "Buscar ferramentas...",
     step: "Passo",
+    modalityWarning: "Incompatibilidade de modalidade",
+    modalityWarningTooltip:
+      "Esta etapa espera {expected}, mas recebe {received}; pode falhar ao executar o pipeline.",
   },
   nav: {
     tools: "Ferramentas",

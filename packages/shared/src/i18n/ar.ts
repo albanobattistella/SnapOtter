@@ -3199,6 +3199,9 @@ export const ar: TranslationKeys = {
     noStepsHeading: "لا توجد خطوات بعد",
     searchToolsPlaceholder: "بحث في الأدوات...",
     step: "خطوة",
+    modalityWarning: "عدم توافق النوع",
+    modalityWarningTooltip:
+      "تتوقع هذه الخطوة {expected} لكنها تتلقى {received}؛ قد تفشل عند تشغيل المسار.",
   },
   nav: {
     tools: "الأدوات",

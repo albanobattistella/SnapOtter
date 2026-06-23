@@ -14,10 +14,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { TOOLS } from "@snapotter/shared";
-import { FileImage, GripVertical, X } from "lucide-react";
+import { type Modality, TOOLS } from "@snapotter/shared";
+import { AlertTriangle, GripVertical, Workflow, X } from "lucide-react";
 import { useTranslation } from "@/contexts/i18n-context";
+import { format } from "@/lib/format";
 import { ICON_MAP } from "@/lib/icon-map";
+import { computeStepWarnings, type StepWarning } from "@/lib/pipeline-compat";
 import { getToolName } from "@/lib/tool-i18n";
 import { cn } from "@/lib/utils";
 import type { PipelineStep } from "@/stores/pipeline-store";
@@ -27,6 +29,7 @@ import { getSettingsSummary } from "./pipeline-step-summary";
 interface PipelineBuilderProps {
   steps: PipelineStep[];
   expandedStepId: string | null;
+  uploadedModality?: Modality | null;
   onRemoveStep: (id: string) => void;
   onReorderSteps: (activeId: string, overId: string) => void;
   onUpdateSettings: (id: string, settings: Record<string, unknown>) => void;
@@ -41,6 +44,7 @@ interface SortableStepProps {
   step: PipelineStep;
   index: number;
   isExpanded: boolean;
+  warning?: StepWarning | null;
   onToggle: () => void;
   onRemove: () => void;
   onUpdateSettings: (settings: Record<string, unknown>) => void;
@@ -50,6 +54,7 @@ function SortableStep({
   step,
   index,
   isExpanded,
+  warning,
   onToggle,
   onRemove,
   onUpdateSettings,
@@ -67,7 +72,7 @@ function SortableStep({
   const tool = TOOLS.find((t) => t.id === step.toolId);
   if (!tool) return null;
 
-  const Icon = (ICON_MAP[tool.icon] as React.ComponentType<{ className?: string }>) ?? FileImage;
+  const Icon = (ICON_MAP[tool.icon] as React.ComponentType<{ className?: string }>) ?? Workflow;
   const summary = getSettingsSummary(step.toolId, step.settings);
 
   return (
@@ -115,6 +120,20 @@ function SortableStep({
             {getToolName(t, tool.id, tool.name)}
           </span>
 
+          {/* Modality mismatch warning */}
+          {warning && (
+            <span
+              title={format(t.automate.modalityWarningTooltip, {
+                expected: warning.expects,
+                received: warning.receives,
+              })}
+              className="inline-flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 ms-1"
+            >
+              <AlertTriangle className="h-3 w-3" />
+              {t.automate.modalityWarning}
+            </span>
+          )}
+
           {/* Settings summary when collapsed */}
           {!isExpanded && summary && (
             <span className="text-xs text-muted-foreground truncate ms-1">{summary}</span>
@@ -154,12 +173,17 @@ function SortableStep({
 export function PipelineBuilder({
   steps,
   expandedStepId,
+  uploadedModality,
   onRemoveStep,
   onReorderSteps,
   onUpdateSettings,
   onToggleStep,
 }: PipelineBuilderProps) {
   const { t } = useTranslation();
+  const warnings = computeStepWarnings(
+    steps.map((s) => s.toolId),
+    uploadedModality ?? null,
+  );
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -176,7 +200,7 @@ export function PipelineBuilder({
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="p-4 rounded-full bg-muted/50 mb-4">
-          <FileImage className="h-8 w-8 text-muted-foreground" />
+          <Workflow className="h-8 w-8 text-muted-foreground" />
         </div>
         <h3 className="text-sm font-medium text-foreground mb-1">{t.automate.noStepsHeading}</h3>
         <p className="text-sm text-muted-foreground max-w-[240px]">{t.automate.addToolsPrompt}</p>
@@ -194,6 +218,7 @@ export function PipelineBuilder({
               step={step}
               index={idx}
               isExpanded={expandedStepId === step.id}
+              warning={warnings[idx]}
               onToggle={() => onToggleStep(expandedStepId === step.id ? null : step.id)}
               onRemove={() => onRemoveStep(step.id)}
               onUpdateSettings={(s) => onUpdateSettings(step.id, s)}
