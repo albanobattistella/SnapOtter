@@ -33,6 +33,7 @@ import {
   ensureAnonymousUser,
   ensureBuiltinRoles,
   ensureDefaultAdmin,
+  ensureDefaultTeam,
   getAuthUser,
 } from "./plugins/auth.js";
 import { registerMfa } from "./plugins/mfa.js";
@@ -54,6 +55,7 @@ import { filePreviewRoutes } from "./routes/file-preview.js";
 import { fileRoutes } from "./routes/files.js";
 import { registerMemeTemplates } from "./routes/meme-templates.js";
 import { registerPipelineRoutes } from "./routes/pipeline.js";
+import { preferencesRoutes } from "./routes/preferences.js";
 import { registerProgressRoutes } from "./routes/progress.js";
 import { rolesRoutes } from "./routes/roles.js";
 import { settingsRoutes } from "./routes/settings.js";
@@ -123,6 +125,7 @@ if (env.SQLITE_MIGRATE_PATH) {
 // inserted via data statements.  The pg baseline is DDL-only, so roles are
 // seeded here at boot time.  onConflictDoNothing makes this idempotent.
 await ensureBuiltinRoles();
+await ensureDefaultTeam();
 
 if (env.AUTH_ENABLED) {
   await ensureDefaultAdmin();
@@ -173,6 +176,8 @@ if (!env.COOKIE_SECRET) {
 }
 
 await initAnalytics();
+const { primeAnalyticsGate } = await import("./lib/analytics-gate.js");
+await primeAnalyticsGate();
 
 // Enterprise features (license-gated)
 let enterpriseLicense: { org: string; plan: string } | null = null;
@@ -211,6 +216,8 @@ if (env.STORAGE_MODE === "s3") {
 
 // Start the cooperative cancellation listener (Redis pub/sub)
 await startCancelListener();
+const { startAnalyticsGateListener } = await import("./lib/analytics-gate.js");
+await startAnalyticsGateListener();
 
 // Set up AI feature directories and recover from interrupted installs. Both are
 // best-effort and must never block boot: ensureAiDirs swallows its own errors,
@@ -361,6 +368,9 @@ await registerIpAllowlist(app);
 
 // Public config routes (no auth required)
 await configRoutes(app);
+
+// Per-user preferences (any authenticated user)
+await preferencesRoutes(app);
 
 // Auth middleware (must be registered before routes it protects)
 await authMiddleware(app);
@@ -761,6 +771,8 @@ async function shutdown(signal: string) {
     await closeQueueEvents();
     await closeQueues();
     await stopCancelListener();
+    const { stopAnalyticsGateListener } = await import("./lib/analytics-gate.js");
+    await stopAnalyticsGateListener();
     await closeRedis();
     console.log("Redis connections closed");
   } catch (err) {

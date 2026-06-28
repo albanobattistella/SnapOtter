@@ -36,6 +36,7 @@ import { apiDelete, apiGet, apiPost, apiPut, clearToken, formatHeaders } from "@
 import { format, plural } from "@/lib/format";
 import { getCategoryName, getToolDescription, getToolName } from "@/lib/tool-i18n";
 import { cn, copyToClipboard } from "@/lib/utils";
+import { useAnalyticsStore } from "@/stores/analytics-store";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useThemeStore } from "@/stores/theme-store";
 import { OtterLogo } from "../common/otter-logo";
@@ -362,10 +363,10 @@ function GeneralSection() {
             role: "unknown",
           });
         }),
-      apiGet<{ settings: Record<string, string> }>("/v1/settings")
+      apiGet<{ preferences: Record<string, unknown> }>("/v1/preferences")
         .then((data) => {
-          if (data.settings.defaultToolView) {
-            setDefaultToolView(data.settings.defaultToolView);
+          if (typeof data.preferences.defaultToolView === "string") {
+            setDefaultToolView(data.preferences.defaultToolView);
           }
         })
         .catch(() => {}),
@@ -397,7 +398,10 @@ function GeneralSection() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiPut("/v1/settings", { defaultToolView });
+      // The default home view is a per-user preference, not instance config, so
+      // it saves to /v1/preferences (writable by any authenticated user) rather
+      // than the admin-only /v1/settings.
+      await apiPut("/v1/preferences", { defaultToolView });
       setSaveMsg(t.settings.general.saveSuccess);
       useSettingsStore.setState({
         defaultToolView: defaultToolView as "sidebar" | "fullscreen",
@@ -549,7 +553,24 @@ function SystemSection() {
     setSaving(true);
     setSaveMsg(null);
     try {
-      await apiPut("/v1/settings", settings);
+      // GET returns read-only keys (instance_id, cookie_secret) and shows redacted
+      // secrets as the literal "********". Echoing those back fails with 400
+      // READONLY_SETTING or would overwrite a real secret with the mask, so send
+      // only the keys this section can actually change.
+      const READONLY_KEYS = new Set(["instance_id", "cookie_secret"]);
+      const writable = Object.fromEntries(
+        Object.entries(settings).filter(
+          ([key, value]) => !READONLY_KEYS.has(key) && value !== "********",
+        ),
+      );
+      await apiPut("/v1/settings", writable);
+      if (settings.analyticsEnabled === "false") {
+        const { optOut } = await import("@/lib/analytics");
+        optOut();
+      } else {
+        // Re-enabling takes effect on the next config refetch / reload.
+        useAnalyticsStore.getState().fetchConfig();
+      }
       if (settings.defaultTheme) {
         const theme = settings.defaultTheme as "light" | "dark" | "system";
         useThemeStore.getState().setTheme(theme);
@@ -680,6 +701,39 @@ function SystemSection() {
             className={cn(
               "block w-4 h-4 rounded-full bg-white absolute top-1 transition-transform",
               settings.startupCleanup !== "false" ? "translate-x-6" : "translate-x-1",
+            )}
+          />
+        </button>
+      </SettingRow>
+
+      <div className="pt-4 border-t border-border">
+        <h4 className="text-sm font-semibold text-foreground mb-3">{t.settings.privacy.title}</h4>
+        <p className="text-sm text-muted-foreground mb-3">{t.settings.privacy.description}</p>
+      </div>
+      <SettingRow
+        label={t.settings.privacy.analyticsLabel}
+        description={t.settings.privacy.analyticsDescription}
+      >
+        <button
+          type="button"
+          role="switch"
+          aria-checked={settings.analyticsEnabled !== "false"}
+          aria-label={t.settings.privacy.analyticsLabel}
+          onClick={() =>
+            updateSetting(
+              "analyticsEnabled",
+              settings.analyticsEnabled === "false" ? "true" : "false",
+            )
+          }
+          className={cn(
+            "w-11 h-6 rounded-full transition-colors relative",
+            settings.analyticsEnabled !== "false" ? "bg-primary" : "bg-muted-foreground/30",
+          )}
+        >
+          <span
+            className={cn(
+              "block w-4 h-4 rounded-full bg-white absolute top-1 transition-transform",
+              settings.analyticsEnabled !== "false" ? "translate-x-6" : "translate-x-1",
             )}
           />
         </button>
@@ -1631,6 +1685,10 @@ function PeopleSection() {
                 setShowAddForm(false);
                 setShowGeneratedPw(false);
                 setPwCopied(false);
+                // Reset the field values too, so re-opening the form is clean.
+                setNewUsername("");
+                setNewPassword("");
+                setAddError(null);
               }}
               className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:bg-muted transition-colors"
             >
@@ -2415,8 +2473,17 @@ function TeamsSection() {
                         className="px-2 py-1 rounded border border-border bg-background text-sm text-foreground w-40"
                         ref={(el) => el?.focus()}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter") handleRename(tm.id);
-                          if (e.key === "Escape") setEditingTeamId(null);
+                          // Keep Enter/Escape scoped to the rename input. Without
+                          // stopping propagation, Escape also reaches the dialog's
+                          // global Escape handler and closes the whole dialog.
+                          if (e.key === "Enter") {
+                            e.stopPropagation();
+                            handleRename(tm.id);
+                          }
+                          if (e.key === "Escape") {
+                            e.stopPropagation();
+                            setEditingTeamId(null);
+                          }
                         }}
                       />
                       <button
