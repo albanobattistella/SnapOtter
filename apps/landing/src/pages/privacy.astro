@@ -99,6 +99,12 @@ const breadcrumbJsonLd = {
               <code class="text-xs">SNAPOTTER_ANALYTICS=off</code> build arg as a compile-time
               hard-off.
             </li>
+            <li>
+              Optional in-app feedback is sent only when a user submits it, and only when analytics
+              is enabled. Feedback appears in PostHog as <code class="text-xs">feedback_submitted</code>.
+              Contact details are included only after explicit contact consent. Files, file names,
+              upload paths, private outputs, and raw error logs are not included.
+            </li>
           </ul>
         </section>
 

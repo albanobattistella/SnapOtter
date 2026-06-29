@@ -16,6 +16,7 @@ import {
   Download,
   FileImage,
   Loader2,
+  MessageSquare,
   Upload,
   XCircle,
 } from "lucide-react";
@@ -31,6 +32,7 @@ import { SideBySideComparison } from "@/components/common/side-by-side-compariso
 import { ThumbnailStrip } from "@/components/common/thumbnail-strip";
 import { ToolDropzone } from "@/components/common/tool-dropzone";
 import { FeatureInstallPrompt } from "@/components/features/feature-install-prompt";
+import { FeedbackDialog } from "@/components/feedback/feedback-dialog";
 import { AppLayout } from "@/components/layout/app-layout";
 import { CropCanvas } from "@/components/tools/crop-canvas";
 import type { EraserCanvasRef } from "@/components/tools/eraser-canvas";
@@ -43,11 +45,13 @@ import { useMobile } from "@/hooks/use-mobile";
 import { usePageTitle } from "@/hooks/use-page-title";
 import { recordRecentTool } from "@/hooks/use-recent-tools";
 import { formatFileSize } from "@/lib/download";
+import { classifyFeedbackError } from "@/lib/feedback";
 import { format } from "@/lib/format";
 import { ICON_MAP } from "@/lib/icon-map";
 import { MULTI_FILE_TOOLS } from "@/lib/tool-display-modes";
 import { getToolName } from "@/lib/tool-i18n";
 import { getToolRegistryEntry } from "@/lib/tool-registry";
+import { useAnalyticsStore } from "@/stores/analytics-store";
 import { useBase64Store } from "@/stores/base64-store";
 import { useCollageStore } from "@/stores/collage-store";
 import { useDuplicateStore } from "@/stores/duplicate-store";
@@ -322,11 +326,15 @@ export function ToolPage() {
     [navigateNext, navigatePrev],
   );
   const [mobileSettingsOpen, setMobileSettingsOpen] = useState(false);
+  const [failedFeedbackOpen, setFailedFeedbackOpen] = useState(false);
+  const analyticsConfig = useAnalyticsStore((s) => s.config);
+  const feedbackEnabled = Boolean(analyticsConfig?.enabled);
   const [previewTransform, setPreviewTransform] = useState<PreviewTransform | null>(null);
   const [previewFilter, setPreviewFilter] = useState<string>("");
   const [imageWrapperStyle, setImageWrapperStyle] = useState<React.CSSProperties | null>(null);
   const [imageWrapperChildren, setImageWrapperChildren] = useState<React.ReactNode>(null);
   const [bgPreview, setBgPreview] = useState<BgPreviewState | null>(null);
+  const failedFeedbackCategory = classifyFeedbackError(currentEntry?.error);
 
   const [cropCrop, setCropCrop] = useState<Crop>({
     unit: "%",
@@ -782,6 +790,16 @@ export function ToolPage() {
               >
                 {t.toolPage.tryDifferentFile}
               </button>
+              {feedbackEnabled && (
+                <button
+                  type="button"
+                  onClick={() => setFailedFeedbackOpen(true)}
+                  className="px-4 py-2 rounded-md border border-border text-sm text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center justify-center gap-2"
+                >
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  {t.feedback.reportIssue}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -1101,6 +1119,17 @@ export function ToolPage() {
           </Suspense>
         </div>
 
+        {feedbackEnabled && currentEntry?.status === "failed" && (
+          <button
+            type="button"
+            onClick={() => setFailedFeedbackOpen(true)}
+            className="w-full py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted text-xs font-medium flex items-center justify-center gap-2"
+          >
+            <MessageSquare className="h-3.5 w-3.5" />
+            {t.feedback.reportIssue}
+          </button>
+        )}
+
         {/* Batch download — shown right after settings for easy access */}
         {entries.length > 1 && hasProcessed && batchZipBlob && (
           <button
@@ -1246,6 +1275,15 @@ export function ToolPage() {
           >
             <div className="settings-container space-y-3">{renderSettingsContent()}</div>
           </BottomSheet>
+          <FeedbackDialog
+            open={failedFeedbackOpen}
+            source="failed_job"
+            toolId={tool?.id}
+            jobStatus="failed"
+            errorCategory={failedFeedbackCategory}
+            initialSentiment="issue"
+            onClose={() => setFailedFeedbackOpen(false)}
+          />
         </div>
       </AppLayout>
     );
@@ -1339,6 +1377,15 @@ export function ToolPage() {
             />
           )}
         </section>
+        <FeedbackDialog
+          open={failedFeedbackOpen}
+          source="failed_job"
+          toolId={tool?.id}
+          jobStatus="failed"
+          errorCategory={failedFeedbackCategory}
+          initialSentiment="issue"
+          onClose={() => setFailedFeedbackOpen(false)}
+        />
       </div>
     </AppLayout>
   );

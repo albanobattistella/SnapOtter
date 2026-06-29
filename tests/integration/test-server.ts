@@ -60,6 +60,7 @@ import { auditLogRoutes } from "../../apps/api/src/routes/audit-log.js";
 import { registerBatchRoutes } from "../../apps/api/src/routes/batch.js";
 import { docsRoutes } from "../../apps/api/src/routes/docs.js";
 import { registerEnterpriseRoutes } from "../../apps/api/src/routes/enterprise/index.js";
+import { feedbackRoutes } from "../../apps/api/src/routes/feedback.js";
 import { registerFetchUrlsRoute } from "../../apps/api/src/routes/fetch-urls.js";
 import { fileRoutes } from "../../apps/api/src/routes/files.js";
 import { registerMemeTemplates } from "../../apps/api/src/routes/meme-templates.js";
@@ -235,6 +236,9 @@ export async function buildTestApp(): Promise<TestApp> {
 
   // Analytics routes
   await analyticsRoutes(app);
+
+  // Explicit customer feedback capture
+  await feedbackRoutes(app);
 
   // API docs (Scalar)
   await docsRoutes(app);

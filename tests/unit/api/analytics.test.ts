@@ -221,3 +221,62 @@ describe("trackEvent", () => {
     await expect(mod.trackEvent("test_event", { key: "value" })).resolves.toBeUndefined();
   });
 });
+
+describe("captureFeedback", () => {
+  it("captures feedback_submitted with explicit feedback properties", async () => {
+    bakedConfig.enabled = true;
+    bakedConfig.posthogApiKey = "phc_test_key";
+    await mod.initAnalytics();
+
+    await mod.captureFeedback(
+      {
+        source: "admin_installer",
+        survey_id: "admin-install-v1",
+        prompt_variant: "settings-card-v1",
+        sentiment: "issue",
+        feedback_type: "bug",
+        message: "Docs need a complete S3 example.",
+        contact_ok: true,
+        contact_email: "admin@example.com",
+        contact_name: "Pat",
+        company: "Example Co",
+        install_method: "docker_compose",
+        usage_type: "team_internal",
+        friction_area: "environment_variables",
+        important_areas: ["pdf_docs", "batch_workflows"],
+        error_category: "processing_error",
+      },
+      "distinct-feedback",
+    );
+
+    expect(mockCapture).toHaveBeenCalledWith({
+      distinctId: "distinct-feedback",
+      event: "feedback_submitted",
+      properties: expect.objectContaining({
+        feedback_version: 1,
+        source: "admin_installer",
+        survey_id: "admin-install-v1",
+        prompt_variant: "settings-card-v1",
+        contact_ok: true,
+        contact_email: "admin@example.com",
+        install_method: "docker_compose",
+        usage_type: "team_internal",
+        friction_area: "environment_variables",
+        important_areas: ["pdf_docs", "batch_workflows"],
+        error_category: "processing_error",
+      }),
+    });
+  });
+
+  it("does nothing when analytics is disabled", async () => {
+    bakedConfig.enabled = false;
+
+    await mod.captureFeedback({
+      source: "global",
+      contact_ok: false,
+      message: "A message",
+    });
+
+    expect(mockCapture).not.toHaveBeenCalled();
+  });
+});

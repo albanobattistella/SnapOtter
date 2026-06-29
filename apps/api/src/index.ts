@@ -50,6 +50,7 @@ import { configRoutes } from "./routes/config.js";
 import { docsRoutes } from "./routes/docs.js";
 import { registerEnterpriseRoutes } from "./routes/enterprise/index.js";
 import { registerFeatureRoutes } from "./routes/features.js";
+import { feedbackRoutes } from "./routes/feedback.js";
 import { registerFetchUrlsRoute } from "./routes/fetch-urls.js";
 import { filePreviewRoutes } from "./routes/file-preview.js";
 import { fileRoutes } from "./routes/files.js";
@@ -437,6 +438,9 @@ await settingsRoutes(app);
 
 // Analytics config and consent routes
 await analyticsRoutes(app);
+
+// Explicit customer feedback capture (respects the analytics gate)
+await feedbackRoutes(app);
 
 // Feature management routes (AI feature bundle install/uninstall)
 await registerFeatureRoutes(app);

@@ -33,6 +33,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { useMobile } from "@/hooks/use-mobile";
 import { apiDelete, apiGet, apiPost, apiPut, clearToken, formatHeaders } from "@/lib/api";
+import { shouldShowInstallFeedbackCard } from "@/lib/feedback";
 import { format, plural } from "@/lib/format";
 import { getCategoryName, getToolDescription, getToolName } from "@/lib/tool-i18n";
 import { cn, copyToClipboard } from "@/lib/utils";
@@ -40,6 +41,8 @@ import { useAnalyticsStore } from "@/stores/analytics-store";
 import { useSettingsStore } from "@/stores/settings-store";
 import { useThemeStore } from "@/stores/theme-store";
 import { OtterLogo } from "../common/otter-logo";
+import { AdminInstallFeedbackCard } from "../feedback/admin-install-feedback-card";
+import { FeedbackDialog } from "../feedback/feedback-dialog";
 import { AiFeaturesSection } from "./ai-features-section";
 import { UsageSection } from "./usage-section";
 
@@ -541,10 +544,14 @@ function writableSettings(settings: Record<string, string>): Record<string, stri
 
 function SystemSection() {
   const { t } = useTranslation();
+  const { role } = useAuth();
+  const analyticsConfig = useAnalyticsStore((s) => s.config);
+  const analyticsConfigLoaded = useAnalyticsStore((s) => s.configLoaded);
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [installFeedbackOpen, setInstallFeedbackOpen] = useState(false);
   const [bundleLoading, setBundleLoading] = useState(false);
   const [bundleError, setBundleError] = useState<string | null>(null);
 
@@ -566,6 +573,24 @@ function SystemSection() {
   const updateSetting = useCallback((key: string, value: string) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   }, []);
+
+  const updateInstallFeedbackState = useCallback(async (key: string, value: string) => {
+    await apiPut("/v1/settings", { [key]: value });
+    setSettings((prev) => ({ ...prev, [key]: value }));
+  }, []);
+
+  const handleInstallFeedbackSubmitted = useCallback(() => {
+    void updateInstallFeedbackState("feedback.install.submittedAt", new Date().toISOString());
+  }, [updateInstallFeedbackState]);
+
+  const handleInstallFeedbackSnooze = useCallback(() => {
+    const snoozedUntil = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    void updateInstallFeedbackState("feedback.install.snoozedUntil", snoozedUntil);
+  }, [updateInstallFeedbackState]);
+
+  const handleInstallFeedbackDismiss = useCallback(() => {
+    void updateInstallFeedbackState("feedback.install.dismissedAt", new Date().toISOString());
+  }, [updateInstallFeedbackState]);
 
   const handleSave = useCallback(async () => {
     setSaving(true);
@@ -599,6 +624,13 @@ function SystemSection() {
       </div>
     );
   }
+
+  const installFeedbackVisible = shouldShowInstallFeedbackCard({
+    settings,
+    role,
+    analyticsConfigLoaded,
+    analyticsEnabled: Boolean(analyticsConfig?.enabled),
+  });
 
   return (
     <div className="space-y-6">
@@ -747,6 +779,13 @@ function SystemSection() {
         </button>
       </SettingRow>
 
+      <AdminInstallFeedbackCard
+        visible={installFeedbackVisible}
+        onShare={() => setInstallFeedbackOpen(true)}
+        onRemindLater={handleInstallFeedbackSnooze}
+        onDismissForever={handleInstallFeedbackDismiss}
+      />
+
       <div className="pt-4 border-t border-border">
         <h4 className="text-sm font-semibold text-foreground mb-3">
           {t.settings.dataRetention.title}
@@ -846,6 +885,13 @@ function SystemSection() {
         </SettingRow>
         {bundleError && <p className="text-sm text-destructive mt-2">{bundleError}</p>}
       </div>
+
+      <FeedbackDialog
+        open={installFeedbackOpen}
+        source="admin_installer"
+        onClose={() => setInstallFeedbackOpen(false)}
+        onSubmitted={handleInstallFeedbackSubmitted}
+      />
     </div>
   );
 }

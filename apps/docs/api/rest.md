@@ -534,6 +534,7 @@ Query parameters:
 | Method | Path | Access | Description |
 |--------|------|--------|-------------|
 | `GET` | `/api/v1/config/analytics` | Public | Get the effective analytics configuration (PostHog key, Sentry DSN, sample rate). Keys, DSN, and instance ID are blank when analytics is off, either from the compile-time bake or the instance `analyticsEnabled` setting. |
+| `POST` | `/api/v1/feedback` | Auth | Submit explicit user feedback to the configured PostHog project as `feedback_submitted`. The route respects the analytics gate, rate-limits submissions, strips contact fields unless `contactOk` is true, and never accepts file contents, file names, upload paths, or raw private error text. When analytics is disabled, it returns `{ "ok": true, "accepted": false }`. |
 | `PUT` | `/api/v1/settings` | Admin (`settings:write`) | Set the instance-wide opt-out. Send a JSON body `{ "analyticsEnabled": "false" }` to turn analytics off for everyone, or `"true"` to turn it back on. |
 
 ## Features / AI Bundles
