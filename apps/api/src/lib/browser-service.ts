@@ -1,9 +1,7 @@
-import { lookup } from "node:dns/promises";
 import { existsSync } from "node:fs";
-import { isIP } from "node:net";
 import PQueue from "p-queue";
 import { type Browser, chromium, type Page } from "playwright";
-import { isPrivateIp } from "./ssrf.js";
+import { MAX_URL_FETCH_SIZE, safeFetch } from "./ssrf.js";
 
 const MAX_PAGES = Math.max(1, parseInt(process.env.BROWSER_MAX_PAGES || "3", 10));
 const CRASH_WINDOW_MS = 60_000;
@@ -59,50 +57,68 @@ function recordCrash(): void {
   backoffUntil = now + delay;
 }
 
-async function isBlockedUrl(url: string): Promise<boolean> {
-  try {
-    const parsed = new URL(url);
+function isBrowserLocalUrl(url: string): boolean {
+  const parsed = new URL(url);
+  return parsed.protocol === "data:" || parsed.protocol === "blob:" || parsed.protocol === "about:";
+}
+
+function responseHeadersForBrowser(response: Response): Record<string, string> {
+  const headers: Record<string, string> = {};
+  response.headers.forEach((value, key) => {
     if (
-      parsed.protocol === "data:" ||
-      parsed.protocol === "blob:" ||
-      parsed.protocol === "about:"
+      key === "connection" ||
+      key === "content-encoding" ||
+      key === "content-length" ||
+      key === "transfer-encoding"
     ) {
-      return false;
+      return;
     }
-    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-      return true;
-    }
-    const hostname = parsed.hostname.replace(/^\[|]$/g, "");
-    if (isIP(hostname)) {
-      return isPrivateIp(hostname);
-    }
-    try {
-      const result = await lookup(hostname, { all: true });
-      const entries = Array.isArray(result) ? result : [result];
-      return entries.some((e) => isPrivateIp(e.address));
-    } catch {
-      return true;
-    }
-  } catch {
-    return true;
-  }
+    headers[key] = value;
+  });
+  return headers;
 }
 
 async function installNetworkGuard(page: Page): Promise<void> {
   await page.route("**/*", async (route) => {
     const url = route.request().url();
-    if (await isBlockedUrl(url)) {
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch {
       await route.abort("blockedbyclient").catch(() => {});
       return;
     }
+
+    if (isBrowserLocalUrl(url)) {
+      await route.continue().catch(() => {});
+      return;
+    }
+
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      await route.abort("blockedbyclient").catch(() => {});
+      return;
+    }
+
+    const method = route.request().method();
+    if (method !== "GET" && method !== "HEAD") {
+      await route.abort("blockedbyclient").catch(() => {});
+      return;
+    }
+
     try {
-      const response = await route.fetch();
-      const responseUrl = response.url();
-      if (responseUrl !== url && (await isBlockedUrl(responseUrl))) {
-        await route.abort("blockedbyclient").catch(() => {});
-        return;
-      }
-      await route.fulfill({ response });
+      const response = await safeFetch(url, {
+        method,
+        maxBytes: MAX_URL_FETCH_SIZE,
+        headers: {
+          Accept: route.request().headers().accept ?? "*/*",
+        },
+      });
+      const body = method === "HEAD" ? undefined : Buffer.from(await response.arrayBuffer());
+      await route.fulfill({
+        status: response.status,
+        headers: responseHeadersForBrowser(response),
+        body,
+      });
     } catch {
       await route.abort("failed").catch(() => {});
     }

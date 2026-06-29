@@ -37,6 +37,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 };
 
 export async function getPermissions(role: Role | string): Promise<Permission[]> {
+  if (typeof role !== "string" || isDisabledRole(role)) return [];
   if (role in ROLE_PERMISSIONS) {
     return ROLE_PERMISSIONS[role as Role];
   }
@@ -69,6 +70,37 @@ export async function hasEffectivePermission(
   return true;
 }
 
+export function isDisabledRole(role: string | null | undefined): boolean {
+  return role === "disabled" || role?.startsWith("disabled:") === true;
+}
+
+export async function getEffectivePermissions(user: AuthUser): Promise<Permission[]> {
+  const rolePermissions = await getPermissions(user.role);
+  if (!user.apiKeyPermissions) return rolePermissions;
+
+  const scoped = new Set(user.apiKeyPermissions);
+  return rolePermissions.filter((permission) => scoped.has(permission));
+}
+
+export async function permissionsNotHeldBy(
+  user: AuthUser,
+  requestedPermissions: string[],
+): Promise<string[]> {
+  const effectivePermissions = new Set(await getEffectivePermissions(user));
+  return requestedPermissions.filter(
+    (permission) => !effectivePermissions.has(permission as Permission),
+  );
+}
+
+export async function canAssignRole(actor: AuthUser, targetRole: string): Promise<boolean> {
+  if (isDisabledRole(targetRole)) return false;
+  const targetPermissions = await getPermissions(targetRole);
+  if (targetPermissions.length === 0) return false;
+
+  const actorPermissions = new Set(await getEffectivePermissions(actor));
+  return targetPermissions.every((permission) => actorPermissions.has(permission));
+}
+
 export function requirePermission(
   permission: Permission,
 ): (request: FastifyRequest, reply: FastifyReply) => Promise<AuthUser | null> {
@@ -87,6 +119,8 @@ export function requirePermission(
 }
 
 export async function hasToolAccess(role: string, toolId: string): Promise<boolean> {
+  if (isDisabledRole(role)) return false;
+
   // Built-in roles have no tool restrictions
   if (role in ROLE_PERMISSIONS) return true;
 
@@ -97,8 +131,10 @@ export async function hasToolAccess(role: string, toolId: string): Promise<boole
       .where(eq(schema.roles.name, role))
       .limit(1);
 
-    // Role not found or no toolPermissions configured -- allow all
-    if (!roleRow?.toolPermissions) return true;
+    // Unknown custom roles do not get implicit access. Known custom roles with
+    // no per-tool restriction keep the historical "all tools" behavior.
+    if (!roleRow) return false;
+    if (!roleRow.toolPermissions) return true;
 
     const tp = roleRow.toolPermissions;
 
@@ -123,9 +159,32 @@ export async function hasToolAccess(role: string, toolId: string): Promise<boole
 
     return true; // Unknown mode = allow
   } catch {
-    // DB not yet available during early startup
-    return true;
+    return false;
   }
+}
+
+export async function hasEffectiveToolAccess(user: AuthUser, toolId: string): Promise<boolean> {
+  if (!(await hasEffectivePermission(user, "tools:use"))) return false;
+  return hasToolAccess(user.role, toolId);
+}
+
+export async function requireToolAccess(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  toolId: string,
+): Promise<AuthUser | null> {
+  const user = getAuthUser(request);
+  if (!user) {
+    reply.status(401).send({ error: "Authentication required", code: "AUTH_REQUIRED" });
+    return null;
+  }
+
+  if (!(await hasEffectiveToolAccess(user, toolId))) {
+    reply.status(403).send({ error: "You don't have permission to use this tool" });
+    return null;
+  }
+
+  return user;
 }
 
 export async function requireOwnershipOrPermission(

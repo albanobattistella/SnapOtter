@@ -35,8 +35,8 @@ import { resolveToolPool } from "../lib/pool.js";
 import { isSvgBuffer, sanitizeSvg } from "../lib/svg-sanitize.js";
 import { InputValidationError } from "../modality/contract.js";
 import { inputHandlerFor } from "../modality/input-handler.js";
-import { hasEffectivePermission } from "../permissions.js";
-import { getAuthUser, requireAuth } from "../plugins/auth.js";
+import { hasEffectivePermission, hasEffectiveToolAccess } from "../permissions.js";
+import { requireAuth } from "../plugins/auth.js";
 import { updateJobProgress, updateSingleFileProgress } from "./progress.js";
 import { getRegisteredToolIds, getToolConfig } from "./tool-factory.js";
 
@@ -222,6 +222,9 @@ export async function registerPipelineRoutes(app: FastifyInstance): Promise<void
     "/api/v1/pipeline/execute",
     { config: { rateLimit: { max: 60, timeWindow: "1 minute" } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
+      const authUser = requireAuth(request, reply);
+      if (!authUser) return;
+
       let fileBuffer: Buffer | null = null;
       let filename = "file";
       let pipelineRaw: string | null = null;
@@ -374,6 +377,11 @@ export async function registerPipelineRoutes(app: FastifyInstance): Promise<void
             error: `Step ${i + 1} (${step.toolId}): Tool not found or not available`,
           });
         }
+        if (!(await hasEffectiveToolAccess(authUser, resolvedToolId))) {
+          return reply.status(403).send({
+            error: `Step ${i + 1} (${step.toolId}): You don't have permission to use this tool`,
+          });
+        }
 
         // Guard: check if the tool's AI feature bundle is installed
         const missingBundleId = getFirstMissingBundleForTool(resolvedToolId);
@@ -428,7 +436,7 @@ export async function registerPipelineRoutes(app: FastifyInstance): Promise<void
       // ── Enqueue as a BullMQ flow ────────────────────────────────
 
       const jobId = randomUUID();
-      const userId = getAuthUser(request)?.id ?? null;
+      const userId = authUser.id;
       const originalSize = fileBuffer.length;
 
       // Upload decoded file to object storage
@@ -573,6 +581,11 @@ export async function registerPipelineRoutes(app: FastifyInstance): Promise<void
             error: `Step ${i + 1}: Tool "${steps[i].toolId}" not found`,
           });
         }
+        if (!(await hasEffectiveToolAccess(user, steps[i].toolId))) {
+          return reply.status(403).send({
+            error: `Step ${i + 1}: You don't have permission to use this tool`,
+          });
+        }
       }
 
       const id = randomUUID();
@@ -691,6 +704,9 @@ export async function registerPipelineRoutes(app: FastifyInstance): Promise<void
       config: { rateLimit: { max: 20, timeWindow: "1 minute" } },
     },
     async (request: FastifyRequest, reply: FastifyReply) => {
+      const authUser = requireAuth(request, reply);
+      if (!authUser) return;
+
       // ── Parse multipart ──────────────────────────────────────────────
       interface ParsedFile {
         buffer: Buffer;
@@ -780,6 +796,11 @@ export async function registerPipelineRoutes(app: FastifyInstance): Promise<void
             error: `Step ${i + 1}: Tool "${step.toolId}" not found`,
           });
         }
+        if (!(await hasEffectiveToolAccess(authUser, resolvedToolId))) {
+          return reply.status(403).send({
+            error: `Step ${i + 1} (${step.toolId}): You don't have permission to use this tool`,
+          });
+        }
 
         const missingBundleId = getFirstMissingBundleForTool(resolvedToolId);
         if (missingBundleId) {
@@ -832,7 +853,7 @@ export async function registerPipelineRoutes(app: FastifyInstance): Promise<void
 
       // ── Prepare files and build flow ─────────────────────────────────
       const parentId = clientJobId || randomUUID();
-      const userId = getAuthUser(request)?.id ?? null;
+      const userId = authUser.id;
 
       // Insert batch-finalize row BEFORE updateJobProgress to avoid
       // a duplicate-key race with the progress persist layer.

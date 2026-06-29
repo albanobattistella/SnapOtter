@@ -14,6 +14,7 @@ import { env } from "../../config.js";
 import { db, schema } from "../../db/index.js";
 import { auditFromRequest } from "../../lib/audit.js";
 import { encrypt } from "../../lib/encryption.js";
+import { validateFetchUrl } from "../../lib/ssrf.js";
 import { deliverWebhook } from "../../lib/webhook-delivery.js";
 import { requirePermission } from "../../permissions.js";
 
@@ -82,6 +83,19 @@ async function checkFeatureGate(reply: FastifyReply): Promise<boolean> {
   return true;
 }
 
+async function validateWebhookDestinationUrl(url: string, reply: FastifyReply): Promise<boolean> {
+  try {
+    await validateFetchUrl(url);
+    return true;
+  } catch (err) {
+    reply.status(400).send({
+      error: "Webhook URL must resolve to a public HTTP(S) destination",
+      details: err instanceof Error ? err.message : String(err),
+    });
+    return false;
+  }
+}
+
 export async function registerWebhookRoutes(app: FastifyInstance): Promise<void> {
   // GET /api/v1/enterprise/webhooks -- list all destinations
   app.get("/api/v1/enterprise/webhooks", async (request: FastifyRequest, reply: FastifyReply) => {
@@ -116,6 +130,7 @@ export async function registerWebhookRoutes(app: FastifyInstance): Promise<void>
       }
 
       const dest = { ...parsed.data };
+      if (!(await validateWebhookDestinationUrl(dest.url, reply))) return;
 
       // Encrypt the auth header before storage
       if (dest.authHeader && env.DATA_ENCRYPTION_KEY) {
@@ -167,6 +182,7 @@ export async function registerWebhookRoutes(app: FastifyInstance): Promise<void>
       }
 
       const dest = { ...parsed.data };
+      if (!(await validateWebhookDestinationUrl(dest.url, reply))) return;
 
       // Encrypt the auth header before storage
       if (dest.authHeader && env.DATA_ENCRYPTION_KEY) {

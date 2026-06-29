@@ -932,6 +932,24 @@ describe("loadEnv", () => {
     expect(env.CONCURRENT_JOBS).toBe(0);
   });
 
+  it("defaults upload and batch limits to bounded values", async () => {
+    delete process.env.MAX_UPLOAD_SIZE_MB;
+    delete process.env.MAX_BATCH_SIZE;
+    const { loadEnv } = await import("../../../apps/api/src/lib/env.js");
+    const env = loadEnv();
+    expect(env.MAX_UPLOAD_SIZE_MB).toBe(100);
+    expect(env.MAX_BATCH_SIZE).toBe(100);
+  });
+
+  it("still accepts explicit 0 for unlimited upload and batch limits", async () => {
+    process.env.MAX_UPLOAD_SIZE_MB = "0";
+    process.env.MAX_BATCH_SIZE = "0";
+    const { loadEnv } = await import("../../../apps/api/src/lib/env.js");
+    const env = loadEnv();
+    expect(env.MAX_UPLOAD_SIZE_MB).toBe(0);
+    expect(env.MAX_BATCH_SIZE).toBe(0);
+  });
+
   it("coerces negative numbers for numeric fields", async () => {
     process.env.PORT = "-1";
     const { loadEnv } = await import("../../../apps/api/src/lib/env.js");

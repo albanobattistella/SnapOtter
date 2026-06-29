@@ -9,7 +9,7 @@ import { sharedRedis } from "../jobs/connection.js";
 import { auditFromRequest } from "../lib/audit.js";
 import { decrypt, encrypt } from "../lib/encryption.js";
 import { getSettingString } from "../lib/settings-helpers.js";
-import { getPermissions } from "../permissions.js";
+import { getPermissions, isDisabledRole } from "../permissions.js";
 import { createSessionToken, getAuthUser, requireAuth } from "./auth.js";
 
 // ── Constants ─────────────────────────────────────────────────────
@@ -271,7 +271,7 @@ export async function registerMfa(app: FastifyInstance): Promise<void> {
 
       // Load user
       const [dbUser] = await db.select().from(schema.users).where(eq(schema.users.id, userId));
-      if (!dbUser?.totpSecret) {
+      if (!dbUser?.totpSecret || isDisabledRole(dbUser.role)) {
         return reply.status(401).send({
           error: "User not found or MFA not configured",
           code: "MFA_NOT_CONFIGURED",

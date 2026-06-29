@@ -12,8 +12,12 @@ import { z } from "zod";
 import { env } from "../config.js";
 import { db, schema } from "../db/index.js";
 import { auditFromRequest } from "../lib/audit.js";
-import { getPermissions, hasEffectivePermission } from "../permissions.js";
-import { computeKeyPrefix, hashPassword, requireAuth } from "../plugins/auth.js";
+import {
+  getEffectivePermissions,
+  hasEffectivePermission,
+  permissionsNotHeldBy,
+} from "../permissions.js";
+import { type AuthUser, computeKeyPrefix, hashPassword, requireAuth } from "../plugins/auth.js";
 
 // Per-route cap on the API-key management endpoints. Defaults to 30/min as an
 // anti-abuse guard; raised via env in the e2e suite, where many api-keys specs
@@ -26,13 +30,50 @@ const createApiKeySchema = z.object({
   expiresAt: z.string().optional(),
 });
 
+async function requireApiKeyManagement(
+  request: FastifyRequest,
+  reply: FastifyReply,
+): Promise<AuthUser | null> {
+  const user = requireAuth(request, reply);
+  if (!user) return null;
+
+  if (
+    !(await hasEffectivePermission(user, "apikeys:own")) &&
+    !(await hasEffectivePermission(user, "apikeys:all"))
+  ) {
+    reply.status(403).send({ error: "Insufficient permissions", code: "FORBIDDEN" });
+    return null;
+  }
+
+  return user;
+}
+
+export async function deriveApiKeyPermissionsForCreate(
+  user: AuthUser,
+  requestedPermissions?: string[],
+): Promise<{ permissions: string[] | null; invalid: string[] }> {
+  if (requestedPermissions !== undefined) {
+    const invalid = await permissionsNotHeldBy(user, requestedPermissions);
+    return {
+      permissions: requestedPermissions.length > 0 ? requestedPermissions : [],
+      invalid,
+    };
+  }
+
+  if (user.apiKeyPermissions) {
+    return { permissions: await getEffectivePermissions(user), invalid: [] };
+  }
+
+  return { permissions: null, invalid: [] };
+}
+
 export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
   // POST /api/v1/api-keys — Generate a new API key
   app.post(
     "/api/v1/api-keys",
     { config: { rateLimit: API_KEYS_RATE_LIMIT } },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const user = requireAuth(request, reply);
+      const user = await requireApiKeyManagement(request, reply);
       if (!user) return;
 
       const parsed = createApiKeySchema.safeParse(request.body ?? {});
@@ -45,18 +86,12 @@ export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
       const body = parsed.data;
       const name = body.name?.trim() || "Default API Key";
 
-      let scopedPermissions: string[] | null = null;
-      if (body.permissions && body.permissions.length > 0) {
-        const userPerms = await getPermissions(user.role);
-        const permSet = new Set<string>(userPerms);
-        const invalid = body.permissions.filter((p) => !permSet.has(p));
-        if (invalid.length > 0) {
-          return reply.status(400).send({
-            error: `Cannot scope key with permissions you don't have: ${invalid.join(", ")}`,
-            code: "VALIDATION_ERROR",
-          });
-        }
-        scopedPermissions = body.permissions;
+      const scoped = await deriveApiKeyPermissionsForCreate(user, body.permissions);
+      if (scoped.invalid.length > 0) {
+        return reply.status(400).send({
+          error: `Cannot scope key with permissions you don't have: ${scoped.invalid.join(", ")}`,
+          code: "VALIDATION_ERROR",
+        });
       }
 
       let expiresAt: Date | null = null;
@@ -88,7 +123,7 @@ export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
           keyHash,
           keyPrefix,
           name,
-          permissions: scopedPermissions,
+          permissions: scoped.permissions,
           expiresAt,
         });
       } catch {
@@ -106,7 +141,7 @@ export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
         id,
         key: rawKey,
         name,
-        permissions: scopedPermissions,
+        permissions: scoped.permissions,
         expiresAt: expiresAt?.toISOString() ?? null,
         createdAt: new Date().toISOString(),
       });
@@ -118,7 +153,7 @@ export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
     "/api/v1/api-keys",
     { config: { rateLimit: API_KEYS_RATE_LIMIT } },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const user = requireAuth(request, reply);
+      const user = await requireApiKeyManagement(request, reply);
       if (!user) return;
 
       const selectFields = {
@@ -156,7 +191,7 @@ export async function apiKeyRoutes(app: FastifyInstance): Promise<void> {
     "/api/v1/api-keys/:id",
     { config: { rateLimit: API_KEYS_RATE_LIMIT } },
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-      const user = requireAuth(request, reply);
+      const user = await requireApiKeyManagement(request, reply);
       if (!user) return;
 
       const { id } = request.params;

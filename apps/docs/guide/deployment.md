@@ -31,9 +31,9 @@ services:
       - DATABASE_URL=postgres://snapotter:snapotter@postgres:5432/snapotter
       - REDIS_URL=redis://redis:6379
 
-      # --- Limits (0 = unlimited) ---
-      # - MAX_UPLOAD_SIZE_MB=0     # Per-file upload limit in MB
-      # - MAX_BATCH_SIZE=0         # Max files per batch request
+      # --- Limits (set 0 for unlimited) ---
+      # - MAX_UPLOAD_SIZE_MB=100   # Per-file upload limit in MB
+      # - MAX_BATCH_SIZE=100       # Max files per batch request
       # - RATE_LIMIT_PER_MIN=0     # API rate limit (0 = disabled, 100 = recommended for public)
       # - MAX_USERS=0              # Max user accounts
 
@@ -404,8 +404,8 @@ The startup error names the exact UID to use, so the quickest path is to start t
 | `AUTH_ENABLED` | `true` | Enable/disable login requirement |
 | `DEFAULT_USERNAME` | `admin` | Initial admin username |
 | `DEFAULT_PASSWORD` | `admin` | Initial admin password (forced change on first login) |
-| `MAX_UPLOAD_SIZE_MB` | `0` (unlimited) | Per-file upload limit |
-| `MAX_BATCH_SIZE` | `0` (unlimited) | Max files per batch request |
+| `MAX_UPLOAD_SIZE_MB` | `100` | Per-file upload limit |
+| `MAX_BATCH_SIZE` | `100` | Max files per batch request |
 | `RATE_LIMIT_PER_MIN` | `0` (disabled) | API requests per minute per IP |
 | `MAX_USERS` | `0` (unlimited) | Maximum user accounts |
 | `TRUST_PROXY` | `true` | Trust X-Forwarded-For headers from reverse proxy |

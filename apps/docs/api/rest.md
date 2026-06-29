@@ -398,7 +398,7 @@ curl -X POST http://localhost:1349/api/v1/tools/image/compress/batch \
   -F 'settings={"quality":80}'
 ```
 
-Concurrency is controlled by `CONCURRENT_JOBS` (default: auto-detected from CPU cores). Set `MAX_BATCH_SIZE` to limit the number of files per batch (default: unlimited).
+Concurrency is controlled by `CONCURRENT_JOBS` (default: auto-detected from CPU cores). `MAX_BATCH_SIZE` limits the number of files per batch (default: 100; set 0 for unlimited).
 
 ## Pipelines
 

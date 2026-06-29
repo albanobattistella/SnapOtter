@@ -164,6 +164,24 @@ export async function registerSaml(app: FastifyInstance): Promise<void> {
 
       const resolvedUser = result.user;
 
+      let mfaRequired = false;
+      try {
+        const { getMfaPolicy, isMfaRequiredForUser } = await import("./mfa.js");
+        const policy = await getMfaPolicy();
+        mfaRequired = isMfaRequiredForUser(policy, resolvedUser.role);
+      } catch {
+        // MFA plugin not loaded
+      }
+      if (mfaRequired) {
+        authAttempts.inc({ method: "saml", result: "failure" });
+        await audit("SAML_LOGIN_FAILED", {
+          userId: resolvedUser.id,
+          username: resolvedUser.username,
+          reason: "mfa_required",
+        });
+        return redirectToLogin(reply, "mfa_required");
+      }
+
       // Create session (same pattern as OIDC)
       const token = createSessionToken();
       const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);

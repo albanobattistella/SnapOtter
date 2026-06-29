@@ -22,7 +22,10 @@ type Permission =
   | "teams:manage"
   | "features:manage"
   | "system:health"
-  | "audit:read";
+  | "audit:read"
+  | "compliance:manage"
+  | "webhooks:manage"
+  | "security:manage";
 
 const ALL_PERMISSIONS: Permission[] = [
   "tools:use",
@@ -39,6 +42,9 @@ const ALL_PERMISSIONS: Permission[] = [
   "features:manage",
   "system:health",
   "audit:read",
+  "compliance:manage",
+  "webhooks:manage",
+  "security:manage",
 ];
 
 const ROLE_NAME_PATTERN = /^[a-z0-9_-]+$/;
@@ -263,8 +269,8 @@ describe("roles route logic", () => {
   });
 
   describe("ALL_PERMISSIONS constant", () => {
-    it("contains exactly 14 permissions", () => {
-      expect(ALL_PERMISSIONS).toHaveLength(14);
+    it("contains exactly 17 permissions", () => {
+      expect(ALL_PERMISSIONS).toHaveLength(17);
     });
 
     it("contains all expected permissions", () => {
@@ -280,6 +286,9 @@ describe("roles route logic", () => {
       expect(ALL_PERMISSIONS).toContain("features:manage");
       expect(ALL_PERMISSIONS).toContain("system:health");
       expect(ALL_PERMISSIONS).toContain("audit:read");
+      expect(ALL_PERMISSIONS).toContain("compliance:manage");
+      expect(ALL_PERMISSIONS).toContain("webhooks:manage");
+      expect(ALL_PERMISSIONS).toContain("security:manage");
     });
   });
 

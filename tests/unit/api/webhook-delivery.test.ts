@@ -1,9 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const safeFetchMock = vi.hoisted(() => vi.fn());
+
+vi.mock("../../../apps/api/src/lib/ssrf.js", () => ({
+  safeFetch: safeFetchMock,
+}));
+
 describe("webhook delivery", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.resetModules();
+    safeFetchMock.mockReset();
+    safeFetchMock.mockImplementation((url, options) => fetch(url, options));
   });
 
   afterEach(() => {
@@ -21,6 +29,7 @@ describe("webhook delivery", () => {
 
     expect(result.success).toBe(true);
     expect(result.attempts).toBe(1);
+    expect(safeFetchMock).toHaveBeenCalledOnce();
     expect(fetchMock).toHaveBeenCalledOnce();
     const [url, opts] = fetchMock.mock.calls[0];
     expect(url).toBe("https://siem.example.com/input");

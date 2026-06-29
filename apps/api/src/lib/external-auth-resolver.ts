@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { FastifyBaseLogger } from "fastify";
 import { env } from "../config.js";
 import { db, schema } from "../db/index.js";
+import { isDisabledRole } from "../permissions.js";
 import { auditLog, sanitizeAuditInput } from "./audit.js";
 
 // ── Types ─────────────────────────────────────────────────────────
@@ -24,7 +25,7 @@ export interface ExternalAuthParams {
 export interface ExternalAuthResult {
   user: { id: string; username: string; role: string; team: string } | null;
   action: "matched" | "linked" | "created" | "denied";
-  deniedReason?: "user_not_authorized" | "user_limit_reached";
+  deniedReason?: "user_not_authorized" | "user_limit_reached" | "user_disabled";
 }
 
 // ── Username helpers ──────────────────────────────────────────────
@@ -94,10 +95,18 @@ export async function resolveExternalUser(params: ExternalAuthParams): Promise<E
   const [existingByExtId] = await db
     .select()
     .from(schema.users)
-    .where(eq(schema.users.externalId, externalId))
+    .where(and(eq(schema.users.externalId, externalId), eq(schema.users.authProvider, provider)))
     .limit(1);
 
   if (existingByExtId) {
+    if (isDisabledRole(existingByExtId.role)) {
+      await audit(`${providerUpper}_LOGIN_FAILED`, {
+        reason: "user_disabled",
+        userId: existingByExtId.id,
+      });
+      return { user: null, action: "denied", deniedReason: "user_disabled" };
+    }
+
     // Update email if changed
     if (email && email !== existingByExtId.email) {
       await db
@@ -125,6 +134,14 @@ export async function resolveExternalUser(params: ExternalAuthParams): Promise<E
       .limit(1);
 
     if (existingByEmail) {
+      if (isDisabledRole(existingByEmail.role)) {
+        await audit(`${providerUpper}_LOGIN_FAILED`, {
+          reason: "user_disabled",
+          userId: existingByEmail.id,
+        });
+        return { user: null, action: "denied", deniedReason: "user_disabled" };
+      }
+
       await db
         .update(schema.users)
         .set({
@@ -154,6 +171,14 @@ export async function resolveExternalUser(params: ExternalAuthParams): Promise<E
 
   // 3. Auto-create
   if (autoCreate) {
+    if (isDisabledRole(defaultRole)) {
+      logger.warn(`${provider} auto-create blocked: default role is disabled`);
+      await audit(`${providerUpper}_LOGIN_FAILED`, {
+        reason: "user_disabled",
+      });
+      return { user: null, action: "denied", deniedReason: "user_disabled" };
+    }
+
     // Check user limit
     if (env.MAX_USERS > 0) {
       const [countResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(schema.users);

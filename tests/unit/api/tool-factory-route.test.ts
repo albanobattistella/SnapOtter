@@ -63,7 +63,7 @@ vi.mock("../../../apps/api/src/routes/progress.js", () => ({
 }));
 
 vi.mock("../../../apps/api/src/plugins/auth.js", () => ({
-  getAuthUser: vi.fn(() => null),
+  getAuthUser: vi.fn(() => ({ id: "user-1", username: "test", role: "admin" })),
 }));
 
 vi.mock("../../../apps/api/src/lib/analytics.js", () => ({

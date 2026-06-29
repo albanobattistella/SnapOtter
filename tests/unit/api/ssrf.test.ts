@@ -3,13 +3,13 @@ import { MAX_REDIRECTS, safeFetch, validateFetchUrl } from "../../../apps/api/sr
 
 describe("validateFetchUrl", () => {
   it("allows valid public HTTP URL", async () => {
-    const result = await validateFetchUrl("https://images.unsplash.com/photo.jpg");
+    const result = await validateFetchUrl("https://93.184.216.34/photo.jpg");
     expect(result).toHaveProperty("resolvedIp");
     expect(typeof result.resolvedIp).toBe("string");
   });
 
   it("allows valid public HTTP URL without TLS", async () => {
-    const result = await validateFetchUrl("http://example.com/image.png");
+    const result = await validateFetchUrl("http://93.184.216.34/image.png");
     expect(result).toHaveProperty("resolvedIp");
   });
 
@@ -268,5 +268,23 @@ describe("safeFetch", () => {
     await expect(safeFetch("http://93.184.216.34/image.jpg")).rejects.toThrow(
       "Redirect without Location header",
     );
+  });
+
+  it("enforces maxBytes while reading HTTP responses", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(new Uint8Array(3));
+            controller.enqueue(new Uint8Array(3));
+            controller.close();
+          },
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const res = await safeFetch("http://93.184.216.34/image.jpg", { maxBytes: 4 });
+    await expect(res.arrayBuffer()).rejects.toThrow("Response exceeds maximum size");
   });
 });

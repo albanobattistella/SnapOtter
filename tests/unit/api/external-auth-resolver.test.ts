@@ -5,6 +5,12 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 const dbMock = vi.hoisted(() => {
   let idx = 0;
   let results: unknown[][] = [];
+  const queryResult = () => {
+    const promise = Promise.resolve(results[idx++] ?? []);
+    return Object.assign(promise, {
+      limit: () => promise,
+    });
+  };
   return {
     reset(r: unknown[][]) {
       idx = 0;
@@ -13,6 +19,7 @@ const dbMock = vi.hoisted(() => {
     nextResult() {
       return results[idx++] ?? [];
     },
+    queryResult,
   };
 });
 
@@ -20,12 +27,20 @@ vi.mock("../../../apps/api/src/db/index.js", () => ({
   db: {
     select: () => ({
       from: () => ({
-        where: () => Promise.resolve(dbMock.nextResult()),
+        where: () => dbMock.queryResult(),
       }),
+    }),
+    insert: () => ({
+      values: () => Promise.resolve({ rowCount: 1 }),
     }),
   },
   schema: {
-    users: { username: "username" },
+    users: {
+      username: "username",
+      externalId: "external_id",
+      authProvider: "auth_provider",
+      email: "email",
+    },
   },
 }));
 
@@ -190,5 +205,37 @@ describe("findUniqueUsername", () => {
     ]);
     const result = await findUniqueUsername("user");
     expect(result).toBe("user_5");
+  });
+});
+
+describe("resolveExternalUser", () => {
+  beforeEach(() => {
+    dbMock.reset([]);
+  });
+
+  it("denies SSO auto-create when the configured default role is disabled", async () => {
+    const mod = await import("../../../apps/api/src/lib/external-auth-resolver.js");
+    const logger = {
+      info: vi.fn(),
+      warn: vi.fn(),
+    };
+    const result = await mod.resolveExternalUser({
+      provider: "oidc",
+      externalId: "subject-1",
+      username: "subject",
+      autoCreate: true,
+      autoLink: false,
+      defaultRole: "disabled",
+      logger: logger as never,
+      ip: "127.0.0.1",
+      requestId: "req-1",
+    });
+
+    expect(result).toEqual({
+      user: null,
+      action: "denied",
+      deniedReason: "user_disabled",
+    });
+    expect(logger.warn).toHaveBeenCalledWith("oidc auto-create blocked: default role is disabled");
   });
 });

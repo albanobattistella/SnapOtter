@@ -2,12 +2,33 @@ import { readFileSync } from "node:fs";
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { pandocAvailable, runPandoc } from "@snapotter/doc-engine";
+import { buildPandocArgs, pandocAvailable, runPandoc } from "@snapotter/doc-engine";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 describe("pandocAvailable", () => {
   it("returns a boolean without throwing", () => {
     expect(typeof pandocAvailable()).toBe("boolean");
+  });
+});
+
+describe("buildPandocArgs", () => {
+  it("runs conversions inside the pandoc sandbox", () => {
+    expect(buildPandocArgs("input.md", "out.docx")).toEqual([
+      "--sandbox",
+      "input.md",
+      "-o",
+      "out.docx",
+    ]);
+  });
+
+  it("keeps extra args after the sandboxed input/output args", () => {
+    expect(buildPandocArgs("input.md", "out.html", { extraArgs: ["--standalone"] })).toEqual([
+      "--sandbox",
+      "input.md",
+      "-o",
+      "out.html",
+      "--standalone",
+    ]);
   });
 });
 

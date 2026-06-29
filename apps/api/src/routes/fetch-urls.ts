@@ -185,7 +185,10 @@ async function fetchSingleUrl(
 
     let response: Response;
     try {
-      response = await safeFetch(url, controller.signal);
+      response = await safeFetch(url, {
+        signal: controller.signal,
+        maxBytes: MAX_URL_FETCH_SIZE,
+      });
     } finally {
       clearTimeout(timeout);
     }

@@ -56,8 +56,8 @@ Telemetry note: embedded mode inherits the image's analytics default like any ot
 
 | Variable | Default | Description |
 |---|---|---|
-| `MAX_UPLOAD_SIZE_MB` | `0` (unlimited) | Maximum file size per upload in megabytes. Set to 0 for unlimited. |
-| `MAX_BATCH_SIZE` | `0` (unlimited) | Maximum number of files in a single batch request. Set to 0 for unlimited. |
+| `MAX_UPLOAD_SIZE_MB` | `100` | Maximum file size per upload in megabytes. Set to 0 for unlimited. |
+| `MAX_BATCH_SIZE` | `100` | Maximum number of files in a single batch request. Set to 0 for unlimited. |
 | `CONCURRENT_JOBS` | `0` (auto) | Number of batch jobs that run in parallel. Set to 0 to auto-detect based on available CPU cores. |
 | `MAX_MEGAPIXELS` | `0` (unlimited) | Maximum image resolution allowed in megapixels. Set to 0 for unlimited. |
 | `MAX_WORKER_THREADS` | `0` (auto) | Maximum worker threads for image processing. Set to 0 to auto-detect based on available CPU cores. |

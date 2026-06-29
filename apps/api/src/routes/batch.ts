@@ -35,7 +35,7 @@ import { getObjectStream, putObject } from "../lib/object-storage.js";
 import { resolveToolPool } from "../lib/pool.js";
 import { InputValidationError } from "../modality/contract.js";
 import { inputHandlerFor } from "../modality/input-handler.js";
-import { getAuthUser } from "../plugins/auth.js";
+import { requireToolAccess } from "../permissions.js";
 import { updateJobProgress } from "./progress.js";
 import { getToolConfig } from "./tool-factory.js";
 
@@ -67,6 +67,8 @@ export async function registerBatchRoutes(app: FastifyInstance): Promise<void> {
       if (!tool || toolSection(tool) !== section) {
         return reply.status(404).send({ error: "Not found", code: "NOT_FOUND" });
       }
+      const authUser = await requireToolAccess(request, reply, toolId);
+      if (!authUser) return;
 
       // Batch processing (especially with AI) can take tens of minutes.
       // Disable the Node.js HTTP socket timeout so the connection is not
@@ -157,7 +159,7 @@ export async function registerBatchRoutes(app: FastifyInstance): Promise<void> {
 
       // ── Create job ID and initial progress ────────────────────────
       const parentId = clientJobId || randomUUID();
-      const userId = getAuthUser(request)?.id ?? null;
+      const userId = authUser.id;
       const pool: Pool = resolveToolPool(toolId);
 
       // Insert the parent row BEFORE updateJobProgress, because the

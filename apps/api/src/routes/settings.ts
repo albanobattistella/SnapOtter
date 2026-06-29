@@ -14,7 +14,6 @@ import { db, schema } from "../db/index.js";
 import { auditFromRequest } from "../lib/audit.js";
 import { decrypt, encrypt, isEncrypted } from "../lib/encryption.js";
 import { requirePermission } from "../permissions.js";
-import { requireAuth } from "../plugins/auth.js";
 
 const settingsBodySchema = z.record(z.string().min(1), z.unknown());
 
@@ -25,15 +24,34 @@ const SENSITIVE_KEYS = new Set([
   "instance_id",
   "oidc_client_secret",
   "saml_idp_certificate",
+  "scim_token_hash",
+  "siem_config",
+  "siem_webhook_auth",
+  "webhook_destinations",
+]);
+
+const ENCRYPTED_KEYS = new Set([
+  "cookie_secret",
+  "oidc_client_secret",
+  "saml_idp_certificate",
+  "scim_token_hash",
   "siem_webhook_auth",
 ]);
 
-const REDACTED_KEYS = new Set(["cookie_secret", "oidc_client_secret", "siem_webhook_auth"]);
+const REDACTED_KEYS = new Set([
+  "cookie_secret",
+  "oidc_client_secret",
+  "saml_idp_certificate",
+  "scim_token_hash",
+  "siem_config",
+  "siem_webhook_auth",
+  "webhook_destinations",
+]);
 
 const READONLY_KEYS = new Set(["cookie_secret", "instance_id"]);
 
 async function encryptIfSensitive(key: string, value: string): Promise<string> {
-  if (!env.DATA_ENCRYPTION_KEY || !SENSITIVE_KEYS.has(key)) return value;
+  if (!env.DATA_ENCRYPTION_KEY || !ENCRYPTED_KEYS.has(key)) return value;
   return encrypt(value, env.DATA_ENCRYPTION_KEY);
 }
 
@@ -55,7 +73,7 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
     "/api/v1/settings",
     { config: { rateLimit: { max: 300, timeWindow: "1 minute" } } },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      const user = requireAuth(request, reply);
+      const user = await requirePermission("settings:read")(request, reply);
       if (!user) return;
 
       const isAdmin = user.role === "admin";
@@ -175,7 +193,7 @@ export async function settingsRoutes(app: FastifyInstance): Promise<void> {
     "/api/v1/settings/:key",
     { config: { rateLimit: { max: 300, timeWindow: "1 minute" } } },
     async (request: FastifyRequest<{ Params: { key: string } }>, reply: FastifyReply) => {
-      const user = requireAuth(request, reply);
+      const user = await requirePermission("settings:read")(request, reply);
       if (!user) return;
 
       const { key } = request.params;

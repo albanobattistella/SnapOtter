@@ -639,22 +639,25 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
       SELECT DISTINCT id, stored_name, size, user_id FROM chain
     `);
       const chainRows = cteResult.rows;
+      const deletableChainRows = canDeleteAll
+        ? chainRows
+        : chainRows.filter((row) => row.user_id === user.id);
 
       // Filesystem deletes (must loop; cannot batch across the OS)
-      for (const row of chainRows) {
+      for (const row of deletableChainRows) {
         await deleteStoredFile(row.stored_name);
         await deleteThumbnail(row.stored_name);
       }
 
       // Batch DB delete
-      const chainIds = chainRows.map((r) => r.id);
+      const chainIds = deletableChainRows.map((r) => r.id);
       if (chainIds.length > 0) {
         await db.delete(schema.userFiles).where(inArray(schema.userFiles.id, chainIds));
       }
 
       // Decrement storageUsed per user (group by userId for files:all scenarios)
       const perUserSizes = new Map<string, number>();
-      for (const row of chainRows) {
+      for (const row of deletableChainRows) {
         if (row.user_id && row.size) {
           perUserSizes.set(row.user_id, (perUserSizes.get(row.user_id) ?? 0) + row.size);
         }
@@ -670,11 +673,11 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
 
       await auditFromRequest(request)("FILE_DELETED", {
         userId: user.id,
-        count: chainRows.length,
+        count: deletableChainRows.length,
         ids,
       });
 
-      return reply.send({ deleted: chainRows.length });
+      return reply.send({ deleted: deletableChainRows.length });
     },
   );
 
@@ -688,8 +691,9 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
    *   toolId   — the tool that produced this result
    */
   app.post("/api/v1/files/save-result", async (request: FastifyRequest, reply: FastifyReply) => {
-    const user = getAuthUser(request);
-    const userId = user?.id ?? null;
+    const user = requireAuth(request, reply);
+    if (!user) return;
+    const userId = user.id;
 
     // Enforce per-user storage quota before saving results
     try {
@@ -739,6 +743,13 @@ export async function userFileRoutes(app: FastifyInstance): Promise<void> {
       .where(eq(schema.userFiles.id, parentId));
 
     if (!parent) {
+      return reply.status(404).send({ error: "Parent file not found" });
+    }
+    if (
+      parent.userId &&
+      parent.userId !== user.id &&
+      !(await hasEffectivePermission(user, "files:all"))
+    ) {
       return reply.status(404).send({ error: "Parent file not found" });
     }
 

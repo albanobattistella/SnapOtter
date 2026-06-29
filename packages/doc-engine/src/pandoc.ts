@@ -45,6 +45,21 @@ export interface PandocOptions {
   extraArgs?: string[];
 }
 
+export function buildPandocArgs(
+  inPath: string,
+  outPath: string,
+  opts: PandocOptions = {},
+): string[] {
+  const args = ["--sandbox", inPath, "-o", outPath];
+  if (opts.selfContained) {
+    args.push(...selfContainedArgs());
+  }
+  if (opts.extraArgs) {
+    args.push(...opts.extraArgs);
+  }
+  return args;
+}
+
 /** Runs pandoc in -> out; rejects with the stderr tail on failure. */
 export function runPandoc(
   inPath: string,
@@ -52,13 +67,7 @@ export function runPandoc(
   opts: PandocOptions = {},
 ): Promise<void> {
   const timeoutMs = opts.timeoutMs ?? 120_000;
-  const args = [inPath, "-o", outPath];
-  if (opts.selfContained) {
-    args.push(...selfContainedArgs());
-  }
-  if (opts.extraArgs) {
-    args.push(...opts.extraArgs);
-  }
+  const args = buildPandocArgs(inPath, outPath, opts);
   return new Promise<void>((resolvePromise, reject) => {
     const child = spawn(pandocBin(), args, { stdio: ["ignore", "pipe", "pipe"] });
     let err = "";

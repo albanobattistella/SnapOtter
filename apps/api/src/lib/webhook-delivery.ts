@@ -1,3 +1,5 @@
+import { safeFetch } from "./ssrf.js";
+
 interface DeliveryOptions {
   maxRetries?: number;
   initialDelayMs?: number;
@@ -36,11 +38,12 @@ export async function deliverWebhook(
     }
 
     try {
-      const response = await fetch(url, {
+      const response = await safeFetch(url, {
         method: "POST",
         headers,
         body: payload,
         signal: AbortSignal.timeout(timeoutMs),
+        maxBytes: 1024 * 1024,
       });
 
       if (response.ok) {

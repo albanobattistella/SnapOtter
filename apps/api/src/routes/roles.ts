@@ -5,7 +5,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { db, schema } from "../db/index.js";
 import { auditFromRequest } from "../lib/audit.js";
-import { requirePermission } from "../permissions.js";
+import { permissionsNotHeldBy, requirePermission } from "../permissions.js";
 
 const ALL_PERMISSIONS: Permission[] = [
   "tools:use",
@@ -96,7 +96,7 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
 
   // POST /api/v1/roles — Create custom role
   app.post("/api/v1/roles", async (request: FastifyRequest, reply: FastifyReply) => {
-    const user = await requirePermission("users:manage")(request, reply);
+    const user = await requirePermission("security:manage")(request, reply);
     if (!user) return;
 
     const parsed = createRoleSchema.safeParse(request.body);
@@ -113,6 +113,13 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
       return reply
         .status(400)
         .send({ error: `Invalid permissions: ${invalid.join(", ")}`, code: "VALIDATION_ERROR" });
+    }
+    const broader = await permissionsNotHeldBy(user, permissions);
+    if (broader.length > 0) {
+      return reply.status(403).send({
+        error: `Cannot grant permissions you don't have: ${broader.join(", ")}`,
+        code: "ESCALATION_DENIED",
+      });
     }
 
     const [existing] = await db.select().from(schema.roles).where(eq(schema.roles.name, name));
@@ -151,7 +158,7 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
   app.put(
     "/api/v1/roles/:id",
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-      const user = await requirePermission("users:manage")(request, reply);
+      const user = await requirePermission("security:manage")(request, reply);
       if (!user) return;
 
       const { id } = request.params;
@@ -193,6 +200,13 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
             code: "VALIDATION_ERROR",
           });
         }
+        const broader = await permissionsNotHeldBy(user, body.permissions);
+        if (broader.length > 0) {
+          return reply.status(403).send({
+            error: `Cannot grant permissions you don't have: ${broader.join(", ")}`,
+            code: "ESCALATION_DENIED",
+          });
+        }
         updates.permissions = body.permissions;
       }
       if (body.toolPermissions !== undefined) {
@@ -218,7 +232,7 @@ export async function rolesRoutes(app: FastifyInstance): Promise<void> {
   app.delete(
     "/api/v1/roles/:id",
     async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-      const user = await requirePermission("users:manage")(request, reply);
+      const user = await requirePermission("security:manage")(request, reply);
       if (!user) return;
 
       const { id } = request.params;

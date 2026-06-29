@@ -124,6 +124,14 @@ export const MAX_URL_FETCH_SIZE = 50 * 1024 * 1024;
 export const MAX_URLS_PER_REQUEST = 50;
 export const URL_FETCH_CONCURRENCY = 4;
 
+export interface SafeFetchOptions {
+  signal?: AbortSignal;
+  maxBytes?: number;
+  method?: string;
+  headers?: Record<string, string>;
+  body?: BodyInit | Buffer | string;
+}
+
 /**
  * Create an HTTP(S) agent that pins DNS resolution to a specific IP address.
  * This prevents DNS rebinding attacks where a hostname resolves to a different
@@ -158,7 +166,41 @@ function createPinnedAgent(resolvedIp: string, protocol: string): http.Agent | h
   return new http.Agent({ lookup: pinnedLookup as never, maxSockets: 1 });
 }
 
-export async function safeFetch(url: string, signal?: AbortSignal): Promise<Response> {
+function normalizeSafeFetchOptions(options?: AbortSignal | SafeFetchOptions): SafeFetchOptions {
+  if (!options) return {};
+  if ("aborted" in options && "addEventListener" in options) return { signal: options };
+  return options;
+}
+
+function withResponseSizeLimit(response: Response, maxBytes?: number): Response {
+  if (maxBytes === undefined || !response.body) return response;
+
+  let totalBytes = 0;
+  const limitedBody = response.body.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        totalBytes += chunk.byteLength;
+        if (totalBytes > maxBytes) {
+          controller.error(new Error(`Response exceeds maximum size of ${maxBytes} bytes`));
+          return;
+        }
+        controller.enqueue(chunk);
+      },
+    }),
+  );
+
+  return new Response(limitedBody, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers,
+  });
+}
+
+export async function safeFetch(
+  url: string,
+  options?: AbortSignal | SafeFetchOptions,
+): Promise<Response> {
+  const safeOptions = normalizeSafeFetchOptions(options);
   let currentUrl = url;
   for (let i = 0; i <= MAX_REDIRECTS; i++) {
     const { resolvedIp } = await validateFetchUrl(currentUrl);
@@ -177,12 +219,15 @@ export async function safeFetch(url: string, signal?: AbortSignal): Promise<Resp
     }
 
     const fetchOptions: RequestInit & { agent?: http.Agent | https.Agent } = {
-      signal,
+      signal: safeOptions.signal,
       redirect: "manual",
+      method: safeOptions.method ?? "GET",
       headers: {
         "User-Agent": "SnapOtter/2.0 (file-fetch)",
         Host: parsed.host,
+        ...safeOptions.headers,
       },
+      body: safeOptions.body as BodyInit | null | undefined,
     };
 
     // Node.js undici-based fetch does not support the `agent` option directly.
@@ -196,16 +241,32 @@ export async function safeFetch(url: string, signal?: AbortSignal): Promise<Resp
           currentUrl,
           {
             agent,
-            signal: signal ?? undefined,
+            signal: safeOptions.signal ?? undefined,
             headers: {
               "User-Agent": "SnapOtter/2.0 (file-fetch)",
+              ...safeOptions.headers,
             },
-            method: "GET",
+            method: safeOptions.method ?? "GET",
           },
           (incomingMessage) => {
             const chunks: Buffer[] = [];
-            incomingMessage.on("data", (chunk: Buffer) => chunks.push(chunk));
+            let totalBytes = 0;
+            let settled = false;
+            incomingMessage.on("data", (chunk: Buffer) => {
+              if (settled) return;
+              totalBytes += chunk.length;
+              if (safeOptions.maxBytes !== undefined && totalBytes > safeOptions.maxBytes) {
+                settled = true;
+                req.destroy(
+                  new Error(`Response exceeds maximum size of ${safeOptions.maxBytes} bytes`),
+                );
+                return;
+              }
+              chunks.push(chunk);
+            });
             incomingMessage.on("end", () => {
+              if (settled) return;
+              settled = true;
               const body = Buffer.concat(chunks);
               const headers = new Headers();
               for (const [key, value] of Object.entries(incomingMessage.headers)) {
@@ -222,10 +283,15 @@ export async function safeFetch(url: string, signal?: AbortSignal): Promise<Resp
                 }),
               );
             });
-            incomingMessage.on("error", reject);
+            incomingMessage.on("error", (err) => {
+              if (settled) return;
+              settled = true;
+              reject(err);
+            });
           },
         );
         req.on("error", reject);
+        if (safeOptions.body) req.write(safeOptions.body);
         req.end();
       });
     } else {
@@ -241,7 +307,7 @@ export async function safeFetch(url: string, signal?: AbortSignal): Promise<Resp
       continue;
     }
 
-    return res;
+    return withResponseSizeLimit(res, safeOptions.maxBytes);
   }
   throw new Error("Too many redirects");
 }

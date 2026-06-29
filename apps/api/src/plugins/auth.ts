@@ -9,7 +9,12 @@ import { sharedRedis } from "../jobs/connection.js";
 import { auditFromRequest, sanitizeAuditInput } from "../lib/audit.js";
 import { authAttempts } from "../lib/metrics.js";
 import { getSettingNumber, getSettingString } from "../lib/settings-helpers.js";
-import { getPermissions, requirePermission } from "../permissions.js";
+import {
+  canAssignRole,
+  getPermissions,
+  isDisabledRole,
+  requirePermission,
+} from "../permissions.js";
 
 const scryptAsync = promisify(scrypt);
 
@@ -343,6 +348,15 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
       const audit = auditFromRequest(request);
 
+      if (user && isDisabledRole(user.role)) {
+        authAttempts.inc({ method: "password", result: "failure" });
+        await audit("LOGIN_FAILED", {
+          username: sanitizeAuditInput(body.username),
+          reason: "disabled_user",
+        });
+        return reply.status(403).send({ error: "User is disabled", code: "USER_DISABLED" });
+      }
+
       if (!user?.passwordHash) {
         authAttempts.inc({ method: "password", result: "failure" });
         await audit("LOGIN_FAILED", {
@@ -362,6 +376,15 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         return reply.status(401).send({ error: "Invalid credentials" });
       }
 
+      let mfaRequiredByPolicy = false;
+      try {
+        const { getMfaPolicy, isMfaRequiredForUser } = await import("./mfa.js");
+        const policy = await getMfaPolicy();
+        mfaRequiredByPolicy = isMfaRequiredForUser(policy, user.role);
+      } catch {
+        // MFA plugin not loaded
+      }
+
       // ── MFA challenge ──────────────────────────────────────────
       if (user.totpEnabled) {
         const mfaToken = randomUUID();
@@ -370,21 +393,24 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
         await audit("MFA_CHALLENGE_ISSUED", { userId: user.id, username: user.username });
 
-        // Determine if MFA policy requires enrollment for this user
-        let mfaRequired = false;
-        try {
-          const { getMfaPolicy, isMfaRequiredForUser } = await import("./mfa.js");
-          const policy = await getMfaPolicy();
-          mfaRequired = isMfaRequiredForUser(policy, user.role);
-        } catch {
-          // MFA plugin not loaded
-        }
-
         return reply.status(200).send({
           requiresMfa: true,
           mfaToken,
-          mfaRequired,
+          mfaRequired: mfaRequiredByPolicy,
           message: "MFA verification required",
+        });
+      }
+
+      if (mfaRequiredByPolicy) {
+        authAttempts.inc({ method: "password", result: "failure" });
+        await audit("LOGIN_FAILED", {
+          userId: user.id,
+          username: user.username,
+          reason: "mfa_enrollment_required",
+        });
+        return reply.status(403).send({
+          error: "MFA enrollment is required before login",
+          code: "MFA_ENROLLMENT_REQUIRED",
         });
       }
 
@@ -420,16 +446,6 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
       const [teamRow] = await db.select().from(schema.teams).where(eq(schema.teams.id, user.team));
 
-      // Check if MFA enrollment is required by policy but user hasn't enrolled yet
-      let mfaRequired = false;
-      try {
-        const { getMfaPolicy, isMfaRequiredForUser } = await import("./mfa.js");
-        const policy = await getMfaPolicy();
-        mfaRequired = isMfaRequiredForUser(policy, user.role) && !user.totpEnabled;
-      } catch {
-        // MFA plugin not loaded
-      }
-
       const cookieReply = reply as FastifyReply & {
         setCookie?: (name: string, value: string, opts: Record<string, unknown>) => FastifyReply;
       };
@@ -454,7 +470,6 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
           teamName: teamRow?.name ?? user.team,
         },
         expiresAt: expiresAt.toISOString(),
-        ...(mfaRequired && { mfaRequired: true }),
       });
     },
   );
@@ -535,6 +550,11 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
 
     if (!user) {
       return reply.status(401).send({ error: "User not found" });
+    }
+
+    if (isDisabledRole(user.role)) {
+      await db.delete(schema.sessions).where(eq(schema.sessions.id, token));
+      return reply.status(403).send({ error: "User is disabled", code: "USER_DISABLED" });
     }
 
     return reply.send({
@@ -723,6 +743,12 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         code: "ESCALATION_DENIED",
       });
     }
+    if (!(await canAssignRole(admin, role))) {
+      return reply.status(403).send({
+        error: "Cannot create a user with permissions you don't have",
+        code: "ESCALATION_DENIED",
+      });
+    }
 
     // Resolve team -- frontend sends team name (e.g. "Default"), not ID
     const requestedTeam = body.team;
@@ -831,19 +857,6 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
         updatedAt: new Date(),
       };
 
-      // Escalation prevention
-      if (body.role) {
-        const roleHierarchy: Record<string, number> = { admin: 3, editor: 2, user: 1 };
-        const actorLevel = roleHierarchy[admin.role] ?? 0;
-        const targetLevel = roleHierarchy[body.role] ?? 0;
-        if (targetLevel > actorLevel) {
-          return reply.status(403).send({
-            error: "Cannot assign a role higher than your own",
-            code: "ESCALATION_DENIED",
-          });
-        }
-      }
-
       if (body.role) {
         const validBuiltinRoles = ["admin", "editor", "user"];
         const [customRoleRow] = validBuiltinRoles.includes(body.role)
@@ -851,6 +864,22 @@ export async function authRoutes(app: FastifyInstance): Promise<void> {
           : await db.select().from(schema.roles).where(eq(schema.roles.name, body.role));
         const isValid = validBuiltinRoles.includes(body.role) || customRoleRow;
         if (isValid) {
+          const roleHierarchy: Record<string, number> = { admin: 3, editor: 2, user: 1 };
+          const actorLevel = roleHierarchy[admin.role] ?? 0;
+          const targetLevel = roleHierarchy[body.role] ?? 0;
+          if (targetLevel > actorLevel) {
+            return reply.status(403).send({
+              error: "Cannot assign a role higher than your own",
+              code: "ESCALATION_DENIED",
+            });
+          }
+          if (!(await canAssignRole(admin, body.role))) {
+            return reply.status(403).send({
+              error: "Cannot assign a role with permissions you don't have",
+              code: "ESCALATION_DENIED",
+            });
+          }
+
           // Prevent removing your own admin role
           if (id === admin.id && body.role !== "admin") {
             return reply.status(400).send({
@@ -1121,7 +1150,7 @@ export async function authMiddleware(app: FastifyInstance): Promise<void> {
               .select()
               .from(schema.users)
               .where(eq(schema.users.id, key.userId));
-            if (apiUser) {
+            if (apiUser && !isDisabledRole(apiUser.role)) {
               authAttempts.inc({ method: "apikey", result: "success" });
               const keyPermissions = key.permissions ?? undefined;
               (request as FastifyRequest & { user?: AuthUser }).user = {
@@ -1147,6 +1176,12 @@ export async function authMiddleware(app: FastifyInstance): Promise<void> {
     if (!user) {
       if (isPublic) return;
       return reply.status(401).send({ error: "User not found" });
+    }
+
+    if (isDisabledRole(user.role)) {
+      await db.delete(schema.sessions).where(eq(schema.sessions.id, token));
+      if (isPublic) return;
+      return reply.status(403).send({ error: "User is disabled", code: "USER_DISABLED" });
     }
 
     // ── Idle timeout enforcement ───────────────────────────────────

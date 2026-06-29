@@ -21,7 +21,14 @@ vi.mock("../../../apps/api/src/plugins/auth.js", () => ({
   getAuthUser: () => null,
 }));
 
-import { getPermissions, hasPermission } from "../../../apps/api/src/permissions.js";
+import {
+  getEffectivePermissions,
+  getPermissions,
+  hasEffectiveToolAccess,
+  hasPermission,
+  isDisabledRole,
+  permissionsNotHeldBy,
+} from "../../../apps/api/src/permissions.js";
 
 describe("permissions", () => {
   describe("getPermissions", () => {
@@ -89,6 +96,57 @@ describe("permissions", () => {
 
     it("returns false for user with settings:write", async () => {
       expect(await hasPermission("user", "settings:write")).toBe(false);
+    });
+  });
+
+  describe("effective scoped permissions", () => {
+    it("intersects role permissions with API key scope", async () => {
+      const perms = await getEffectivePermissions({
+        id: "u1",
+        username: "admin",
+        role: "admin",
+        apiKeyPermissions: ["tools:use", "apikeys:own"],
+      });
+      expect(perms).toEqual(["tools:use", "apikeys:own"]);
+    });
+
+    it("reports requested permissions outside the caller effective scope", async () => {
+      const invalid = await permissionsNotHeldBy(
+        {
+          id: "u1",
+          username: "admin",
+          role: "admin",
+          apiKeyPermissions: ["tools:use", "apikeys:own"],
+        },
+        ["tools:use", "users:manage"],
+      );
+      expect(invalid).toEqual(["users:manage"]);
+    });
+
+    it("denies tool execution when API key scope lacks tools:use", async () => {
+      await expect(
+        hasEffectiveToolAccess(
+          {
+            id: "u1",
+            username: "admin",
+            role: "admin",
+            apiKeyPermissions: ["apikeys:own"],
+          },
+          "resize",
+        ),
+      ).resolves.toBe(false);
+    });
+  });
+
+  describe("disabled roles", () => {
+    it("identifies disabled SCIM roles", () => {
+      expect(isDisabledRole("disabled")).toBe(true);
+      expect(isDisabledRole("disabled:user")).toBe(true);
+      expect(isDisabledRole("user")).toBe(false);
+    });
+
+    it("returns no permissions for disabled roles", async () => {
+      await expect(getPermissions("disabled:admin")).resolves.toEqual([]);
     });
   });
 });

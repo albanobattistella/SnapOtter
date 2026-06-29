@@ -24,7 +24,7 @@ import { type ReceivedUpload, receiveUpload } from "../lib/upload-stream.js";
 import { InputValidationError } from "../modality/contract.js";
 import { inputHandlerFor } from "../modality/input-handler.js";
 import { MediaInputHandler, type MediaInputKind } from "../modality/media-input.js";
-import { getAuthUser } from "../plugins/auth.js";
+import { requireToolAccess } from "../permissions.js";
 import { updateSingleFileProgress } from "./progress.js";
 
 /** Context passed to tool process functions for cooperative cancellation, scratch storage, and progress. */
@@ -236,14 +236,8 @@ export function createToolRoute<T>(app: FastifyInstance, config: ToolRouteConfig
       : apiToolPath(config.toolId),
     { config: { rateLimit: toolRateLimit } },
     async (request: FastifyRequest, reply: FastifyReply) => {
-      // Check per-tool access before processing uploads
-      const authUser = getAuthUser(request);
-      if (authUser) {
-        const { hasToolAccess } = await import("../permissions.js");
-        if (!(await hasToolAccess(authUser.role, config.toolId))) {
-          return reply.status(403).send({ error: "You don't have permission to use this tool" });
-        }
-      }
+      const authUser = await requireToolAccess(request, reply, config.toolId);
+      if (!authUser) return;
 
       const jobId = randomUUID();
       const maxInputs = config.maxInputs ?? 1;
@@ -513,7 +507,7 @@ export function createToolRoute<T>(app: FastifyInstance, config: ToolRouteConfig
         }
 
         // Check per-user concurrent job limit before enqueuing
-        const userId = getAuthUser(request)?.id ?? null;
+        const userId = authUser.id;
         const maxConcurrent = await getSettingNumber("maxConcurrentJobsPerUser", 0);
         if (maxConcurrent > 0 && userId) {
           const activeJobs = await db
@@ -570,10 +564,9 @@ export function createToolRoute<T>(app: FastifyInstance, config: ToolRouteConfig
               .then(({ isToolAuditEnabled, auditFromRequest }) =>
                 isToolAuditEnabled().then((enabled) => {
                   if (!enabled) return;
-                  const user = getAuthUser(request);
                   return auditFromRequest(request)("TOOL_EXECUTED", {
-                    userId: user?.id,
-                    username: user?.username,
+                    userId: authUser.id,
+                    username: authUser.username,
                     toolId: config.toolId,
                     inputFileCount: received.length,
                     totalInputSize: received.reduce((sum, r) => sum + r.size, 0),
