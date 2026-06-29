@@ -1,0 +1,200 @@
+import { MessageSquare, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useTranslation } from "@/contexts/i18n-context";
+import {
+  type FeedbackErrorCategory,
+  type FeedbackSentiment,
+  promptVariantForSource,
+  submitFeedback,
+  surveyIdForSource,
+} from "@/lib/feedback";
+import { cn } from "@/lib/utils";
+import { useAnalyticsStore } from "@/stores/analytics-store";
+import { FeedbackDialog } from "./feedback-dialog";
+
+interface ToolFeedbackPromptProps {
+  toolId: string;
+  jobStatus?: "completed" | "failed";
+  errorCategory?: FeedbackErrorCategory;
+}
+
+const GLOBAL_LAST_PROMPT_KEY = "snapotter-feedback-last-prompt-at";
+const PROMPTS_DISABLED_KEY = "snapotter-feedback-prompts-disabled";
+const TOOL_PROMPT_PREFIX = "snapotter-feedback-tool-prompt:";
+const GLOBAL_PROMPT_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
+const TOOL_PROMPT_COOLDOWN_MS = 90 * 24 * 60 * 60 * 1000;
+
+function readNumber(key: string): number {
+  try {
+    const raw = localStorage.getItem(key);
+    const parsed = raw ? Number(raw) : 0;
+    return Number.isFinite(parsed) ? parsed : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeNow(key: string): void {
+  try {
+    localStorage.setItem(key, String(Date.now()));
+  } catch {
+    // ignore storage failures
+  }
+}
+
+function promptsDisabled(): boolean {
+  try {
+    return localStorage.getItem(PROMPTS_DISABLED_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function disablePrompts(): void {
+  try {
+    localStorage.setItem(PROMPTS_DISABLED_KEY, "true");
+  } catch {
+    // ignore storage failures
+  }
+}
+
+function shouldShowPrompt(toolId: string): boolean {
+  if (!toolId || promptsDisabled()) return false;
+  const now = Date.now();
+  const lastGlobal = readNumber(GLOBAL_LAST_PROMPT_KEY);
+  if (lastGlobal && now - lastGlobal < GLOBAL_PROMPT_COOLDOWN_MS) return false;
+  const lastTool = readNumber(`${TOOL_PROMPT_PREFIX}${toolId}`);
+  if (lastTool && now - lastTool < TOOL_PROMPT_COOLDOWN_MS) return false;
+  return true;
+}
+
+function markPromptHandled(toolId: string): void {
+  writeNow(GLOBAL_LAST_PROMPT_KEY);
+  writeNow(`${TOOL_PROMPT_PREFIX}${toolId}`);
+}
+
+export function ToolFeedbackPrompt({
+  toolId,
+  jobStatus = "completed",
+  errorCategory,
+}: ToolFeedbackPromptProps) {
+  const { t } = useTranslation();
+  const analyticsConfig = useAnalyticsStore((s) => s.config);
+  const analyticsLoaded = useAnalyticsStore((s) => s.configLoaded);
+  const [visible, setVisible] = useState(false);
+  const [dialogSentiment, setDialogSentiment] = useState<FeedbackSentiment | undefined>();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [thanks, setThanks] = useState(false);
+
+  useEffect(() => {
+    if (!analyticsLoaded || !analyticsConfig?.enabled) return;
+    setVisible(shouldShowPrompt(toolId));
+  }, [analyticsLoaded, analyticsConfig?.enabled, toolId]);
+
+  if (!analyticsLoaded || !analyticsConfig?.enabled) return null;
+  if (!visible && !thanks && !dialogOpen) return null;
+
+  async function handleQuickSentiment(sentiment: FeedbackSentiment) {
+    const source = jobStatus === "failed" ? "failed_job" : "tool_result";
+    if (sentiment === "great") {
+      markPromptHandled(toolId);
+      setVisible(false);
+      setThanks(true);
+      try {
+        await submitFeedback({
+          source,
+          surveyId: surveyIdForSource(source),
+          promptVariant: promptVariantForSource(source),
+          sentiment,
+          feedbackType: "other",
+          toolId,
+          jobStatus,
+          errorCategory,
+        });
+      } catch {
+        // Explicit feedback is best-effort; keep the user flow calm.
+      }
+      return;
+    }
+
+    setDialogSentiment(sentiment);
+    setDialogOpen(true);
+  }
+
+  function handleDismiss() {
+    markPromptHandled(toolId);
+    setVisible(false);
+  }
+
+  function handleDontAskAgain() {
+    disablePrompts();
+    setVisible(false);
+  }
+
+  function handleSubmitted() {
+    markPromptHandled(toolId);
+    setVisible(false);
+    setThanks(true);
+  }
+
+  return (
+    <>
+      {visible && (
+        <div className="rounded-lg border border-border bg-muted/35 p-3 space-y-2">
+          <div className="flex items-start gap-2">
+            <MessageSquare className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground">{t.feedback.toolPromptTitle}</p>
+              <p className="text-xs text-muted-foreground">{t.feedback.toolPromptDescription}</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleDismiss}
+              aria-label={t.feedback.dismissPrompt}
+              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-background"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {(["great", "issue", "missing"] as FeedbackSentiment[]).map((sentiment) => (
+              <button
+                key={sentiment}
+                type="button"
+                onClick={() => handleQuickSentiment(sentiment)}
+                className={cn(
+                  "rounded-md border border-border px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-background hover:text-foreground",
+                  sentiment === "great" && "hover:border-emerald-500/60",
+                )}
+              >
+                {sentiment === "great" ? t.feedback.workedWell : t.feedback.sentiments[sentiment]}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={handleDontAskAgain}
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            {t.feedback.dontAskAgain}
+          </button>
+        </div>
+      )}
+
+      {thanks && (
+        <p className="text-xs text-emerald-600 dark:text-emerald-400">{t.feedback.quickThanks}</p>
+      )}
+
+      <FeedbackDialog
+        open={dialogOpen}
+        source={jobStatus === "failed" ? "failed_job" : "tool_result"}
+        toolId={toolId}
+        jobStatus={jobStatus}
+        errorCategory={errorCategory}
+        initialSentiment={dialogSentiment}
+        onClose={() => setDialogOpen(false)}
+        onSubmitted={handleSubmitted}
+      />
+    </>
+  );
+}

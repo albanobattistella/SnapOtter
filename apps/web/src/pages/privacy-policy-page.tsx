@@ -49,6 +49,14 @@ export function PrivacyPolicyPage() {
               <code className="text-xs bg-muted px-1 py-0.5 rounded">SNAPOTTER_ANALYTICS=off</code>,
               which strips it from the bundle entirely. Everything works normally without it.
             </p>
+            <p className="mt-3">
+              SnapOtter also includes optional feedback prompts. Feedback is sent only when you
+              submit it, and only when analytics is enabled. Feedback events go to PostHog as{" "}
+              <code className="text-xs bg-muted px-1 py-0.5 rounded">feedback_submitted</code>.
+              Contact name, email, and company are sent only if you check the contact permission
+              box. SnapOtter does not attach files, file names, upload paths, OCR/transcription
+              output, private document text, or raw error logs to feedback.
+            </p>
           </section>
 
           <section>

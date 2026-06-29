@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["ANALYTICS_BAKED_OVERRIDE"],
   "tasks": {
     "dev": {
       "cache": false,

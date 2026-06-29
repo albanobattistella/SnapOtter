@@ -1,4 +1,4 @@
-import { ANALYTICS_BAKED } from "@snapotter/shared";
+import { ANALYTICS_BAKED, ANALYTICS_EVENTS, APP_VERSION } from "@snapotter/shared";
 import { eq } from "drizzle-orm";
 import type { PostHog } from "posthog-node";
 import { db, schema } from "../db/index.js";
@@ -6,6 +6,43 @@ import { sanitizeEventProperties } from "./analytics-allowlist.js";
 import { analyticsEnabled, bakedEnabled } from "./analytics-gate.js";
 
 let posthogClient: PostHog | null = null;
+
+export interface FeedbackEventProperties {
+  source: "global" | "tool_result" | "failed_job" | "admin_installer";
+  survey_id?: "global-feedback-v1" | "tool-result-v1" | "failed-job-v1" | "admin-install-v1";
+  prompt_variant?: string;
+  sentiment?: "great" | "okay" | "issue" | "missing" | "bug" | "idea" | "other";
+  feedback_type?: "bug" | "feature_request" | "confusing_ux" | "performance" | "other";
+  message?: string;
+  contact_ok: boolean;
+  contact_email?: string;
+  contact_name?: string;
+  company?: string;
+  tool_id?: string;
+  job_status?: "completed" | "failed";
+  install_method?: "docker" | "docker_compose" | "source" | "cloud" | "other";
+  usage_type?: "personal" | "team_internal" | "business_workflow" | "education" | "evaluating";
+  important_areas?: string[];
+  friction_area?:
+    | "smooth"
+    | "docker"
+    | "environment_variables"
+    | "auth"
+    | "storage"
+    | "workers"
+    | "ai_tools"
+    | "docs"
+    | "performance"
+    | "other";
+  error_category?:
+    | "validation_error"
+    | "upload_error"
+    | "processing_error"
+    | "timeout"
+    | "unsupported_format"
+    | "worker_unavailable"
+    | "unknown";
+}
 
 export async function initAnalytics(): Promise<void> {
   if (!bakedEnabled()) return;
@@ -66,5 +103,56 @@ export async function trackEvent(
     });
   } catch {
     // analytics must never throw
+  }
+}
+
+function cleanFeedbackProperties(properties: FeedbackEventProperties): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    feedback_version: 1,
+    app_version: APP_VERSION,
+    source: properties.source,
+    contact_ok: properties.contact_ok,
+  };
+
+  const copyString = (from: keyof FeedbackEventProperties, to = from) => {
+    const value = properties[from];
+    if (typeof value === "string" && value.length > 0) out[to] = value;
+  };
+
+  copyString("survey_id");
+  copyString("prompt_variant");
+  copyString("sentiment");
+  copyString("feedback_type");
+  copyString("message");
+  copyString("contact_email");
+  copyString("contact_name");
+  copyString("company");
+  copyString("tool_id");
+  copyString("job_status");
+  copyString("install_method");
+  copyString("usage_type");
+  copyString("friction_area");
+  copyString("error_category");
+
+  if (properties.important_areas?.length) {
+    out.important_areas = properties.important_areas;
+  }
+
+  return out;
+}
+
+export async function captureFeedback(
+  properties: FeedbackEventProperties,
+  distinctId?: string,
+): Promise<void> {
+  try {
+    if (!analyticsEnabled() || !posthogClient) return;
+    posthogClient.capture({
+      distinctId: distinctId ?? (await getInstanceId()),
+      event: ANALYTICS_EVENTS.FEEDBACK_SUBMITTED,
+      properties: cleanFeedbackProperties(properties),
+    });
+  } catch {
+    // feedback capture must never throw
   }
 }

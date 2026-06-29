@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { useMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { useAnalyticsStore } from "@/stores/analytics-store";
 import { useConnectionStore } from "@/stores/connection-store";
 import { useSettingsStore } from "@/stores/settings-store";
+import { FeedbackDialog } from "../feedback/feedback-dialog";
 import { HelpDialog } from "../help/help-dialog";
 import { SettingsDialog } from "../settings/settings-dialog";
 import { AiInstallIndicator } from "./ai-install-indicator";
@@ -18,9 +20,12 @@ interface AppLayoutProps {
 export function AppLayout({ children, breadcrumb, navVariant }: AppLayoutProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const isMobile = useMobile();
+  const analyticsConfig = useAnalyticsStore((s) => s.config);
   const connectionStatus = useConnectionStore((s) => s.status);
   const bannerVisible = connectionStatus !== "connected";
+  const feedbackEnabled = Boolean(analyticsConfig?.enabled);
 
   // Load global settings (disabled tools, experimental flag, default theme) on
   // every authenticated page, not just the home grid. Without this, navigating
@@ -44,7 +49,9 @@ export function AppLayout({ children, breadcrumb, navVariant }: AppLayoutProps) 
         variant={navVariant}
         breadcrumb={breadcrumb}
         onHelpClick={() => setHelpOpen(true)}
+        onFeedbackClick={() => setFeedbackOpen(true)}
         onSettingsClick={() => setSettingsOpen(true)}
+        feedbackEnabled={feedbackEnabled}
       />
 
       {/* Main content area */}
@@ -64,6 +71,9 @@ export function AppLayout({ children, breadcrumb, navVariant }: AppLayoutProps) 
 
       {/* Help dialog */}
       <HelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
+
+      {/* Feedback dialog */}
+      <FeedbackDialog open={feedbackOpen} source="global" onClose={() => setFeedbackOpen(false)} />
 
       {/* Global AI install progress */}
       <AiInstallIndicator />

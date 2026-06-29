@@ -5,6 +5,7 @@ import {
   Globe,
   HelpCircle,
   LayoutGrid,
+  MessageSquare,
   Moon,
   Sun,
   Workflow,
@@ -24,7 +25,9 @@ interface TopNavProps {
   variant?: "light" | "dark";
   breadcrumb?: { modality?: string; modalityTab?: string; toolName?: string };
   onHelpClick: () => void;
+  onFeedbackClick?: () => void;
   onSettingsClick: () => void;
+  feedbackEnabled?: boolean;
 }
 
 interface NavLinkItem {
@@ -53,7 +56,9 @@ export function TopNav({
   variant = "light",
   breadcrumb,
   onHelpClick,
+  onFeedbackClick,
   onSettingsClick,
+  feedbackEnabled = false,
 }: TopNavProps) {
   const location = useLocation();
   const isMobile = useMobile();
@@ -108,6 +113,22 @@ export function TopNav({
         )}
 
         <div className="flex-1" />
+
+        {feedbackEnabled && onFeedbackClick && (
+          <button
+            type="button"
+            onClick={onFeedbackClick}
+            className={cn(
+              "p-1.5 rounded-md transition-colors",
+              isDark
+                ? "text-[#aaa] hover:text-[#e0e0e0] hover:bg-[#333]"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted",
+            )}
+            aria-label={t.feedback.navLabel}
+          >
+            <MessageSquare className="h-4 w-4" />
+          </button>
+        )}
 
         <button
           type="button"
@@ -231,6 +252,22 @@ export function TopNav({
         {!isMobile && <ThemeToggle isDark={isDark} />}
         {!isMobile && <LanguageSelector isDark={isDark} />}
 
+        {feedbackEnabled && onFeedbackClick && (
+          <button
+            type="button"
+            onClick={onFeedbackClick}
+            className={cn(
+              "p-1.5 rounded-md transition-colors",
+              isDark
+                ? "text-[#aaa] hover:text-[#e0e0e0] hover:bg-[#333]"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted",
+            )}
+            aria-label={t.feedback.navLabel}
+          >
+            <MessageSquare className="h-4 w-4" />
+          </button>
+        )}
+
         <button
           type="button"
           onClick={onHelpClick}
@@ -328,6 +365,7 @@ function LanguageSelector({ isDark }: { isDark: boolean }) {
               <span className={l.code === locale ? "font-medium" : ""}>{l.nativeName}</span>
               {l.code === locale && (
                 <svg
+                  aria-hidden="true"
                   className="h-3.5 w-3.5 text-primary"
                   viewBox="0 0 24 24"
                   fill="none"

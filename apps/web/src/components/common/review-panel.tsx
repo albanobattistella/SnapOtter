@@ -5,8 +5,10 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "@/contexts/i18n-context";
 import { formatHeaders } from "@/lib/api";
 import { formatFileSize, triggerDownload } from "@/lib/download";
+import { classifyFeedbackError } from "@/lib/feedback";
 import { format } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { ToolFeedbackPrompt } from "../feedback/tool-feedback-prompt";
 
 /** Tools whose primary output is text/data, not a downloadable file. */
 const DATA_OUTPUT_TOOLS = new Set([
@@ -212,6 +214,16 @@ export function ReviewPanel({
           </button>
         </div>
       )}
+
+      <ToolFeedbackPrompt
+        toolId={currentToolId}
+        jobStatus={hasBatchStats && failedCount > 0 ? "failed" : "completed"}
+        errorCategory={
+          hasBatchStats && failedCount > 0
+            ? classifyFeedbackError(t.toolPage.batchPartialSuccess)
+            : undefined
+        }
+      />
 
       {/* Edit settings / New file -- side by side */}
       <div className="grid grid-cols-2 gap-2">
