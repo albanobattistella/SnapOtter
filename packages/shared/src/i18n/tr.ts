@@ -80,7 +80,6 @@ export const tr: TranslationKeys = {
     adminCardDescription:
       "A quick note from admins helps us improve Docker, source installs, and docs.",
     installMethodLabel: "Install method",
-    usageTypeLabel: "Use case",
     frictionAreaLabel: "Hardest setup area",
     importantAreasLabel: "Most important areas",
     sentiments: {
@@ -107,9 +106,9 @@ export const tr: TranslationKeys = {
       other: "Other",
     },
     usageTypes: {
-      personal: "Personal",
-      team_internal: "Team/internal",
-      business_workflow: "Business workflow",
+      personal: "Sadece ben",
+      team_internal: "Küçük ekip",
+      business_workflow: "Şirket veya kurum",
       education: "Education",
       evaluating: "Evaluating",
     },
@@ -132,6 +131,12 @@ export const tr: TranslationKeys = {
       batch_workflows: "Batch workflows",
       ai_tools: "AI tools",
     },
+  },
+  onboarding: {
+    usageSurveyTitle: "SnapOtter'ı nasıl kullanıyorsunuz?",
+    usageSurveyToolsLabel: "Sizin için en önemlisi ne?",
+    pickAnyHint: "(istediğiniz kadar seçin)",
+    continueLabel: "Devam et",
   },
   categories: {
     essentials: "Temel Araçlar",

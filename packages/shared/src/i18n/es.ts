@@ -80,7 +80,6 @@ export const es: TranslationKeys = {
     adminCardDescription:
       "A quick note from admins helps us improve Docker, source installs, and docs.",
     installMethodLabel: "Install method",
-    usageTypeLabel: "Use case",
     frictionAreaLabel: "Hardest setup area",
     importantAreasLabel: "Most important areas",
     sentiments: {
@@ -107,9 +106,9 @@ export const es: TranslationKeys = {
       other: "Other",
     },
     usageTypes: {
-      personal: "Personal",
-      team_internal: "Team/internal",
-      business_workflow: "Business workflow",
+      personal: "Solo yo",
+      team_internal: "Equipo pequeño",
+      business_workflow: "Empresa u organización",
       education: "Education",
       evaluating: "Evaluating",
     },
@@ -132,6 +131,12 @@ export const es: TranslationKeys = {
       batch_workflows: "Batch workflows",
       ai_tools: "AI tools",
     },
+  },
+  onboarding: {
+    usageSurveyTitle: "¿Cómo usas SnapOtter?",
+    usageSurveyToolsLabel: "¿Qué es lo más importante para ti?",
+    pickAnyHint: "(elige las que quieras)",
+    continueLabel: "Continuar",
   },
   categories: {
     essentials: "Esenciales",

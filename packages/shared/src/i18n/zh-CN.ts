@@ -80,7 +80,6 @@ export const zhCN: TranslationKeys = {
     adminCardDescription:
       "A quick note from admins helps us improve Docker, source installs, and docs.",
     installMethodLabel: "Install method",
-    usageTypeLabel: "Use case",
     frictionAreaLabel: "Hardest setup area",
     importantAreasLabel: "Most important areas",
     sentiments: {
@@ -107,9 +106,9 @@ export const zhCN: TranslationKeys = {
       other: "Other",
     },
     usageTypes: {
-      personal: "Personal",
-      team_internal: "Team/internal",
-      business_workflow: "Business workflow",
+      personal: "仅我自己",
+      team_internal: "小型团队",
+      business_workflow: "公司或组织",
       education: "Education",
       evaluating: "Evaluating",
     },
@@ -132,6 +131,12 @@ export const zhCN: TranslationKeys = {
       batch_workflows: "Batch workflows",
       ai_tools: "AI tools",
     },
+  },
+  onboarding: {
+    usageSurveyTitle: "您如何使用 SnapOtter?",
+    usageSurveyToolsLabel: "您最看重什么?",
+    pickAnyHint: "(可多选)",
+    continueLabel: "继续",
   },
   categories: {
     essentials: "基础工具",
