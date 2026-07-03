@@ -20,6 +20,7 @@ import { fileURLToPath } from "node:url";
 import type { FeatureBundleState, FeatureStatus } from "@snapotter/shared";
 import { FEATURE_BUNDLES, getRequiredBundlesForTool } from "@snapotter/shared";
 import * as tar from "tar";
+import { getQueuedBundleIds } from "./feature-install-queue.js";
 
 // ── Paths ───────────────────────────────────────────────────────────────
 
@@ -281,12 +282,28 @@ interface ManifestModel {
   minSize?: number;
 }
 
+interface ManifestArchive {
+  compressedSize?: number;
+  extractedSize?: number;
+}
+
 interface ManifestBundle {
   models: ManifestModel[];
+  archives?: Record<string, ManifestArchive>;
 }
 
 interface Manifest {
   bundles: Record<string, ManifestBundle>;
+}
+
+/**
+ * Bundle archive key for this host, mirroring detect_arch() in
+ * install_feature.py exactly so the size we surface matches what actually gets
+ * downloaded. Only "amd64-gpu" and "arm64-cpu" archives are published; amd64
+ * always resolves to the GPU variant (there is no CPU-only amd64 archive).
+ */
+function bundleArchKey(): string {
+  return process.arch === "arm64" ? "arm64-cpu" : "amd64-gpu";
 }
 
 function readManifest(): Manifest | null {
@@ -492,6 +509,9 @@ export function verifyBundleModels(bundleId: string): string | null {
 export function getFeatureStates(): FeatureBundleState[] {
   const installed = readInstalled();
   const lock = getInstallingBundle();
+  const manifest = readManifest();
+  const arch = bundleArchKey();
+  const queuedIds = new Set(getQueuedBundleIds());
 
   return Object.values(FEATURE_BUNDLES).map((bundle) => {
     const installedBundle = installed.bundles[bundle.id];
@@ -517,10 +537,19 @@ export function getFeatureStates(): FeatureBundleState[] {
       } else {
         status = "installed";
       }
+    } else if (queuedIds.has(bundle.id)) {
+      // Waiting behind the active install in the server-side queue.
+      status = "queued";
     } else if (currentProgress?.bundleId === bundle.id && currentProgress.error) {
       status = "error";
       error = currentProgress.error;
     }
+
+    const archive = manifest?.bundles[bundle.id]?.archives?.[arch];
+    const downloadBytes =
+      archive?.compressedSize && archive.compressedSize > 0 ? archive.compressedSize : null;
+    const installedBytes =
+      archive?.extractedSize && archive.extractedSize > 0 ? archive.extractedSize : null;
 
     return {
       id: bundle.id,
@@ -529,6 +558,8 @@ export function getFeatureStates(): FeatureBundleState[] {
       status,
       installedVersion: installedBundle?.version ?? null,
       estimatedSize: bundle.estimatedSize,
+      downloadBytes,
+      installedBytes,
       enablesTools: bundle.enablesTools,
       progress,
       error,

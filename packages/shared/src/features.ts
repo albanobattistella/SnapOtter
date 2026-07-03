@@ -6,7 +6,7 @@ export interface FeatureBundleInfo {
   enablesTools: string[];
 }
 
-export type FeatureStatus = "not_installed" | "installing" | "installed" | "error";
+export type FeatureStatus = "not_installed" | "queued" | "installing" | "installed" | "error";
 
 export interface FeatureBundleState {
   id: string;
@@ -15,6 +15,13 @@ export interface FeatureBundleState {
   status: FeatureStatus;
   installedVersion: string | null;
   estimatedSize: string;
+  // Real download / on-disk sizes for THIS host's architecture, read from the
+  // bundle manifest. amd64 hosts pull the CUDA-inclusive archive whether or not
+  // a GPU is present, so these can be much larger than the coarse estimatedSize
+  // label suggests. Optional/nullable: absent in native (non-Docker) mode and
+  // when the manifest lacks the value (extractedSize is 0 for some archives).
+  downloadBytes?: number | null;
+  installedBytes?: number | null;
   enablesTools: string[];
   progress: { percent: number; stage: string } | null;
   error: string | null;
@@ -52,21 +59,21 @@ export const FEATURE_BUNDLES: Record<string, FeatureBundleInfo> = {
     id: "upscale-enhance",
     name: "Upscale & Enhance",
     description: "AI upscaling, face enhancement, and noise removal",
-    estimatedSize: "4-5 GB",
+    estimatedSize: "5-6 GB",
     enablesTools: ["upscale", "enhance-faces", "noise-removal"],
   },
   "photo-restoration": {
     id: "photo-restoration",
     name: "Photo Restoration",
     description: "Restore old or damaged photos",
-    estimatedSize: "800 MB - 1 GB",
+    estimatedSize: "4-5 GB",
     enablesTools: ["restore-photo"],
   },
   ocr: {
     id: "ocr",
     name: "OCR",
     description: "Extract text from images",
-    estimatedSize: "3-4 GB",
+    estimatedSize: "5-6 GB",
     enablesTools: ["ocr", "ocr-pdf"],
   },
   transcription: {
