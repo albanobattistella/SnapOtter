@@ -226,7 +226,7 @@ These numbers come from benchmarks run across four systems (Apple M2 Max, AMD Ry
 | Disk | 3 GB (image) + 1 GB (data volume) |
 | GPU | Not required |
 
-All 138 non-AI tools (image resize/crop/convert, video trim/merge, audio normalize/convert, PDF merge/split/compress, data format conversion, and more) run on any hardware. Most operations complete in under 1 second even on a single core. The exception is AVIF encoding, which takes ~27s on 1 core but drops to ~5s on 4 cores.
+All 222 non-AI catalog tools (image resize/crop/convert, video trim/merge, audio normalize/convert, PDF merge/split/compress, file format conversion, conversion presets, and more) run on any hardware. Most operations complete in under 1 second even on a single core. The exception is AVIF encoding, which takes ~27s on 1 core but drops to ~5s on 4 cores.
 
 ```yaml
 deploy:
@@ -242,7 +242,7 @@ deploy:
 |---|---|
 | CPU | 4 cores |
 | RAM | 4 GB |
-| Disk | 3 GB (image) + 14 GB (AI models) + workspace |
+| Disk | 3 GB (image) + 24 GB (AI models) + workspace |
 | GPU | Not required (CPU fallback) |
 
 AI tools work on CPU but are significantly slower. Some tools are practical on CPU, others are not:
@@ -259,13 +259,13 @@ AI model download sizes:
 
 | Bundle | Disk Size |
 |---|---|
-| Background removal | 3-4 GB |
-| Upscale + Face enhance + Noise removal | 4-5 GB |
+| Background removal | 4-5 GB |
+| Upscale + Face enhance + Noise removal | 5-6 GB |
 | Face detection | 200-300 MB |
 | Object eraser + Colorize | 1-2 GB |
-| OCR | 3-4 GB |
-| Photo restoration | 800 MB - 1 GB |
-| **All bundles** | **~14 GB** |
+| OCR | 5-6 GB |
+| Photo restoration | 4-5 GB |
+| **All bundles** | **~24 GB** |
 
 ```yaml
 deploy:
