@@ -48,3 +48,11 @@ CVE-2026-33809
 # pulled by glob, whose fix is a major-version bump (5.0.5) the glob ecosystem
 # has not adopted. Not reachable from user input.
 CVE-2026-33750
+
+# npm bundled sigstore (build-time tool internal, not runtime-reachable).
+# CVE-2026-48815: sigstore certificateOIDs verification constraints silently dropped.
+# This is the npm CLI vendored copy (node_modules/npm/node_modules/sigstore), used
+# only for npm package provenance at build time; SnapOtter never runs npm provenance
+# verification at runtime. Same build-tool rationale as the pnpm entries above.
+# Re-evaluate when the Node base image ships a fixed npm.
+CVE-2026-48815
